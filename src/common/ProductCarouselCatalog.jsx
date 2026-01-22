@@ -70,42 +70,41 @@ function ProductCarousel({ data }) {
     function DisplayButtons({ product }) {
       if (user) {
         const AddToCart = () => {
-          const productAmountInCart = cart[product.id] || 0
+          const productAmountInCart = cart.content[product.id] || 0
           if (product.stock >= productAmountInCart) {
-            if (Object.keys(cart).includes(product.id)) {
-              setCart((prevData) => ({
-                ...prevData,
-                [product.id]: prevData[product.id] + 1,
-              }));
-            } else {
-              setCart((prevData) => ({
-                ...prevData,
-                [product.id]: 1,
-              }));
-            }
+            setCart(prev => ({
+              ...prev,
+              content: {
+                ...prev.content,
+                [product.id]: (prev.content[product.id] || 0) + 1,
+              }
+            }));
           } else {
             displayNotification("Stock de " + product.name + " insuffisant", "", "danger")
           }
         };
 
         const RemoveFromCart = () => {
-          if (Object.keys(cart).includes(product.id)) {
-            if (cart[product.id] <= 1) {
+          if (Object.keys(cart.content).includes(product.id)) {
+            if (cart.content[product.id] <= 1) {
               setCart((prevData) => {
                 const newCart = { ...prevData };
-                delete newCart[product.id];
+                delete newCart.content[product.id];
                 return newCart;
               });
             } else {
-              setCart((prevData) => ({
-                ...prevData,
-                [product.id]: prevData[product.id] - 1,
+              setCart(prev => ({
+                ...prev,
+                content: {
+                  ...prev.content,
+                  [product.id]: prev.content[product.id] -1,
+                }
               }));
             }
           }
         };
-
-        if (Object.keys(cart).includes(product.id) && cart[product.id] > 0) {
+        
+        if (Object.keys(cart.content).includes(product.id) && cart.content[product.id] > 0) {
           return (
             <div className="flex jusitfy-end">
               <FunctionButton
@@ -114,7 +113,7 @@ function ProductCarousel({ data }) {
                 fun={RemoveFromCart}
               />
               <p className="text-[#3435FF] text-xl mr-1 ml-1 font-semibold">
-                {cart[product.id] || ""}
+                {cart.content[product.id] || ""}
               </p>
               <FunctionButton
                 className="text-white bg-[#3435FF] hover:bg-[#5253ff] rounded-full text-sm px-2 py-0.5 mb-2 ml-0 text-right"

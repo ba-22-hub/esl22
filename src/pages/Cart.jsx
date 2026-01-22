@@ -31,12 +31,12 @@ function Cart() {
     const [productsPriceTotal, setProductsPriceTotal] = useState(0)
     const [productsWeightTotal, setProductsWeightTotal] = useState(0)
     const [productsNumberTotal, setProductsNumberTotal] = useState(0)
-    const [shippingCost, setShippingCost] = useState(1)
+    const [shippingCost, setShippingCost] = useState(1.35)
     const isNotified = useRef(false)
     const [loading, setLoading] = useState(true);
 
     const { user, loading: authorLoading, checkHasRights } = useAuthor()
-    const { cart, setCart, clearCart } = useCart()
+    const { cart, setCart } = useCart()
 
     let navigate = useNavigate()
 
@@ -97,7 +97,7 @@ function Cart() {
             const { data, error } = await supabase
                 .from('products')
                 .select('*')
-                .in("id", Object.keys(cart));
+                .in("id", Object.keys(cart.content));
             if (error) {
                 displayNotification("Erreur de chargement des produits", error.message, "danger")
             } else {
@@ -130,6 +130,10 @@ function Cart() {
                 .maybeSingle();
             if (!error) {
                 setShippingCost(data.value)
+                setCart(prev => ({
+                    ...prev,
+                    shippingCost: data.value,
+                }));
             }
         };
 
@@ -144,9 +148,9 @@ function Cart() {
 
     const updateTotals = () => {
         if (productsInCart.length > 0) {
-            setProductsPriceTotal(roundTwoDigits(productsInCart.map((product) => (parseFloat(product.salePrice) * parseFloat(cart[product.id]))).reduce((priceTotal, price) => priceTotal + price)))
-            setProductsWeightTotal(roundTwoDigits(productsInCart.map((product) => (parseFloat(product.weight) * parseFloat(cart[product.id]))).reduce((weightTotal, weight) => weightTotal + weight)))
-            setProductsNumberTotal(Object.values(cart).reduce((acc, number) => acc + number, 0))
+            setProductsPriceTotal(roundTwoDigits(productsInCart.map((product) => (parseFloat(product.salePrice) * parseFloat(cart.content[product.id]))).reduce((priceTotal, price) => priceTotal + price)))
+            setProductsWeightTotal(roundTwoDigits(productsInCart.map((product) => (parseFloat(product.weight) * parseFloat(cart.content[product.id]))).reduce((weightTotal, weight) => weightTotal + weight)))
+            setProductsNumberTotal(Object.keys(cart.content).map(k => cart.content[k]).reduce((acc, number) => acc + number, 0))
         } else {
             setProductsPriceTotal(0)
             setProductsWeightTotal(0)
@@ -155,12 +159,17 @@ function Cart() {
     }
 
     async function handleValidate() {
-        if (Object.keys(cart).length === 0) {
+        if (Object.keys(cart.content).length === 0) {
             displayNotification("Échec de validation du panier", "Le panier est vide", "danger")
             return;
         } else {
+<<<<<<< HEAD
             let productsPriceTotal = productsInCart
                 .map(p => parseFloat(p.salePrice) * cart[p.id])
+=======
+            const productsPriceTotal = productsInCart
+                .map(p => parseFloat(p.salePrice) * cart.content[p.id])
+>>>>>>> 31b948dad3acaf77bbafb90375b0352c5888688e
                 .reduce((a, b) => a + b, 0);
 
             if (productsPriceTotal < 0.5) {
@@ -187,14 +196,14 @@ function Cart() {
             !limit || (currentAmount + newAmount) <= limit;
 
         const productsWeightTotal = productsInCart
-            .map(p => parseFloat(p.weight) * cart[p.id])
+            .map(p => parseFloat(p.weight) * cart.content[p.id])
             .reduce((a, b) => a + b, 0);
 
         const productsPriceTotal = productsInCart
-            .map(p => parseFloat(p.salePrice) * cart[p.id])
+            .map(p => parseFloat(p.salePrice) * cart.content[p.id])
             .reduce((a, b) => a + b, 0);
 
-        const productsNumberTotal = Object.values(cart).reduce((a, b) => a + b, 0);
+        const productsNumberTotal = Object.keys(cart.content).map(k => cart.content[k]).reduce((a, b) => a + b, 0);
 
         if (limits.weight_limit && !isRespectedLimit(limits.weight_limit, limits.current_weight, productsWeightTotal)) {
             displayNotification(
@@ -234,7 +243,7 @@ function Cart() {
         }
 
         // Check stock
-        const outOfStockProducts = productsInCart.filter(p => cart[p.id] > p.stock);
+        const outOfStockProducts = productsInCart.filter(p => cart.content[p.id] > p.stock);
         if (outOfStockProducts.length > 0) {
             const productNames = outOfStockProducts.map(p => p.name).join(", ");
             if (outOfStockProducts.length > 1) {
@@ -271,47 +280,7 @@ function Cart() {
             }
         }
 
-        // add shipping cost : 
-        // productsPriceTotal = productsPriceTotal + shippingCost
-
-        try {
-            let tmp_cart = productsInCart.map(p => ({
-                        id: p.id,
-                        name: p.name,
-                        salePrice: p.salePrice,
-                        quantity: cart[p.id]
-                    }))
-            tmp_cart.push({
-                id: 0, 
-                name : 'Contribution livraison', 
-                salePrice : shippingCost, 
-                quantity : 1 
-            })
-            // We invoke the supabase edge function to create the Stripe checkout session
-            const { data, error } = await supabase.functions.invoke("create-checkout-session", {
-                body: {
-                    cart: tmp_cart,
-                    userId: user.id,
-                    successUrl: `${window.location.origin}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-                    cancelUrl: `${window.location.origin}/cart`,
-                }
-            });
-
-            if (error) {
-                console.error("Erreur fonction edge Stripe :", error);
-                return;
-            }
-
-            if (data.url) {
-                window.location.href = data.url;
-            } else {
-                console.error("Aucune URL Stripe renvoyée par la fonction edge.");
-            }
-
-            clearCart();
-        } catch (err) {
-            console.error("Erreur Stripe :", err);
-        }
+        navigate("/chose-pickup-point")
     }
 
 
@@ -320,44 +289,40 @@ function Cart() {
 
         function DisplayButtons({ product }) {
             const AddToCart = () => {
-                if (Object.keys(cart).includes(product.id)) {
-                    // Product already in cart
-                    setCart(prevData => ({
-                        ...prevData,
-                        [product.id]: prevData[product.id] + 1
-                    }))
-                }
-                else {
-                    // New product added to cart
-                    setCart(prevData => ({
-                        ...prevData,
-                        [product.id]: 1
-                    }))
-                }
+                setCart(prev => ({
+                    ...prev,
+                    content: {
+                        ...prev.content,
+                        [product.id]: (prev.content[product.id] || 0) + 1,
+                    }
+                }));
                 updateTotals()
             }
 
             const RemoveFromCart = () => {
-                if (Object.keys(cart).includes(product.id)) {   // Should always be true when function called
-                    if (cart[product.id] <= 1) {
+                if (Object.keys(cart.content).includes(product.id)) {   // Should always be true when function called
+                    if (cart.content[product.id] <= 1) {
                         // Removing last item of this product from cart : product removed from cart
                         setCart(prevData => {
                             const newCart = { ...prevData };
-                            delete newCart[product.id];
+                            delete newCart.content[product.id];
                             return newCart;
                         });
                     }
                     else {
-                        setCart(prevData => ({
-                            ...prevData,
-                            [product.id]: prevData[product.id] - 1
-                        }))
+                        setCart(prev => ({
+                            ...prev,
+                            content: {
+                                ...prev.content,
+                                [product.id]: prev.content[product.id] - 1,
+                            }
+                        }));
                     }
                 }
                 updateTotals()
             }
 
-            if (cart[product.id] == 1) {
+            if (cart.content[product.id] == 1) {
                 return <div className="flex jusitfy-end">
                     {/* TRASH CAN BUTTON */}
                     <button type="button" className="text-white bg-[#FF8200] hover:bg-[#ff9800] rounded-full text-sm px-1 py-0.5 mb-2" onClick={RemoveFromCart}>
@@ -365,21 +330,21 @@ function Cart() {
                             <path fill="currentColor" d="M13.5 6.5V7h5v-.5a2.5 2.5 0 0 0-5 0Zm-2 .5v-.5a4.5 4.5 0 1 1 9 0V7H28a1 1 0 1 1 0 2h-1.508L24.6 25.568A5 5 0 0 1 19.63 30h-7.26a5 5 0 0 1-4.97-4.432L5.508 9H4a1 1 0 0 1 0-2h7.5Zm2.5 6.5a1 1 0 1 0-2 0v10a1 1 0 1 0 2 0v-10Zm5-1a1 1 0 0 0-1 1v10a1 1 0 1 0 2 0v-10a1 1 0 0 0-1-1Z" />
                         </svg>
                     </button>
-                    <p className="text-[#3435FF] text-xl mr-1 ml-1 font-semibold">{cart[product.id]}</p>
+                    <p className="text-[#3435FF] text-xl mr-1 ml-1 font-semibold">{cart.content[product.id]}</p>
                     <FunctionButton className="text-white bg-[#3435FF] hover:bg-[#5253ff] rounded-full text-sm px-2 py-0.5 mb-2 ml-0 text-right" buttonText="+" fun={AddToCart} />
                 </div>
             }
-            else if (cart[product.id] > 1) {
+            else if (cart.content[product.id] > 1) {
                 return <div className="flex jusitfy-end">
                     {/* REGULAR MINUS BUTTON */}
                     <FunctionButton className="text-white bg-[#FF8200] hover:bg-[#ff9800] rounded-full text-sm px-2 py-0.5 mb-2" buttonText="-" fun={RemoveFromCart} />
-                    <p className="text-[#3435FF] text-xl mr-1 ml-1 font-semibold">{cart[product.id]}</p>
+                    <p className="text-[#3435FF] text-xl mr-1 ml-1 font-semibold">{cart.content[product.id]}</p>
                     <FunctionButton className="text-white bg-[#3435FF] hover:bg-[#5253ff] rounded-full text-sm px-2 py-0.5 mb-2 ml-0 text-right" buttonText="+" fun={AddToCart} />
                 </div>
             }
         }
 
-        if (Object.keys(cart).includes(product.id)) {
+        if (Object.keys(cart.content).includes(product.id)) {
             return (
                 <div key={idx} className="grid grid-cols-7 text-[#3435FF]">
                     <div className="col-span-1 col-start-1 content-center">
@@ -392,7 +357,7 @@ function Cart() {
                     </div>
                     <div className="col-span-2 col-start-6 lg:col-span-3 lg:col-start-5  content-center">
                         <p className="text-xl lg:text-2xl flex flex-line font-semibold text-right pl-2 whitespace-nowrap">
-                            <span className='hidden lg:block mr-2'>{cart[product.id]} × {product.salePrice} = </span>{roundTwoDigits(cart[product.id] * product.salePrice)}€
+                            <span className='hidden lg:block mr-2'>{cart.content[product.id]} × {product.salePrice} = </span>{roundTwoDigits(cart.content[product.id] * product.salePrice)}€
                         </p>
                     </div>
                 </div>
@@ -448,13 +413,13 @@ function Cart() {
                         </div>
                         <span className='mx-2 text-4xl mt-8 font-semibold lg:hidden'>=</span>
                         <div className="mt-8 w-[20%] lg:mt-12 text-4xl font-extrabold col-span-1 col-start-3 row-span-3 row-start-5 content-right">
-                            {productsPriceTotal + shippingCost}€
+                            {roundTwoDigits(productsPriceTotal + shippingCost)}€
                         </div>
                     </div>
                 </div>
                 <FunctionButton
                     buttonText={'Valider ma commande'}
-                    className={`mx-4 sm:mx-10 w-full mt-4 sm:mt-5 px-4 sm:px-8 py-2 sm:py-3 rounded-lg font-mono text-lg sm:text-xl md:text-2xl font-semibold shadow ${Object.keys(cart).length === 0
+                    className={`mx-4 sm:mx-10 w-full mt-4 sm:mt-5 px-4 sm:px-8 py-2 sm:py-3 rounded-lg font-mono text-lg sm:text-xl md:text-2xl font-semibold shadow ${Object.keys(cart).filter(k => k !== "id").length === 0
                         ? 'bg-[#878787] text-white'
                         : 'bg-[#FF8200] text-white hover:bg-[#ff9800]'
                         }`}

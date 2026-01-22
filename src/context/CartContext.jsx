@@ -6,9 +6,12 @@ import { displayNotification } from '../lib/displayNotification'
 HOW TO USE THE CONTEXT ?? 
 1. import : import { useCart } from '../context/CartContext.jsx';
 2. declare what you need at the begining of the component
-    => const {cart, setCart } = useCart()
+    => const {cart, setCart, clearCart } = useCart()
 
-cart : current cart : {id1: nb1, id2: nb2, ...},
+cart : current cart : {idCart: _,
+                        content: {id1: nb1, id2: nb2, ...}
+                        trackingUrl: _,
+                        orderReference: _},
 setCart : to update the cart
 */
 
@@ -17,7 +20,7 @@ const CartContext = createContext()
 
 function CartProvider({ children }) {
     const { user, loading } = useAuthor()
-    const [cart, setCart] = useState(null)
+    const [cart, setCart] = useState({ "content": {} })
 
     // Retrieving old cart
     useEffect(() => {
@@ -25,13 +28,13 @@ function CartProvider({ children }) {
             if (user?.id) {
                 try {
                     const saved = localStorage.getItem(user.id)
-                    setCart(saved ? JSON.parse(saved) : {})
+                    setCart(saved ? JSON.parse(saved) : { "content": {} })
                 } catch (e) {
                     displayNotification("Erreur de récupération du panier", "", "danger")
-                    setCart({})
+                    setCart({ "content": {} })
                 }
             } else {
-                setCart({})
+                setCart({ "content": {} })
             }
         }
     }, [user, loading])
@@ -45,8 +48,8 @@ function CartProvider({ children }) {
 
     function clearCart() {
         if (user?.id) {
-            localStorage.setItem(user.id, JSON.stringify({}))
-            setCart({})
+            localStorage.setItem(user.id, JSON.stringify({ "content": {} }))
+            setCart({ "content": {} })
         }
     }
 

@@ -9,6 +9,7 @@ import {
 import React from 'react';
 import { Toaster } from "react-hot-toast";
 import { useState } from "react";
+import 'leaflet/dist/leaflet.css';
 
 
 import { useAuthor } from "@context/AuthorContext.jsx";
@@ -25,6 +26,7 @@ import avatar from "@assets/Assets/avatar2.png"
 import About from '@pages/About.jsx'
 import Cart from '@pages/Cart.jsx'
 import Catalog from '@pages/Catalog.jsx'
+import Delivery from '@pages/Delivery.jsx'
 import Contact from '@pages/Contact.jsx'
 import ForgotPassword from '@pages/ForgotPassword.jsx'
 import Home from '@pages/Home.jsx'
@@ -37,6 +39,7 @@ import Sponsor from '@pages/Sponsor.jsx'
 import Account from "@pages/Account.jsx";
 import PaymentSuccess from "@pages/PaymentSuccess.jsx";
 import ResetPassword from "./pages/ResetPassword";
+import ChosePickUpPoint from "@pages/ChosePickUpPoint.jsx";
 
 // Importing common components
 import Footer from "@common/Footer.jsx";
@@ -64,7 +67,7 @@ function App() {
 
             {/* Navigation Links - visible à partir de lg */}
             <div className="hidden lg:block">
-              <div className="ml-10 flex items-baseline space-x-8">
+              <div className="ml-10 flex items-center space-x-8">
                 <Link to="/about" className="text-[#3435FF] hover:text-[#5253ff] px-3 py-2 text-sm font-medium transition-colors">
                   Qui sommes-nous ?
                 </Link>
@@ -79,6 +82,9 @@ function App() {
                 </Link>
                 <Link to="/cart" className="text-[#3435FF] hover:text-[#5253ff] px-3 py-2 text-sm font-medium transition-colors">
                   Mon panier
+                </Link>
+                <Link to="/delivery" className="text-[#3435FF] hover:text-[#5253ff] px-3 py-2 text-sm font-medium transition-colors">
+                  Mes livraisons
                 </Link>
                 <Link to="/contact" className="text-[#3435FF] hover:text-[#5253ff] px-3 py-2 text-sm font-medium transition-colors">
                   Nous contacter
@@ -160,6 +166,13 @@ function App() {
               Mon panier
             </Link>
             <Link
+              to="/delivery"
+              onClick={() => setIsMenuOpen(false)}
+              className="block text-[#3435FF] hover:bg-gray-100 hover:text-[#5253ff] px-3 py-3 rounded-md text-base font-medium transition-colors"
+            >
+              Mes livraisons
+            </Link>
+            <Link
               to="/contact"
               onClick={() => setIsMenuOpen(false)}
               className="block text-[#3435FF] hover:bg-gray-100 hover:text-[#5253ff] px-3 py-3 rounded-md text-base font-medium transition-colors"
@@ -186,6 +199,7 @@ function App() {
         <Route path="/about" element={<About />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/catalog" element={<Catalog />} />
+        <Route path="/delivery" element={<Delivery />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
@@ -197,6 +211,7 @@ function App() {
         <Route path="/account" element={<Account />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/payment-success" element={<PaymentSuccess />} />
+        <Route path="/chose-pickup-point" element={<ChosePickUpPoint />} />
         {/* {/* Redirecting to Error404 page if the route does not exist */}
         {/* <Route path="*" element={<div className="text-center mt-20 text-2xl">Page not found</div>} />  */}
       </Routes>
