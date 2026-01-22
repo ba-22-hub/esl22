@@ -159,7 +159,7 @@ function Cart() {
             displayNotification("Échec de validation du panier", "Le panier est vide", "danger")
             return;
         } else {
-            const productsPriceTotal = productsInCart
+            let productsPriceTotal = productsInCart
                 .map(p => parseFloat(p.salePrice) * cart[p.id])
                 .reduce((a, b) => a + b, 0);
 
@@ -167,6 +167,7 @@ function Cart() {
                 displayNotification("Échec de validation du panier", "Le total produits doit être d'au moins 0.5€ pour pouvoir procéder au payement en ligne", "danger")
                 return;
             }
+
         }
 
         // User's limits check
@@ -270,16 +271,26 @@ function Cart() {
             }
         }
 
+        // add shipping cost : 
+        // productsPriceTotal = productsPriceTotal + shippingCost
+
         try {
-            // We invoke the supabase edge function to create the Stripe checkout session
-            const { data, error } = await supabase.functions.invoke("create-checkout-session", {
-                body: {
-                    cart: productsInCart.map(p => ({
+            let tmp_cart = productsInCart.map(p => ({
                         id: p.id,
                         name: p.name,
                         salePrice: p.salePrice,
                         quantity: cart[p.id]
-                    })),
+                    }))
+            tmp_cart.push({
+                id: 0, 
+                name : 'Contribution livraison', 
+                salePrice : shippingCost, 
+                quantity : 1 
+            })
+            // We invoke the supabase edge function to create the Stripe checkout session
+            const { data, error } = await supabase.functions.invoke("create-checkout-session", {
+                body: {
+                    cart: tmp_cart,
                     userId: user.id,
                     successUrl: `${window.location.origin}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
                     cancelUrl: `${window.location.origin}/cart`,
