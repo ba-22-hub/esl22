@@ -163,13 +163,8 @@ function Cart() {
             displayNotification("Échec de validation du panier", "Le panier est vide", "danger")
             return;
         } else {
-<<<<<<< HEAD
-            let productsPriceTotal = productsInCart
-                .map(p => parseFloat(p.salePrice) * cart[p.id])
-=======
             const productsPriceTotal = productsInCart
                 .map(p => parseFloat(p.salePrice) * cart.content[p.id])
->>>>>>> 31b948dad3acaf77bbafb90375b0352c5888688e
                 .reduce((a, b) => a + b, 0);
 
             if (productsPriceTotal < 0.5) {
