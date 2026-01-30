@@ -1,30 +1,31 @@
 # ========================================
-# ÉTAPE 1: BUILD (Construction de l'application)
+# ÉTAPE 1: BUILD
 # ========================================
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# 🔧 Copier UNIQUEMENT package.json d'abord (cache des dépendances)
+# Copier package files
 COPY package.json package-lock.json* ./
-RUN npm ci --only=production
 
-# 🔧 Copier le code source APRÈS (invalidé à chaque changement)
+# Installer toutes les dépendances
+RUN npm ci
+
+# Copier le code source
 COPY . .
 
-# 🔧 Nettoyer le cache npm et construire
-RUN npm cache clean --force && \
-    npm run build
+# Build
+RUN npm run build
 
 # ========================================
 # ÉTAPE 2: PRODUCTION
 # ========================================
 FROM nginx:alpine AS production
 
-# 🔧 Nettoyer le répertoire par défaut de nginx
+# Nettoyer nginx
 RUN rm -rf /usr/share/nginx/html/*
 
-# Copier les fichiers construits
+# Copier les fichiers buildés
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Copier l'entrypoint
