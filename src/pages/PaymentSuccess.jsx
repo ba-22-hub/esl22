@@ -82,11 +82,57 @@ function PaymentSuccess() {
                     console.log("✅ Paiement validé, insertion dans la base...");
                     displayNotification("Paiement validé", "Votre commande est en cours de traitement", "success")
 
+                    const cartMetadata = data.cartToValidate;
+
+                    // 🔧 RECONSTITUER LES DONNÉES COMPLÈTES DES PRODUITS
+                    const productIds = cartMetadata.items.map(item => item.id);
+
+                    const { data: productsData, error: productsError } = await supabase
+                        .from('products')
+                        .select('id, name, salePrice, weight')
+                        .in('id', productIds);
+
+                    if (productsError) {
+                        console.error("❌ Erreur récupération produits:", productsError);
+                        displayNotification("Erreur", "Impossible de récupérer les informations des produits", "danger");
+                        setIsProcessing(false);
+                        return;
+                    }
+
+                    // Créer un map pour accès rapide aux produits
+                    const productsMap = {};
+                    productsData.forEach(p => {
+                        productsMap[p.id] = p;
+                    });
+
+                    // Reconstituer le contenu complet du panier
+                    const fullCartContent = cartMetadata.items.map(item => {
+                        const product = productsMap[item.id];
+                        return {
+                            id: item.id,
+                            name: product.name,
+                            salePrice: parseFloat(product.salePrice),
+                            weight: parseFloat(product.weight),
+                            quantity: item.qty,
+                            pickupPointId: cartMetadata.pickup_point
+                        };
+                    });
+
+                    console.log("🛒 Contenu complet reconstitué:", fullCartContent);
+
+                    // Créer l'objet cart complet pour insertion
+                    const cartToInsert = {
+                        client_id: cartMetadata.client_id,
+                        content: fullCartContent,
+                        price: cartMetadata.price,
+                        delivered: cartMetadata.delivered
+                    };
+
                     // Fetching old counters
                     const { data: dataOldCounters, error: errorOldCounters } = await supabase
                         .from('User')
                         .select('current_weight, current_price, current_order')
-                        .eq('id', data.cartToValidate.client_id)
+                        .eq('id', cartMetadata.client_id)
                         .single();
 
                     if (errorOldCounters) {
@@ -102,25 +148,27 @@ function PaymentSuccess() {
 
                     // Computing new cart counters values
                     const cartWeight = roundTwoDigits(
-                        data.cartToValidate.content
+                        fullCartContent
                             .map((product) => parseFloat(product.weight) * parseFloat(product.quantity))
                             .reduce((total, weight) => total + weight, 0)
                     )
                     const cartOrder = roundTwoDigits(
-                        data.cartToValidate.content
+                        fullCartContent
                             .map((product) => parseFloat(product.quantity))
                             .reduce((total, qty) => total + qty, 0)
                     )
                     const cartPrice = roundTwoDigits(
-                        data.cartToValidate.content
+                        fullCartContent
                             .map((product) => parseFloat(product.salePrice) * parseFloat(product.quantity))
                             .reduce((total, price) => total + price, 0)
                     )
 
+                    console.log("📊 Compteurs:", { cartWeight, cartOrder, cartPrice });
+
                     // Insert cart in database
                     const { data: dataInsertedCart, error: insertError } = await supabase
                         .from("cart")
-                        .insert(data.cartToValidate)
+                        .insert(cartToInsert)
                         .select("id")
                         .single();
 
@@ -141,7 +189,7 @@ function PaymentSuccess() {
                             current_price: oldPrice + cartPrice,
                             current_order: oldOrder + cartOrder
                         })
-                        .eq('id', data.cartToValidate.client_id)
+                        .eq('id', cartMetadata.client_id)
 
                     if (updateError) {
                         console.error("Échec de mise à jour des compteurs liés au compte", updateError.message)

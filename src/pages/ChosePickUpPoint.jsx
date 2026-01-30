@@ -229,18 +229,19 @@ function ChosePickUpPoint() {
         }));
 
         try {
-            // Préparer les données pour Stripe
+            // 🔧 CHANGEMENT : Ne plus inclure pickupPointId dans chaque produit
             const cartItems = productsInCart.map(p => ({
                 id: p.id,
                 name: p.name,
                 salePrice: parseFloat(p.salePrice),
                 weight: parseFloat(p.weight),
-                quantity: parseInt(cart.content[p.id]),
-                pickupPointId: currPoint.id
+                quantity: parseInt(cart.content[p.id])
+                // ❌ RETIRÉ : pickupPointId: currPoint.id
             }));
 
             console.log("Données envoyées à Stripe:", {
                 cart: cartItems,
+                pickupPointId: currPoint.id, // ✅ UNE SEULE FOIS ici
                 shippingCost: parseFloat(shippingCost),
                 userId: user.id
             });
@@ -249,6 +250,7 @@ function ChosePickUpPoint() {
             const { data, error } = await supabase.functions.invoke("create-checkout-session", {
                 body: {
                     cart: cartItems,
+                    pickupPointId: currPoint.id, // ✅ Envoyé au niveau racine
                     shippingCost: parseFloat(shippingCost),
                     userId: user.id,
                     successUrl: `${window.location.origin}/payment-success?session_id={CHECKOUT_SESSION_ID}`,

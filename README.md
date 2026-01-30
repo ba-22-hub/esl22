@@ -12,20 +12,22 @@ Cette plateforme vise à fluidifier la gestion administrative tout en amélioran
 
 
 ## 📂 Table des matières
-- [Guide d'installation](#-guide-dinstallation)
-    - [Cloner le projet](#-1-cloner-le-projet-mode-développeur)
-    - [Docker]()
-    - [Exécutable Electron](#-2-utiliser-lexécutable-electron-mode-simplifié-non-maintenu)
-- [Guide d'utilisation](#-guide-dutilisation)
-    - [Gestion des utilisateurs](#-gestion-des-utilisateurs)
-    - [Gestion des produits](#-gestion-des-produits)
-- [Guide de programmation](#-guide-de-programmation)
-    - [Technologie utilisées](#-technologies-utilisées)
-    - [Installation du projet](#-installation-du-projet)
-    - [Strucutre du projet](#-structure-du-projet)
-- [Informations complémentaires](#-informations-complémentaires)
-    - [Équipe](#-équipe)
-    - [License](#-licence)
+- [Application web de gestion des clients et des produits – Banque Alimentaire des Côtes d'Armor : Rayon22](#application-web-de-gestion-des-clients-et-des-produits--banque-alimentaire-des-côtes-darmor--rayon22)
+  - [📂 Table des matières](#-table-des-matières)
+  - [📥 Guide d'installation](#-guide-dinstallation)
+    - [💻 1. Cloner le projet (mode développeur)](#-1-cloner-le-projet-mode-développeur)
+    - [🐋 Docker](#-docker)
+    - [~~▶️ 2. Utiliser l’exécutable Electron (mode simplifié)~~ (non maintenu)](#️-2-utiliser-lexécutable-electron-mode-simplifié-non-maintenu)
+  - [🧑‍💼 Guide d'utilisation](#-guide-dutilisation)
+    - [👥 Gestion des utilisateurs](#-gestion-des-utilisateurs)
+    - [🧾 Gestion des produits](#-gestion-des-produits)
+  - [🧑‍💻 Guide de programmation](#-guide-de-programmation)
+    - [⚙️ Technologies utilisées](#️-technologies-utilisées)
+    - [🚀 Installation du projet](#-installation-du-projet)
+    - [📂 Structure du projet](#-structure-du-projet)
+  - [📌 Informations complémentaires](#-informations-complémentaires)
+    - [👥 Équipe](#-équipe)
+    - [📝 Licence](#-licence)
 
 ## 📥 Guide d'installation
 
@@ -188,7 +190,7 @@ git clone git@github.com:dallatIkes/rayon22.git
 
 Installez les modules nécessaires au bon fonctionnement de l’application :
 ```bash
-npm install --legacy-peer-deps
+npm install
 ```
 
 **4. Configuration des variables d’environnement**
