@@ -93,91 +93,92 @@ function ProductCarousel({ data }) {
     prevArrow: <SamplePrevArrow />,
   };
 
-  function DisplayProduct({ product }) {
-    function DisplayButtons({ product }) {
-      if (!user || !isLoaded) return null;
+  // 🔧 DisplayButtons au niveau ProductCarousel (accessible partout)
+  function DisplayButtons({ product }) {
+    if (!user || !isLoaded) return null;
 
-      const productId = product.id.toString(); // 🔑 TOUJOURS string
-      const productInCart = cart?.content?.[productId] || 0;
+    const productId = product.id.toString();
+    const productInCart = cart?.content?.[productId] || 0;
 
-      const AddToCart = () => {
-        console.log("➕ Ajout :", product.name);
-        console.log("📦 Cart avant :", cart);
+    const AddToCart = () => {
+      console.log("➕ Ajout :", product.name);
+      console.log("📦 Cart avant :", cart);
 
-        if (product.stock >= productInCart + 1) {
-          setCart(prev => ({
-            ...prev,
-            content: {
-              ...prev.content,
-              [productId]: productInCart + 1
-            }
-          }));
-        } else {
-          displayNotification(
-            "Stock de " + product.name + " insuffisant",
-            "",
-            "danger"
-          );
-        }
-      };
-
-      const RemoveFromCart = () => {
-        console.log("➖ Retrait :", product.name);
-        console.log("📦 Cart avant :", cart);
-
-        if (!cart?.content?.[productId]) return;
-
-        if (productInCart <= 1) {
-          const newCart = {
-            ...cart,
-            content: { ...cart.content }
-          };
-          delete newCart.content[productId];
-
-          setCart(newCart);
-        } else {
-          setCart(prev => ({
-            ...prev,
-            content: {
-              ...prev.content,
-              [productId]: productInCart - 1
-            }
-          }));
-        }
-      };
-
-      if (productInCart > 0) {
-        return (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={RemoveFromCart}
-              className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full font-bold flex items-center justify-center"
-            >
-              −
-            </button>
-            <span className="text-[#3435FF] text-xl font-bold min-w-[2rem] text-center">
-              {productInCart}
-            </span>
-            <button
-              onClick={AddToCart}
-              className="w-8 h-8 bg-[#3435FF] hover:bg-[#5253ff] text-white rounded-full font-bold flex items-center justify-center"
-            >
-              +
-            </button>
-          </div>
+      if (product.stock >= productInCart + 1) {
+        setCart(prev => ({
+          ...prev,
+          content: {
+            ...prev.content,
+            [productId]: productInCart + 1
+          }
+        }));
+      } else {
+        displayNotification(
+          "Stock de " + product.name + " insuffisant",
+          "",
+          "danger"
         );
       }
+    };
 
+    const RemoveFromCart = () => {
+      console.log("➖ Retrait :", product.name);
+      console.log("📦 Cart avant :", cart);
+
+      if (!cart?.content?.[productId]) return;
+
+      if (productInCart <= 1) {
+        const newCart = {
+          ...cart,
+          content: { ...cart.content }
+        };
+        delete newCart.content[productId];
+
+        setCart(newCart);
+      } else {
+        setCart(prev => ({
+          ...prev,
+          content: {
+            ...prev.content,
+            [productId]: productInCart - 1
+          }
+        }));
+      }
+    };
+
+    if (productInCart > 0) {
       return (
-        <button
-          onClick={AddToCart}
-          className="w-8 h-8 bg-[#3435FF] hover:bg-[#5253ff] text-white rounded-full font-bold flex items-center justify-center"
-        >
-          +
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={RemoveFromCart}
+            className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full font-bold flex items-center justify-center"
+          >
+            −
+          </button>
+          <span className="text-[#3435FF] text-xl font-bold min-w-[2rem] text-center">
+            {productInCart}
+          </span>
+          <button
+            onClick={AddToCart}
+            className="w-8 h-8 bg-[#3435FF] hover:bg-[#5253ff] text-white rounded-full font-bold flex items-center justify-center"
+          >
+            +
+          </button>
+        </div>
       );
     }
 
+    return (
+      <button
+        onClick={AddToCart}
+        className="w-8 h-8 bg-[#3435FF] hover:bg-[#5253ff] text-white rounded-full font-bold flex items-center justify-center"
+      >
+        +
+      </button>
+    );
+  }
+
+  function DisplayProduct({ product }) {
     return (
       <div className="bg-white shadow-lg rounded-2xl overflow-hidden w-64 lg:w-72 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 border border-gray-100">
         <div className="bg-gradient-to-br from-blue-50 to-white p-4 border-b-2 border-[#3435FF]">
@@ -236,8 +237,14 @@ function ProductCarousel({ data }) {
       </Slider>
 
       {selectedProduct && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl relative overflow-hidden">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+          onClick={() => setSelectedProduct(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl relative overflow-hidden max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="bg-gradient-to-r from-[#3435FF] to-[#5253ff] p-6 text-white">
               <button
                 onClick={() => setSelectedProduct(null)}
@@ -248,6 +255,56 @@ function ProductCarousel({ data }) {
               <h2 className="text-3xl font-bold pr-12">
                 {selectedProduct.name}
               </h2>
+            </div>
+
+            <div className="p-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Image */}
+                <div className="bg-gray-50 rounded-xl p-6 flex items-center justify-center">
+                  <img
+                    src={selectedProduct.imageUrl || roundLogo}
+                    alt={selectedProduct.name}
+                    className="max-h-80 max-w-full object-contain"
+                  />
+                </div>
+
+                {/* Détails */}
+                <div>
+                  <div className="mb-6">
+                    <div className="flex items-baseline gap-3 mb-2">
+                      <span className="text-4xl font-bold text-[#FF8200]">
+                        {selectedProduct.salePrice}€
+                      </span>
+                      <span className="text-xl text-red-500 line-through">
+                        {selectedProduct.price}€
+                      </span>
+                    </div>
+                    <div className="text-green-600 font-semibold">
+                      Économie : {(selectedProduct.price - selectedProduct.salePrice).toFixed(2)}€
+                    </div>
+                  </div>
+
+                  {selectedProduct.stock <= (selectedProduct.productStockIncertainThreshold || stockIncertainThreshold) && (
+                    <div className="bg-[#FF8200] bg-opacity-10 border-l-4 border-[#FF8200] p-4 mb-4">
+                      <p className="text-[#FF8200] font-bold">⚠️ Stock incertain</p>
+                    </div>
+                  )}
+
+                  {selectedProduct.description && (
+                    <div className="mb-6">
+                      <h3 className="text-lg font-bold text-[#3435FF] mb-2">Description</h3>
+                      <p className="text-gray-700">{selectedProduct.description}</p>
+                    </div>
+                  )}
+
+                  <div className="mb-6">
+                    <h3 className="text-lg font-bold text-[#3435FF] mb-2">Stock disponible</h3>
+                    <p className="text-gray-700">{selectedProduct.stock} unité(s)</p>
+                  </div>
+
+                  <DisplayButtons product={selectedProduct} />
+                </div>
+              </div>
             </div>
           </div>
         </div>
