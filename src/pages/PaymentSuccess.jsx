@@ -11,12 +11,32 @@ import Loading from "@common/Loading.jsx";
 function PaymentSuccess() {
     const navigate = useNavigate();
     const hasRun = useRef(false);
-    const { setCart } = useCart()
+    const { setCart } = useCart();
     const [isProcessing, setIsProcessing] = useState(true);
+    const [shippingCost, setShippingCost] = useState(1.35) // État pour les frais de port
+    const shippingCostFetched = useRef(false)
 
     function roundTwoDigits(nb) {
         return Math.round(nb * 100) / 100
     }
+
+    useEffect(() => {
+            if (shippingCostFetched.current) return;
+    
+            const fetchShippingCost = async () => {
+                const { data, error } = await supabase
+                    .from('constants')
+                    .select('value')
+                    .eq("name", "shippingCost")
+                    .maybeSingle();
+                if (!error && data) {
+                    setShippingCost(data.value)
+                    shippingCostFetched.current = true
+                }
+            };
+    
+            fetchShippingCost();
+        }, []);
 
     useEffect(() => {
         if (hasRun.current) return;
@@ -124,7 +144,7 @@ function PaymentSuccess() {
                     const cartToInsert = {
                         client_id: cartMetadata.client_id,
                         content: fullCartContent,
-                        price: cartMetadata.price,
+                        price: cartMetadata.price + shippingCost,
                         delivered: cartMetadata.delivered
                     };
 

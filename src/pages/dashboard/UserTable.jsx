@@ -8,6 +8,7 @@ import { useAuthor } from '@context/AuthorContext';
 import { useNavigate } from 'react-router-dom';
 import { displayNotification } from '@lib/displayNotification.jsx';
 
+
 // Importing common components
 import FunctionButton from '@common/FunctionButton.jsx';
 import Loading from '@common/Loading.jsx';
@@ -127,6 +128,12 @@ const UserTable = () => {
 				displayNotification("Erreur inattendue", e.message, "danger")
 			})
 	};
+
+	function formatDate(datestr) {
+		return new Intl.DateTimeFormat('fr-FR', {
+			dateStyle: 'short',
+		}).format(new Date(datestr));
+	}
 
 	if (isLoading || loading) {
 		return <Loading />;
@@ -374,6 +381,62 @@ const UserTable = () => {
 												</p>
 											)}
 										</div>
+
+										{/* ########## Date des droits ############## */}
+
+										{/* padding to end line*/}
+										<div className="bg-white p-3 rounded-lg border border-gray-200">
+											<label className="text-xs font-medium text-rayonblue block mb-1"></label>
+											<p className="text-gray-800"></p>
+										</div>
+
+										<div className="bg-white p-3 rounded-lg border border-gray-200">
+											<label className="text-xs font-medium text-rayonblue block mb-1">
+												Début des droits
+											</label>
+											{editMode === user.id ? (
+												<input
+													name="start_right"
+													value={editedUser["start_right"] || ''}
+													onChange={handleChange}
+													className="w-full border-2 border-rayonblue rounded px-2 py-1"
+												/>
+											) : (
+												<p className="text-gray-800">{formatDate(user["start_right"]) || '—'}</p>
+											)}
+										</div>
+										<div className="bg-white p-3 rounded-lg border border-gray-200">
+											<label className="text-xs font-medium text-rayonblue block mb-1">
+												Fin des droits
+											</label>
+											{editMode === user.id ? (
+												<input
+													name="end_right"
+													value={editedUser["end_right"] || ''}
+													onChange={handleChange}
+													className="w-full border-2 border-rayonblue rounded px-2 py-1"
+												/>
+											) : (
+												<p className="text-gray-800">{formatDate(user["end_right"]) || '—'}</p>
+											)}
+										</div>
+										<div className="bg-white p-3 rounded-lg border border-gray-200">
+											<label className="text-xs font-medium text-rayonblue block mb-1">
+												Statut du compte
+											</label>
+											{editMode === user.id ? (
+												<input
+													name="has_right"
+													value={editedUser["has_right"] || ''}
+													onChange={handleChange}
+													className="w-full border-2 border-rayonblue rounded px-2 py-1"
+												/>
+											) : (
+												<p className="text-gray-800">{user["has_right"] ? "Actif" : "Inactif"}</p>
+											)}
+										</div>
+
+
 									</div>
 								</div>
 							)}

@@ -10,6 +10,7 @@ module.exports = {
         rayonblue: "#3435FF",
         rayonorange: "#FF8200",
         rayonlightblue: "#0080ffff",
+        red : "#ff0000"
 
       },
     },

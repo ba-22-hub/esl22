@@ -67,7 +67,7 @@ function RegisterStep2({ data, onDataChange, onNext, onPrevious }) {
                         Informations suivantes : date de début et de fin de droit, la composition de la famille en indiquant le
                         nombre d’enfants et âges.</p><br />
                     <p>- Si vous êtes étudiant boursier, nous transmettre la copie du document. L’inscription sera déterminée en
-                        fonction de votre échelon de bourse. la durée de validité sera l’année scolaire en cours.</p>
+                        fonction de votre échelon de bourse. La durée de validité sera l’année scolaire en cours.</p>
                 </div>
                 <div className='text-red w-[84%] ml-[8%] mb-10 p-4'>
                     Toutes les informations transmises sont strictement confidentielles, seulement accessibles aux personnes qui

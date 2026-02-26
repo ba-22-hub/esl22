@@ -2,12 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@lib/supabaseClient.js';
 import { displayNotification } from '@lib/displayNotification.jsx';
+import { useAuthor } from '@context/AuthorContext.jsx'
+import { useNavigate } from 'react-router-dom';
 
-// Importing common components
-import ProductCarousel from "@common/ProductCarouselCatalog"
-import Loading from "@common/Loading.jsx"
-
-/**
+import Loading from '@common/Loading.jsx'
+import ProductCarousel from '@common/ProductCarouselCatalog.jsx'
+/*
  * The Catalog page.
  * @returns {React.ReactElement} Catalog component.
  */
@@ -17,6 +17,9 @@ const SearchBar = () => {
   const [search, setSearch] = useState('');
   const [update, setUpdate] = useState(true);
   const [loading, setLoading] = useState(true);
+  const { user, loading: authorLoading, checkHasRights } = useAuthor()
+  const navigate = useNavigate()
+
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -50,6 +53,23 @@ const SearchBar = () => {
 
     fetchProducts()
   }, [update]);
+
+  // check if user have an account 
+  useEffect(() => {
+    if (authorLoading) return;
+    if (!user) {
+      navigate('/login')
+      displayNotification("Vous devez être connectés et avoir les droits pour consulter le catalog")
+    } else {
+      checkHasRights(user.id)
+        .then((rights) => {
+          if (!rights) {
+            displayNotification("Vous n'avez pas (encore ?) les droits. Pour passer une commande, veuillez déposer un fichier dans votre espace compte")
+            navigate('/account')
+          }
+        })
+    }
+  }, [authorLoading])
 
   const filteredProducts = products.filter(product =>
     `${product.name} ${product.category}`

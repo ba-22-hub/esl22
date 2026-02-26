@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react"
 import { supabase } from '@lib/supabaseClient.js'
+import { displayNotification } from '@lib/displayNotification.jsx';
+
 // Importing common components
 import PageButton from "@common/PageButton"
 import ArticleCard from "../common/ArticleCard"
 import ArticleModal from "../common/ArticleModal"
+
 
 // Importing assets
 import student from "@assets/Photos/etudiante1.png"
@@ -107,7 +110,7 @@ function More() {
             {/* Retours presse section */}
             <div className="pt-36 lg:w-[90%] lg:ml-[5%]">
                 <h2 className="ml-20 text-4xl text-[#3435FF] font-semibold mb-4">Retours presse</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8 p">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8 p-2">
                     {articles.map((article) => (
                         <ArticleCard
                             key={article.id}

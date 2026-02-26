@@ -88,7 +88,7 @@ function ProductTable() {
     }
 
     fetchProducts();
-    fetchCurrentStockIncertainThreshold();
+    fetchCurrentSettings();
   }, [loading]);
 
   const handleEdit = (product) => {
@@ -314,20 +314,35 @@ function ProductTable() {
     );
   };
 
-  async function fetchCurrentStockIncertainThreshold() {
-    const { data, error } = await supabase
+  async function fetchCurrentSettings() {
+    const { data: stockIncertainThresholdData, error: stockIncertainThresholdError } = await supabase
       .from('constants')
       .select('value')
       .eq("name", "stockIncertainThreshold")
       .maybeSingle();
-    if (!error) {
+    if (!stockIncertainThresholdError) {
       setSettings(prevData => ({
         ...prevData,
-        stockIncertainThreshold: data.value
+        stockIncertainThreshold: stockIncertainThresholdData.value
       }))
     } else {
-      console.error("Erreur lors du téléchargement de l'ancienne valeur seuil ", error)
-      displayNotification("Erreur lors du téléchargement de l'ancienne valeur seuil", error.message, "danger")
+      console.error("Erreur lors du téléchargement de l'ancienne valeur seuil", stockIncertainThresholdError)
+      displayNotification("Erreur lors du téléchargement de l'ancienne valeur seuil", stockIncertainThresholdError.message, "danger")
+    }
+
+    const { data: shippingCostData, error: shippingCostError } = await supabase
+      .from('constants')
+      .select('value')
+      .eq("name", "shippingCost")
+      .maybeSingle();
+    if (!shippingCostError) {
+      setSettings(prevData => ({
+        ...prevData,
+        shippingCost: shippingCostData.value
+      }))
+    } else {
+      console.error("Erreur lors du téléchargement de l'ancienne valeur de la participation solidaire aux frais de livraison", shippingCostError)
+      displayNotification("Erreur lors du téléchargement de l'ancienne valeur de la participation solidaire aux frais de livraison", shippingCostError.message, "danger")
     }
   }
 
@@ -360,7 +375,7 @@ function ProductTable() {
   }
 
   function modifySettings() {
-    fetchCurrentStockIncertainThreshold();
+    fetchCurrentSettings();
     setExpandedSettings(true);
   }
 
@@ -462,7 +477,7 @@ function ProductTable() {
                   {/* Informations principales */}
                   <div className="p-4 grid grid-cols-4 gap-4">
                     <div className="text-center">
-                      <p className="text-xs text-gray-500 mb-1">Prix magasin</p>
+                      <p className="text-xs text-gray-500 mb-1">Prix magasin (€)</p>
                       {editingProductId === p.id ? (
                         <input
                           name="price"
@@ -478,7 +493,7 @@ function ProductTable() {
                     </div>
 
                     <div className="text-center">
-                      <p className="text-xs text-gray-500 mb-1">Prix rayon22</p>
+                      <p className="text-xs text-gray-500 mb-1">Prix rayon22 (€)</p>
                       {editingProductId === p.id ? (
                         <input
                           name="salePrice"
@@ -509,7 +524,7 @@ function ProductTable() {
                     </div>
 
                     <div className="text-center">
-                      <p className="text-xs text-gray-500 mb-1">Poids</p>
+                      <p className="text-xs text-gray-500 mb-1">Poids (grammes)</p>
                       {editingProductId === p.id ? (
                         <input
                           name="weight"
@@ -725,7 +740,7 @@ function ProductTable() {
                   <FormInput
                     name="stockIncertainThreshold"
                     type="number"
-                    value={settings.stockIncertainThreshold ?? ""}
+                    value={settings.stockIncertainThreshold ?? 3}
                     inputText="Seuil en deçà duquel le label 'Stock Incertain' apparaît"
                     className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
                     onChange={handleChangeInSettings}
@@ -734,7 +749,7 @@ function ProductTable() {
                     name="shippingCost"
                     type="number"
                     step="0.01"
-                    value={settings.shippingCost ?? ""}
+                    value={settings.shippingCost ?? 0}
                     inputText="Participation solidaire aux frais de livraison (€)"
                     className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
                     onChange={handleChangeInSettings}

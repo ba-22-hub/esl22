@@ -59,7 +59,7 @@ function About() {
         <div className="relative z-30 max-w-7xl mx-auto px-6 lg:px-12 lg:-mt-64 pb-16">
           <div className="grid md:grid-cols-2 gap-8">
             {/* Carte Banque Alimentaire */}
-            <div className="bg-white rounded-2xl shadow-2xl p-8 border-t-4 border-[#3435FF] hover:shadow-3xl transition-all duration-300 transform hover:-translate-y-2">
+            <div className="mt-2 lg:mt-0 bg-white rounded-2xl shadow-2xl p-8 border-t-4 border-[#3435FF] hover:shadow-3xl transition-all duration-300 transform hover:-translate-y-2">
               <div className="flex justify-center mb-6">
                 <div className="w-32 h-32 bg-blue-50 rounded-full flex items-center justify-center p-4">
                   <img src={birdLogo} alt="Banque Alimentaire logo" className="w-full h-full object-contain" />

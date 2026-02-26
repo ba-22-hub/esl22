@@ -124,7 +124,7 @@ function Home() {
                                 Se Connecter
                             </button>
                         </div>
-                        <div className="flex-1 relative">
+                        <div className="hidden lg:flex-1 relative">
                             <div className="relative z-10 transform hover:scale-105 transition-transform duration-500">
                                 <img
                                     src={orangeWoman}
@@ -141,7 +141,7 @@ function Home() {
             {/* Instagram et Partenaires avec cartes modernes */}
             <div className="grid md:grid-cols-2 gap-0 -mt-8 max-w-6xl mx-auto px-6 lg:px-12 relative z-20">
                 {/* Instagram Card */}
-                <div className="bg-white p-8 rounded-l-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-2 border-[#3435FF]">
+                <div className="bg-white p-8 lg:rounded-l-2xl rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-2 border-[#3435FF]">
                     <div className="flex flex-col items-center justify-center h-full">
                         <img src={instagram} alt="Instagram" className="w-20 h-20 mb-6" />
                         <h3 className="text-xl font-bold text-[#3435FF] mb-4">Suivez notre actualité</h3>
@@ -157,7 +157,7 @@ function Home() {
                 </div>
 
                 {/* Partenaires Card */}
-                <div className="bg-gradient-to-br from-gray-50 to-white p-8 rounded-r-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-2 border-[#FF8200]">
+                <div className="bg-gradient-to-br from-gray-50 to-white p-8 lg:rounded-r-2xl rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-2 border-[#FF8200] mt-2 lg:mt-0">
                     <div className="flex flex-col h-full justify-between">
                         <div className="text-center mb-6">
                             <h3 className="text-2xl font-bold text-[#3435FF] mb-2">Nos partenaires de confiance</h3>
@@ -251,7 +251,7 @@ function Home() {
             </div>
 
             {/* Nos Produits */}
-            <div className="py-20 bg-white">
+            <div className="py-5 lg:py-20 bg-white">
                 <div className="max-w-7xl mx-auto px-6 lg:px-12">
                     <h2 className="text-center text-[#3435FF] text-4xl lg:text-5xl font-bold mb-4">Nos produits</h2>
                     <p className="text-center text-gray-600 text-lg mb-12">Découvrez notre sélection de produits de qualité à petits prix</p>
@@ -310,10 +310,10 @@ function Home() {
                 {/* Formes décoratives */}
                 <div className="absolute top-0 right-0 w-96 h-96 bg-[#FF8200] opacity-10 rounded-full blur-3xl"></div>
 
-                <div className="max-w-7xl mx-auto px-6 lg:px-12 relative z-10">
+                <div className="lg:max-w-7xl mx-auto px-6 lg:px-12 relative z-10">
                     <div className="grid md:grid-cols-2 gap-12 items-center">
                         {/* Phone mockup */}
-                        <div className="flex justify-center">
+                        <div className="hidden lg:flex justify-center">
                             <div className="relative transform hover:scale-105 transition-transform duration-500">
                                 <div className="absolute inset-0 bg-[#FF8200] blur-3xl opacity-30 rounded-full"></div>
                                 <img

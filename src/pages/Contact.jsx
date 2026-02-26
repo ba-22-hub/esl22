@@ -3,18 +3,15 @@ import { useState, useRef, useEffect } from 'react';
 import { supabase } from '@lib/supabaseClient.js';
 import { uploadPDF } from '@lib/sendPDF.js';
 import { useAuthor } from '@context/AuthorContext.jsx';
-import { useNavigate } from 'react-router-dom';
 import { displayNotification } from '@lib/displayNotification.jsx';
 
 // Importing common components
-import FormTextArea from "@common/FormTextArea"
 import Loading from '@common/Loading';
 
 // Importing assets
 import roundLogo from "@assets/logos/roundLogo.png"
 
 function Contact() {
-	let navigate = useNavigate()
 	const { user, loading } = useAuthor()
 
 	const [formData, setFormData] = useState({
@@ -28,12 +25,7 @@ function Contact() {
 
 	useEffect(() => {
 		if (loading) return;
-		if (!user) {
-			notify("Vous devez vous connecter pour utiliser cette fonctionnalité !")
-			navigate('/login')
-			return;
-		}
-	}, [loading, user, navigate])
+	}, [loading, user])
 
 	function notify(message) {
 		if (isNotified.current) return;
@@ -84,11 +76,21 @@ function Contact() {
 		}
 
 		// Message insertion in the db
-		const newMessage = {
-			user_id: user.id,
-			message: formData.message,
-			pdf_name: name,
-		};
+		let newMessage
+		if (user) {
+			newMessage = {
+				user_id: user.id,
+				message: formData.message,
+				pdf_name: name,
+			};
+		} else {
+			newMessage = {
+				user_id: 0,
+				message: formData.message,
+				pdf_name: name,
+			};
+		}
+
 
 		const { error: insertError } = await supabase
 			.from('Messages')
@@ -287,8 +289,8 @@ function Contact() {
 										type="submit"
 										disabled={submitting || !formData.message.trim()}
 										className={`w-full py-4 rounded-lg font-bold text-lg transition-all shadow-lg ${submitting || !formData.message.trim()
-												? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-												: 'bg-gradient-to-r from-[#FF8200] to-[#ff9800] hover:from-[#ff9800] hover:to-[#FF8200] text-white hover:shadow-xl transform hover:-translate-y-1'
+											? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+											: 'bg-gradient-to-r from-[#FF8200] to-[#ff9800] hover:from-[#ff9800] hover:to-[#FF8200] text-white hover:shadow-xl transform hover:-translate-y-1'
 											}`}
 									>
 										{submitting ? (
