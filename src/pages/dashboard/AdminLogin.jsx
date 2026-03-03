@@ -8,6 +8,7 @@ import { displayNotification } from '@lib/displayNotification.jsx';
 // Importing common components
 import FormInput from "@common/FormInput.jsx";
 import PageButton from "@common/PageButton.jsx";
+import PasswrdInput from "@common/PasswrdInput.jsx"
 
 /**
  * The AdminLogin page.
@@ -105,17 +106,13 @@ function AdminLogin() {
 
                             {/* Password */}
                             <div>
-                                <label className="block text-sm font-medium text-rayonblue mb-2">
-                                    🔒 Mot de passe
-                                </label>
-                                <input
-                                    type="password"
-                                    name="password"
+                                <PasswrdInput 
+                                    labelClassName={"block text-sm font-medium text-rayonblue mb-2"}
+                                    className={"w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-rayonblue focus:ring-2 focus:ring-rayonorange transition"}
+                                    inputText={"🔒 Mot de passe"}
+                                    name={"password"}
                                     value={formData.password}
                                     onChange={handleChange}
-                                    required
-                                    placeholder="••••••••"
-                                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-rayonblue focus:ring-2 focus:ring-rayonorange transition"
                                 />
                             </div>
 

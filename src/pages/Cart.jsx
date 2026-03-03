@@ -37,7 +37,7 @@ const DisplayProductCard = memo(({ product, quantity, onAdd, onRemove, roundTwoD
                         {quantity === 1 ? (
                             <button
                                 onClick={onRemove}
-                                className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-all shadow-md"
+                                className="w-8 h-8 bg-[#FF8200] hover:bg-[#ff9800] text-white rounded-full flex items-center justify-center transition-all shadow-md"
                             >
                                 <svg viewBox="0 0 32 32" fill="currentColor" className="h-4 w-4">
                                     <path d="M13.5 6.5V7h5v-.5a2.5 2.5 0 0 0-5 0Zm-2 .5v-.5a4.5 4.5 0 1 1 9 0V7H28a1 1 0 1 1 0 2h-1.508L24.6 25.568A5 5 0 0 1 19.63 30h-7.26a5 5 0 0 1-4.97-4.432L5.508 9H4a1 1 0 0 1 0-2h7.5Zm2.5 6.5a1 1 0 1 0-2 0v10a1 1 0 1 0 2 0v-10Zm5-1a1 1 0 0 0-1 1v10a1 1 0 1 0 2 0v-10a1 1 0 0 0-1-1Z" />
@@ -169,7 +169,7 @@ function Cart() {
     function notify(message) {
         if (isNotified.current) return;
         isNotified.current = true
-        alert(message)
+        displayNotification(message, "warn")
     }
 
     // Charger les frais de livraison
@@ -257,15 +257,33 @@ function Cart() {
     }, [cart]);
 
     // Handlers mémoïsés pour éviter de recréer les fonctions à chaque render
-    const handleAddToCart = useCallback((productId) => {
-        setCart(prev => ({
-            ...prev,
-            content: {
-                ...prev.content,
-                [productId]: (prev.content[productId] || 0) + 1,
+    const handleAddToCart = useCallback((product) => {
+        const productId = product.id.toString();
+        const productInCart = cart?.content?.[productId];
+        if (product.stock > productInCart) {
+            if (productInCart < product.max_order) {
+                setCart(prev => ({
+                    ...prev,
+                    content: {
+                        ...prev.content,
+                        [productId]: (prev.content[productId] || 0) + 1,
+                    }
+                }));
+            } else {
+                displayNotification(
+                    "Quantité de " + product.name + " maximale atteinte",
+                    "Vous ne pouvez pas commander plus de " + product.max_order + " rations de " + product.name + " à la fois.",
+                    "danger"
+                );
             }
-        }));
-    }, [setCart]);
+        } else {
+            displayNotification(
+                "Stock de " + product.name + " insuffisant",
+                "",
+                "danger"
+            );
+        }
+    }, [setCart, cart]);
 
     const handleRemoveFromCart = useCallback((productId) => {
         setCart(prevData => {
@@ -380,7 +398,7 @@ function Cart() {
                                                     key={product.id}
                                                     product={product}
                                                     quantity={cart.content[product.id]}
-                                                    onAdd={() => handleAddToCart(product.id)}
+                                                    onAdd={() => handleAddToCart(product)}
                                                     onRemove={() => handleRemoveFromCart(product.id)}
                                                     roundTwoDigits={roundTwoDigits}
                                                 />

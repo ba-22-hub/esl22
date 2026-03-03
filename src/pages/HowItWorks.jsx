@@ -169,7 +169,7 @@ function HowItWorks() {
 
             {/* Section Contact et plus avec design moderne */}
             <div className="py-20 bg-white">
-                <div className="max-w-7xl mx-auto px-6 lg:px-12">
+                <div className="lg:max-w-7xl mx-auto px-6 lg:px-12">
                     <div className="grid lg:grid-cols-2 gap-16 items-start">
                         {/* Colonne gauche - Contenu */}
                         <div className="space-y-12">
@@ -191,23 +191,30 @@ function HowItWorks() {
                                         <span>À tout moment, je peux contacter la Banque Alimentaire par mail pour un problème de fonctionnement ou concernant ma situation personnelle.</span>
                                     </p>
                                 </div>
-
-                                <button
-                                    onClick={() => window.location.href = '/contact'}
-                                    className="bg-[#FF8200] hover:bg-[#ff9800] text-white px-8 py-3 rounded-lg text-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
-                                >
-                                    Contactez-nous
-                                </button>
+                                <div className="flex-c lg:flex-l">
+                                    <button
+                                        onClick={() => window.location.href = '/contact'}
+                                        className="w-[225px] bg-[#FF8200] hover:bg-[#ff9800] text-white px-8 py-3 rounded-lg text-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
+                                    >
+                                        Contactez-nous
+                                    </button>
+                                    <button
+                                        onClick={() => window.location.href = '/Faq'}
+                                        className="w-[225px] mt-2 lg:mt-0 bg-[#FF8200] hover:bg-[#ff9800] text-white lg:mx-4 py-3 rounded-lg text-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
+                                    >
+                                        FAQ
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Et beaucoup plus */}
                             <div className="bg-gradient-to-br from-orange-50 to-white p-8 rounded-2xl shadow-xl border-t-4 border-[#FF8200] relative overflow-hidden">
                                 {/* Image décorative en arrière-plan */}
-                                <div className="absolute top-0 right-0 opacity-10">
+                                <div className="hidden lg:block absolute top-0 right-0 opacity-10">
                                     <img src={beams} className="w-40 h-40 object-contain" alt="Background beams" />
                                 </div>
 
-                                <div className="relative z-10">
+                                <div className="lg:relative lg:z-10">
                                     <h2 className="text-[#3435FF] text-3xl lg:text-4xl font-bold mb-6">Et beaucoup plus...</h2>
 
                                     <p className="text-gray-700 text-lg leading-relaxed mb-8">

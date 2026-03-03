@@ -53,7 +53,7 @@ function SamplePrevArrow(props) {
 
 function ProductCarousel({ data }) {
   const { user } = useAuthor();
-  const { cart, setCart, isLoaded } = useCart();
+  const { cart, setCart, isLoaded, clearCart } = useCart();
 
   const [stockIncertainThreshold, setStockIncertainThreshold] = useState(3);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -105,13 +105,21 @@ function ProductCarousel({ data }) {
       console.log("📦 Cart avant :", cart);
 
       if (product.stock >= productInCart + 1) {
-        setCart(prev => ({
-          ...prev,
-          content: {
-            ...prev.content,
-            [productId]: productInCart + 1
-          }
-        }));
+        if (productInCart < product.max_order) {
+          setCart(prev => ({
+            ...prev,
+            content: {
+              ...prev.content,
+              [productId]: productInCart + 1
+            }
+          }));
+        } else {
+          displayNotification(
+            "Quantité de " + product.name + " maximale atteinte",
+            "Vous ne pouvez pas commander plus de " + product.max_order + " rations de " + product.name + " à la fois.",
+            "danger"
+          );
+        }
       } else {
         displayNotification(
           "Stock de " + product.name + " insuffisant",
@@ -149,12 +157,23 @@ function ProductCarousel({ data }) {
     if (productInCart > 0) {
       return (
         <div className="flex items-center gap-2">
-          <button
-            onClick={RemoveFromCart}
-            className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full font-bold flex items-center justify-center"
-          >
-            −
-          </button>
+          {productInCart === 1 ? (
+            <button
+              onClick={RemoveFromCart}
+              className="w-8 h-8 bg-[#FF8200] hover:bg-[#ff9800] text-white rounded-full flex items-center justify-center transition-all shadow-md"
+            >
+              <svg viewBox="0 0 32 32" fill="currentColor" className="h-4 w-4">
+                <path d="M13.5 6.5V7h5v-.5a2.5 2.5 0 0 0-5 0Zm-2 .5v-.5a4.5 4.5 0 1 1 9 0V7H28a1 1 0 1 1 0 2h-1.508L24.6 25.568A5 5 0 0 1 19.63 30h-7.26a5 5 0 0 1-4.97-4.432L5.508 9H4a1 1 0 0 1 0-2h7.5Zm2.5 6.5a1 1 0 1 0-2 0v10a1 1 0 1 0 2 0v-10Zm5-1a1 1 0 0 0-1 1v10a1 1 0 1 0 2 0v-10a1 1 0 0 0-1-1Z" />
+              </svg>
+            </button>
+          ) : (
+            <button
+              onClick={RemoveFromCart}
+              className="w-8 h-8 bg-[#FF8200] hover:bg-[#ff9800] text-white rounded-full font-bold flex items-center justify-center transition-all shadow-md"
+            >
+              −
+            </button>
+          )}
           <span className="text-[#3435FF] text-xl font-bold min-w-[2rem] text-center">
             {productInCart}
           </span>

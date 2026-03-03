@@ -1,5 +1,5 @@
 // Importing dependencies
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@lib/supabaseClient.js';
 import { useNavigate } from 'react-router-dom';
 import { useAuthor } from '@context/AuthorContext.jsx'
@@ -10,11 +10,13 @@ import 'leaflet/dist/leaflet.css';
 import Loading from "@common/Loading.jsx"
 
 function Delivery() {
+
     const [loading, setLoading] = useState(true);
     const [ongoingDeliveries, setOngoingDeliveries] = useState([]);
     const [expanded, setExpanded] = useState(null);
+    const isNotified = useRef(false)
 
-    const { user } = useAuthor();
+    const { user, loading: authorLoading, checkHasRights } = useAuthor()
     const navigate = useNavigate()
 
     // only accessible to users (this page needs user info)
@@ -50,6 +52,31 @@ function Delivery() {
 
         fetchOngoingDeliveries();
     }, [user]);
+
+    useEffect(() => {
+        if (authorLoading) return;
+        if (!user) {
+            navigate('/login')
+            notify("Vous devez être connectés et avoir les droits pour passer afficher vos livraison")
+        } else {
+            checkHasRights(user.id)
+                .then((rights) => {
+                    if (!rights) {
+                        notify("Vous n'avez pas (encore ?) les droits. Pour passer une commande, veuillez déposer un fichier dans votre espace compte")
+                        navigate('/account')
+                    }
+                })
+        }
+    }, [authorLoading])
+
+    function notify(message) {
+        if (isNotified.current) return;
+        isNotified.current = true
+        displayNotification(message, "warn")
+    }
+
+
+
 
     const toggleExpand = (id) => {
         setExpanded(prev => (prev === id ? null : id));

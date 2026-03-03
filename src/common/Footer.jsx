@@ -48,21 +48,21 @@ const Footer = () => {
                         </h4>
 
                         <a
-                            href="#"
+                            href="/legal-mentions"
                             className="block text-sm text-blue-100 hover:text-rayonorange transition-colors duration-200"
                         >
                             Mentions légales
                         </a>
 
                         <a
-                            href="#"
+                            href="/confidentiality"
                             className="block text-sm text-blue-100 hover:text-rayonorange transition-colors duration-200"
                         >
                             Politique de confidentialité
                         </a>
 
                         <a
-                            href="#"
+                            href="/operationg-charter"
                             className="block text-sm text-blue-100 hover:text-rayonorange transition-colors duration-200"
                         >
                             Charte de fonctionnement
@@ -107,7 +107,7 @@ const Footer = () => {
                             href="mailto:ba220@banquealimentaire.org"
                             className="block text-sm text-blue-100 hover:text-rayonorange transition-colors duration-200"
                         >
-                            ba220@banquealimentaire.org
+                            ba220.epicerie@banquealimentaire.org
                         </a>
 
                         <a

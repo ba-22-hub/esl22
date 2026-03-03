@@ -8,9 +8,11 @@ import { useAuthor } from '@context/AuthorContext';
 import { useNavigate } from 'react-router-dom';
 import { displayNotification } from '@lib/displayNotification.jsx';
 
+
 // Importing common components
 import FunctionButton from '@common/FunctionButton.jsx';
 import Loading from '@common/Loading.jsx';
+import AddUserModal from '../../common/AddUserModal';
 
 
 const UserTable = () => {
@@ -21,9 +23,12 @@ const UserTable = () => {
 	const [editedUser, setEditedUser] = useState({});
 	const [update, setUpdate] = useState(true)
 	const [isLoading, setIsLoading] = useState(true);
+	const [modalOpen, setModalOpen] = useState(false)
 
 	const { isAdmin, loading } = useAuthor()
 	const navigate = useNavigate()
+
+	const selectStatus = ["Enregistré", "Validé", "Actif", "Suspendu", "Résilié", "En attente", "Inactif"]
 
 	let isNotifying = false;
 
@@ -128,6 +133,12 @@ const UserTable = () => {
 			})
 	};
 
+	function formatDate(datestr) {
+		return new Intl.DateTimeFormat('fr-FR', {
+			dateStyle: 'short',
+		}).format(new Date(datestr));
+	}
+
 	if (isLoading || loading) {
 		return <Loading />;
 	}
@@ -136,7 +147,10 @@ const UserTable = () => {
 		<div className="p-6 bg-gray-50 min-h-screen">
 			<div className="max-w-7xl mx-auto">
 				<h1 className="text-3xl font-bold mb-6 text-rayonblue">Gestion des Utilisateurs</h1>
-
+				<button
+					className='text-white bg-rayonorange ml-[77%] mb-3 w-[23%] 	rounded-lg p-2'
+					onClick={() => setModalOpen(true)}
+				>Inscrire un utilisateur</button>
 				<input
 					type="text"
 					placeholder="🔍 Rechercher par nom, email, téléphone..."
@@ -235,7 +249,7 @@ const UserTable = () => {
 												</button>
 												<button
 													onClick={() => setEditMode(null)}
-													className="w-10 h-10 bg-red-500 hover:bg-red-600 text-white rounded-lg transition flex items-center justify-center text-xl"
+													className="w-10 h-10 bg-red hover:bg-red-600 text-white rounded-lg transition flex items-center justify-center text-xl"
 													title="Annuler"
 												>
 													✕
@@ -252,7 +266,7 @@ const UserTable = () => {
 												</button>
 												<button
 													onClick={() => handleDelete(user.id)}
-													className="w-10 h-10 bg-red-500 hover:bg-red-600 text-white rounded-lg transition flex items-center justify-center text-xl"
+													className="w-10 h-10 bg-red hover:bg-red-600 text-white rounded-lg transition flex items-center justify-center text-xl"
 													title="Supprimer"
 												>
 													✕
@@ -374,6 +388,71 @@ const UserTable = () => {
 												</p>
 											)}
 										</div>
+
+										{/* ########## Date des droits ############## */}
+
+										{/* padding to end line*/}
+										<div className="bg-white p-3 rounded-lg border border-gray-200">
+											<label className="text-xs font-medium text-rayonblue block mb-1"></label>
+											<p className="text-gray-800"></p>
+										</div>
+
+										<div className="bg-white p-3 rounded-lg border border-gray-200">
+											<label className="text-xs font-medium text-rayonblue block mb-1">
+												Début des droits
+											</label>
+											{editMode === user.id ? (
+												<input
+													type="date"
+													name="start_right"
+													value={editedUser["start_right"] || ''}
+													onChange={handleChange}
+													className="w-full border-2 border-rayonblue rounded px-2 py-1"
+												/>
+											) : (
+												<p className="text-gray-800">{formatDate(user["start_right"]) || '—'}</p>
+											)}
+										</div>
+										<div className="bg-white p-3 rounded-lg border border-gray-200">
+											<label className="text-xs font-medium text-rayonblue block mb-1">
+												Fin des droits
+											</label>
+											{editMode === user.id ? (
+												<input
+													type="date"
+													name="end_right"
+													value={editedUser["end_right"] || ''}
+													onChange={handleChange}
+													className="w-full border-2 border-rayonblue rounded px-2 py-1"
+												/>
+											) : (
+												<p className="text-gray-800">{formatDate(user["end_right"]) || '—'}</p>
+											)}
+										</div>
+										<div className="bg-white p-3 rounded-lg border border-gray-200">
+											<label className="text-xs font-medium text-rayonblue block mb-1">
+												Statut du compte
+											</label>
+											{editMode === user.id ? (
+												<select
+													className="w-full px-3 py-2 border border-gray-200 rounded-md text-rayonblue bg-white focus:outline-none focus:ring-2 focus:ring-rayonblue"
+													name="status"
+													value={editedUser["status"]}
+													onChange={handleChange}
+												>
+													<option value="">Sélectionner...</option>
+													{selectStatus.map((option) => (
+														<option key={option} value={option}>
+															{option}
+														</option>
+													))}
+												</select>
+											) : (
+												<p className="text-gray-800">{user["status"] || '—'}</p>
+											)}
+										</div>
+
+
 									</div>
 								</div>
 							)}
@@ -387,6 +466,12 @@ const UserTable = () => {
 					)}
 				</div>
 			</div>
+			<AddUserModal
+				isOpen={modalOpen}
+				onClose={() => setModalOpen(false)}
+				onSubmit={() => console.log()}
+
+			/>
 		</div>
 	);
 };
