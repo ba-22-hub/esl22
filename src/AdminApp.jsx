@@ -70,7 +70,7 @@ function AdminNavbar() {
             </Link>
             <button
               onClick={handleLogout}
-              className="w-10 h-10 bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold transition flex items-center justify-center text-xl"
+              className="w-10 h-10 bg-red bg-500 hover:bg-red-600 text-white rounded-lg font-bold transition flex items-center justify-center text-xl"
               title="Déconnexion"
             >
               ⏻

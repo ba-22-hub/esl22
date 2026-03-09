@@ -54,70 +54,16 @@ function Login() {
 			return;
 		}
 
-		const uid = loginData.user.id;
-
-		// Checks if the user already exists in the database
-		const { data: existingUser, error: fetchError } = await supabase
-			.from('User')
-			.select('id')
-			.eq('id', uid)
-			.single();
-
-		if (fetchError && fetchError.code !== 'PGRST116') {
-			// other error
-			displayNotification("Erreur lors de la vérification de votre compte", fetchError.message, "danger")
-			return;
-		}
-
-		if (!existingUser) {
-			const pendingData = localStorage.getItem("pendingUserData");
-			if (pendingData) {
-				const parsedData = JSON.parse(pendingData);
-
-				const newUser = {
-					id: uid,
-					email: parsedData.step1.email,
-					gender: parsedData.step1.gender,
-					firstName: parsedData.step1.firstName,
-					lastName: parsedData.step1.lastName,
-					phone: parsedData.step1.phone,
-					birthday: '01/01/2001',
-					address: parsedData.step1.address,
-					addAddress: parsedData.step1.addAddress,
-					city: parsedData.step1.city,
-					postalCode: parsedData.step1.postalCode,
-					situation: '',
-					quotient: '',
-					wageType: '',
-					otherWage: '',
-					has_right: false,
-				};
-
-				const { error: insertError } = await supabase
-					.from('User')
-					.insert([newUser]);
-
-				if (insertError) {
-					displayNotification("Erreur lors de la création du compte", insertError.message, "danger")
-					return;
-				}
-
-				localStorage.removeItem("pendingUserData");
-				displayNotification("Compte créé avec succès", "", "success")
-			}
-		}
-
 		displayNotification("Connexion réussie", "", "success")
 
-		// resets the inputs and formData to blank
-		setFormData({
-			mail: '',
-			password: ''
-		});
-
+		
 		// update session
 		setUser(loginData.user)
-		navigate('/account')
+		if(formData.password.startsWith("rayon22")){
+			navigate('/first-connection')
+		}else {
+			navigate('/account')
+		}
 
 	}
 

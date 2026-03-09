@@ -112,6 +112,9 @@ const UserTable = () => {
 
 	const handleChange = (e) => {
 		const { name, value } = e.target;
+		if(name == "status"){
+			setEditedUser(prev => ({ ...prev, ["has_right"]: value == "Actif" }));
+		}
 		setEditedUser(prev => ({ ...prev, [name]: value }));
 	};
 
@@ -466,12 +469,11 @@ const UserTable = () => {
 					)}
 				</div>
 			</div>
+			{/* modal to add a new user */}
 			<AddUserModal
-				isOpen={modalOpen}
-				onClose={() => setModalOpen(false)}
-				onSubmit={() => console.log()}
-
-			/>
+                isOpen={modalOpen}
+                onClose={() => setModalOpen(false)}
+            />
 		</div>
 	);
 };

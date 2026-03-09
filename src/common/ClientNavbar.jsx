@@ -23,14 +23,9 @@ function ClientNavbar() {
 
                     {/* Right side - visible à partir de lg */}
                     <div className="hidden lg:flex items-center space-x-4">
-                        {!user && (
-                            <Link to="/register" className="bg-[#FF8200] hover:bg-[#ff9800] text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-md hover:shadow-lg h-11 flex items-center">
-                                S'inscrire
-                            </Link>
-                        )}
                         <Link to={`${user ? '/account' : '/login'}`} className="flex-shrink-0">
-                            <div className="bg-[#FF8200] hover:bg-[#ff9800] p-1 rounded-lg h-11 w-11 flex items-center justify-center shadow-md hover:shadow-lg transition-all">
-                                <img src={avatar} alt="User avatar" className="h-9 w-9 rounded-lg" />
+                            <div className="bg-[#FF8200] hover:bg-[#ff9800] p-1 rounded-lg h-11 w-40 flex items-center justify-center shadow-md hover:shadow-lg transition-all text-white font-semibold">
+                                {user ? "Mon compte" : "Connexion"}
                             </div>
                         </Link>
                     </div>

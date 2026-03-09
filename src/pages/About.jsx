@@ -4,6 +4,9 @@ import womanShelf from "@assets/Photos/womanShelf.jpg";
 import ticketLogo from "@assets/Assets/ticket-logo.png";
 import logo from "@assets/logos/logo2.png";
 
+// Importing content
+import content from "../content/about_content.json";
+
 /**
  * The About page.
  * @returns {React.ReactElement} About component.
@@ -19,20 +22,18 @@ function About() {
 
         <div className="max-w-7xl mx-auto px-6 lg:px-12 py-16 lg:py-24 relative z-10">
           <h1 className="text-white font-bold leading-tight text-3xl sm:text-4xl md:text-5xl lg:text-6xl mb-8">
-            Les banques alimentaires,<br />
-            premier <span className="text-[#FF8200]">réseau</span> de distribution<br />
-            d'aide alimentaire en <span className="text-[#FF8200]">France</span>
+            {content.hero.title.line1}<br />
+            {content.hero.title.line2} <span className="text-[#FF8200]">{content.hero.title.highlight1}</span> {content.hero.title.line3}<br />
+            {content.hero.title.line4} <span className="text-[#FF8200]">{content.hero.title.highlight2}</span>
           </h1>
           <div className="max-w-3xl space-y-4 text-white text-lg leading-relaxed">
-            <p>
-              <span className="font-bold">Le Rayon 22</span> est une épicerie sociale et solidaire dont l'objectif est d'accompagner les personnes en difficulté financière en leur donnant accès à une alimentation à petits prix sur tout le territoire des Côtes d'Armor.
-            </p>
-            <p>
-              <span className="font-bold">Le Rayon 22</span> permet aussi de donner accès à l'aide alimentaire aux personnes qui ne peuvent se rendre aux distributions de nos partenaires.
-            </p>
-            <p>
-              Pour accéder à notre <span className="font-bold">épicerie en ligne</span> en point relais, il faut vous connecter à un compte.
-            </p>
+            {content.hero.paragraphs.map((para, index) => (
+              <p key={index}>
+                {para.boldText && <span className="font-bold">{` ${para.boldText}`}</span>}
+                {para.text && para.text}
+                {para.textAfter && ` ${para.textAfter}`}
+              </p>
+            ))}
           </div>
         </div>
       </section>
@@ -44,13 +45,13 @@ function About() {
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/30 to-white z-10"></div>
           <img
             src={womanShelf}
-            alt="Woman at shelf"
+            alt={content.images.alt.womanShelf}
             className="w-full h-full object-cover object-center"
           />
           {/* Ticket logo flottant */}
           <img
             src={ticketLogo}
-            alt="ticket logo"
+            alt={content.images.alt.ticketLogo}
             className="absolute top-12 right-12 w-32 md:w-40 rotate-6 drop-shadow-2xl z-20 animate-float"
           />
         </div>
@@ -59,37 +60,39 @@ function About() {
         <div className="relative z-30 max-w-7xl mx-auto px-6 lg:px-12 lg:-mt-64 pb-16">
           <div className="grid md:grid-cols-2 gap-8">
             {/* Carte Banque Alimentaire */}
-            <div className="mt-2 lg:mt-0 bg-white rounded-2xl shadow-2xl p-8 border-t-4 border-[#3435FF] hover:shadow-3xl transition-all duration-300 transform hover:-translate-y-2">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 border-t-4 border-[#3435FF] hover:shadow-3xl transition-all duration-300 transform hover:-translate-y-2">
               <div className="flex justify-center mb-6">
                 <div className="w-32 h-32 bg-blue-50 rounded-full flex items-center justify-center p-4">
-                  <img src={birdLogo} alt="Banque Alimentaire logo" className="w-full h-full object-contain" />
+                  <img src={birdLogo} alt={content.images.alt.birdLogo} className="w-full h-full object-contain" />
                 </div>
               </div>
 
               <h2 className="text-[#3435FF] font-bold text-2xl mb-6 text-center">
-                La Banque Alimentaire des Côtes d'Armor
+                {content.cards.banqueAlimentaire.title}
               </h2>
 
               <div className="space-y-4 text-gray-700 leading-relaxed mb-8">
-                <p className="text-center">
-                  La banque alimentaire des côtes d'Armor a été créée le <span className="font-semibold text-[#3435FF]">10 décembre 1984</span>, elle est une des toutes premières en France !
-                </p>
-                <p className="text-center">
-                  Avec le <span className="font-bold text-[#3435FF]">RAYON 22 Épicerie en ligne</span>, la Banque Alimentaire des Côtes d'Armor innove dans le domaine de la distribution alimentaire.
-                </p>
-                <p className="text-center font-semibold text-[#3435FF]">
-                  Vous voulez en savoir plus sur l'organisation de la banque alimentaire ?
-                </p>
+                {content.cards.banqueAlimentaire.paragraphs.map((para, index) => (
+                  <p key={index} className="text-center">
+                    {para.text}
+                    {para.highlight && (
+                      <span className={`font-${para.highlight === "10 décembre 1984" ? "semibold" : "bold"} text-[#3435FF]`}>
+                        {` ${para.highlight}`}
+                      </span>
+                    )}
+                    {para.textAfter && para.textAfter}
+                  </p>
+                ))}
               </div>
 
               <div className="flex justify-center">
                 <a
-                  href="https://www.banquealimentaire.org/"
+                  href={content.cards.banqueAlimentaire.button.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-block bg-[#FF8200] hover:bg-[#ff9800] text-white px-8 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
                 >
-                  Site national BA
+                  {content.cards.banqueAlimentaire.button.text}
                 </a>
               </div>
             </div>
@@ -98,34 +101,36 @@ function About() {
             <div className="bg-gradient-to-br from-blue-50 to-white rounded-2xl shadow-2xl p-8 border-t-4 border-[#FF8200] hover:shadow-3xl transition-all duration-300 transform hover:-translate-y-2">
               <div className="flex justify-center mb-6">
                 <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center p-4 shadow-lg">
-                  <img src={logo} alt="RAYON logo" className="w-full h-full object-contain" />
+                  <img src={logo} alt={content.images.alt.rayonLogo} className="w-full h-full object-contain" />
                 </div>
               </div>
 
               <h2 className="text-[#3435FF] font-bold text-2xl mb-6 text-center">
-                Le réseau Le RAYON
+                {content.cards.leRayon.title}
               </h2>
 
               <div className="space-y-4 text-gray-700 leading-relaxed mb-8">
-                <p className="text-center">
-                  C'est un réseau des <span className="font-bold text-[#3435FF]">Banques Alimentaires</span> dédié à la distribution directe via des épiceries sociales, des camions itinérants et des initiatives spécifiquement pensées pour les jeunes et les étudiants.
-                </p>
-                <p className="text-center">
-                  Il offre une aide diversifiée et de qualité aux personnes vulnérables, là où elles en ont le plus besoin.
-                </p>
-                <p className="text-center">
-                  À l'heure actuelle, <span className="font-bold text-[#FF8200]">six épiceries solidaires</span> sont réparties à travers la France.
-                </p>
+                {content.cards.leRayon.paragraphs.map((para, index) => (
+                  <p key={index} className="text-center">
+                    {para.text}
+                    {para.highlight && (
+                      <span className={`font-bold text-[${para.highlight === "Banques Alimentaires" ? "#3435FF" : "#FF8200"}]`}>
+                        {` ${para.highlight}`}
+                      </span>
+                    )}
+                    {para.textAfter && ` ${para.textAfter}`}
+                  </p>
+                ))}
               </div>
 
               <div className="flex justify-center">
                 <a
-                  href="https://lerayon.banquealimentaire.org"
+                  href={content.cards.leRayon.button.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-block bg-[#3435FF] hover:bg-[#5253ff] text-white px-8 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
                 >
-                  Site national Le RAYON
+                  {content.cards.leRayon.button.text}
                 </a>
               </div>
             </div>
@@ -136,61 +141,31 @@ function About() {
         <div className="max-w-7xl mx-auto px-6 lg:px-12 pb-20">
           <div className="bg-white rounded-2xl shadow-xl p-8 lg:p-12">
             <h2 className="text-3xl lg:text-4xl font-bold text-center text-[#3435FF] mb-12">
-              Notre Mission & Nos Valeurs
+              {content.mission.title}
             </h2>
 
             <div className="grid md:grid-cols-3 gap-8">
-              {/* Valeur 1 */}
-              <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-[#3435FF] to-[#5253ff] rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold">
-                  1
+              {content.mission.values.map((value, index) => (
+                <div key={index} className="text-center">
+                  <div className={`w-16 h-16 bg-gradient-to-br ${
+                    value.number === "2" ? "from-[#FF8200] to-[#ff9800]" : "from-[#3435FF] to-[#5253ff]"
+                  } rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold`}>
+                    {value.number}
+                  </div>
+                  <h3 className={`text-xl font-bold ${
+                    value.number === "2" ? "text-[#FF8200]" : "text-[#3435FF]"
+                  } mb-3`}>
+                    {value.title}
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    {value.description}
+                  </p>
                 </div>
-                <h3 className="text-xl font-bold text-[#3435FF] mb-3">Solidarité</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Lutter contre la précarité alimentaire en offrant un accès digne et respectueux à une alimentation de qualité.
-                </p>
-              </div>
-
-              {/* Valeur 2 */}
-              <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-[#FF8200] to-[#ff9800] rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold">
-                  2
-                </div>
-                <h3 className="text-xl font-bold text-[#FF8200] mb-3">Innovation</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Moderniser la distribution alimentaire avec des solutions digitales accessibles à tous.
-                </p>
-              </div>
-
-              {/* Valeur 3 */}
-              <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-[#3435FF] to-[#5253ff] rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold">
-                  3
-                </div>
-                <h3 className="text-xl font-bold text-[#3435FF] mb-3">Proximité</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Être présent sur tout le territoire pour atteindre ceux qui en ont besoin, partout en Côtes d'Armor.
-                </p>
-              </div>
+              ))}
             </div>
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% {
-            transform: translateY(0) rotate(6deg);
-          }
-          50% {
-            transform: translateY(-20px) rotate(6deg);
-          }
-        }
-        
-        .animate-float {
-          animation: float 3s ease-in-out infinite;
-        }
-      `}</style>
     </div>
   )
 }

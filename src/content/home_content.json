@@ -1,0 +1,84 @@
+{
+  "home": {
+    "brandName": "Le Rayon 22",
+    "hero": {
+      "title": {
+        "main": "Pour",
+        "highlight": "accéder",
+        "end": "à notre épicerie en ligne"
+      },
+      "description": [
+        {
+          "text": "Le",
+          "bold": "Rayon 22",
+          "textAfter": "est une épicerie sociale et solidaire dont l'objectif est d'accompagner les personnes pour qui une aide alimentaire représente un soutien non négligeable pour leurs quotidiens, en leur donnant accès à des produits alimentaires à petits prix, partout sur le territoire des Côtes-d'Armor."
+        },
+        {
+          "text": "Le",
+          "bold": "Rayon 22",
+          "textAfter": "permet aussi de donner accès à l'aide alimentaire aux personnes qui ne peuvent se rendre aux distributions de nos partenaires."
+        },
+        {
+          "text": "Afin de pouvoir commander des produits, il vous faut vous connecter à un compte.",
+          "isBold": true
+        }
+      ],
+      "buttons": {
+        "primary": {
+          "text": "Se Connecter",
+          "link": "/login"
+        },
+        "secondary": {
+          "text": "Bons gestes, bonne assiette",
+          "url": "https://bonsgestes-bonneassiette.org/"
+        }
+      },
+      "image": {
+        "alt": "Woman in orange"
+      }
+    },
+    "howToOrder": {
+      "title": "Comment s'inscrire et commander ?",
+      "steps": [
+        {
+          "number": "1",
+          "title": "Étude de dossier",
+          "icon": "avatar",
+          "color": "#3435FF",
+          "description": "Rendez-vous auprès des services sociaux de votre commune pour vérifier votre éligibilité et leur demander de nous transmettre votre dossier."
+        },
+        {
+          "number": "2",
+          "title": "Inscription",
+          "icon": "file",
+          "color": "#FF8200",
+          "description": "Notre équipe valide alors votre dossier avec les services sociaux. Vous serez informé·e par email une fois votre inscription finalisée par l'administrateur."
+        },
+        {
+          "number": "3",
+          "title": "À vos courses !",
+          "icon": "cart",
+          "color": "#3435FF",
+          "description": "Une fois votre compte activé, connectez-vous pour accéder à l'épicerie en ligne et commander vos produits à petit prix."
+        }
+      ]
+    },
+    "instagram": {
+      "title": "Suivez notre actualité",
+      "buttonText": "Instagram",
+      "url": "https://www.instagram.com/banque.alimentaire22/",
+      "alt": "Instagram"
+    },
+    "partners": {
+      "title": "Nos partenaires de confiance",
+      "rating": "★★★★★",
+      "logos": [
+        {
+          "name": "DPD",
+          "url": "https://www.dpd.com/fr/fr/",
+          "alt": "DPD"
+        }
+      ]
+    }
+  }
+}
