@@ -130,16 +130,6 @@ function ClientNavbar() {
                     >
                         ✉️ Nous contacter
                     </Link>
-
-                    {!user && (
-                        <Link
-                            to="/register"
-                            onClick={() => setIsMenuOpen(false)}
-                            className="block bg-[#FF8200] hover:bg-[#ff9800] text-white px-4 py-3 rounded-lg text-base font-semibold transition-all text-center mt-4 shadow-md"
-                        >
-                            S'inscrire
-                        </Link>
-                    )}
                 </div>
             </div>
         </nav>

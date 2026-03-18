@@ -128,16 +128,6 @@ function Login() {
 					</div>
 				</form>
 
-				<p className="text-[#2E2EFF] text-sm text-center mt-10 mb-4 font-medium">
-					Vous n'avez pas encore de compte ?
-				</p>
-				<div className="flex justify-center">
-					<PageButton
-						buttonText={'Créez votre compte'}
-						page={'/register'}
-						className="w-[90vw] lg:w-[400px] h-10 bg-[#FF8200] text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition"
-					/>
-				</div>
 				<div className="flex justify-center">
 					<PageButton
 						buttonText='Admin'
