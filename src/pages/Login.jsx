@@ -56,14 +56,29 @@ function Login() {
 
 		displayNotification("Connexion réussie", "", "success")
 
-		
 		// update session
 		setUser(loginData.user)
-		if(formData.password.startsWith("rayon22")){
-			navigate('/first-connection')
-		}else {
-			navigate('/account')
-		}
+
+		// verify si user status == "Enregistré"
+            const { data: userdata, error: dberror } = await supabase
+                .from('User')
+                .select('*')
+                .eq('id', loginData.user.id) // in theory we come from "Login" where we use setUser
+                .single();
+
+            if (dberror && dberror.code !== 'PGRST116') {
+                displayNotification("Erreur lors de la vérification de l'utilisateur", dberror.message, "danger")
+                return;
+            }
+
+            if (userdata.status != "Enregistré") {
+                navigate('/account')
+            } else {
+				navigate('/first-connection')
+			}
+
+		
+		
 
 	}
 

@@ -1,10 +1,12 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import rayonLogo from "../assets/logos/logo.png";
 import banqueLogo from "../assets/logos/banquesAlimentaires.png";
 
 const Footer = () => {
+    const  navigate  = useNavigate()
+
     return (
         <footer className="bg-[#3435FF] mt-20">
             <div className="max-w-7xl mx-auto px-6 lg:px-12 py-14">
@@ -48,24 +50,30 @@ const Footer = () => {
                         </h4>
 
                         <a
-                            href="/legal-mentions"
-                            className="block text-sm text-blue-100 hover:text-rayonorange transition-colors duration-200"
+                            onClick={() => navigate("/legal-mentions")}
+                            className="block text-sm text-blue-100 hover:text-rayonorange transition-colors duration-200 cursor-pointer"
                         >
                             Mentions légales
                         </a>
 
                         <a
-                            href="/confidentiality"
-                            className="block text-sm text-blue-100 hover:text-rayonorange transition-colors duration-200"
+                            onClick={() => navigate("/confidentiality")}
+                            className="block text-sm text-blue-100 hover:text-rayonorange transition-colors duration-200 cursor-pointer"
                         >
                             Politique de confidentialité
                         </a>
 
                         <a
-                            href="/operationg-charter"
-                            className="block text-sm text-blue-100 hover:text-rayonorange transition-colors duration-200"
+                            onClick={() => navigate("/operationg-charter")}
+                            className="block text-sm text-blue-100 hover:text-rayonorange transition-colors duration-200 cursor-pointer"
                         >
                             Charte de fonctionnement
+                        </a>
+                        <a
+                            onClick={() => navigate("/cgu")}
+                            className="block text-sm text-blue-100 hover:text-rayonorange transition-colors duration-200 cursor-pointer"
+                        >
+                            CGU
                         </a>
                     </div>
 

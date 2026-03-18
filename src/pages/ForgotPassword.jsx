@@ -1,6 +1,7 @@
 // Importing dependencies
 import { useState } from 'react';
 import { supabase } from '@lib/supabaseClient.js';
+import {displayNotification} from '@lib/displayNotification.jsx'
 
 // Importing common components
 import FormInput from "@common/FormInput";
@@ -28,16 +29,14 @@ function Login() {
     e.preventDefault();
     console.log(formData);
 
-    await supabase.auth.resetPasswordForEmail(formData.replaceAll(' ', ''), {
-      redirectTo: 'http://localhost:5173/reset-password',
-    })
-      .then((response) => {
-        if (response.error) {
-          alert('Erreur lors de la demande de réinitialisation du mot de passe : ' + response.error.message);
-        } else {
-          setMailSent(true);
-        }
-      })
+    const { data, error } = await supabase.functions.invoke("retrieve-password", {
+            body: {email: formData}
+        })
+    if (error){
+      displayNotification('erreur : ' + error.message)
+    } else {
+      displayNotification('Un mail vous a été envoyé')
+    }
   }
 
   return (

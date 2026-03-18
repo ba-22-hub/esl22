@@ -1,5 +1,5 @@
 // Importing dependencies
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@lib/supabaseClient.js';
 import { deleteUser } from '@lib/deleteUser';
 import { patchUser } from '@lib/patchUser';
@@ -10,7 +10,6 @@ import { displayNotification } from '@lib/displayNotification.jsx';
 
 
 // Importing common components
-import FunctionButton from '@common/FunctionButton.jsx';
 import Loading from '@common/Loading.jsx';
 import AddUserModal from '../../common/AddUserModal';
 
@@ -472,7 +471,10 @@ const UserTable = () => {
 			{/* modal to add a new user */}
 			<AddUserModal
                 isOpen={modalOpen}
-                onClose={() => setModalOpen(false)}
+                onClose={() => {
+					setModalOpen(false); 
+					setUpdate(!update)
+				}}
             />
 		</div>
 	);
