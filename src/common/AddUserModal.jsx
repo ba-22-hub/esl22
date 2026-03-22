@@ -33,7 +33,7 @@ function AddUserModal({ isOpen, onClose }) {
             setLength(parseInt(value));
             setFormData({
                 ...formData,
-                end_right: new Date(new Date(formData.start_right).getTime() + (parseInt(value) * 86400000)).toISOString().slice(0, 10), 
+                end_right: new Date(new Date(formData.start_right).getTime() + (parseInt(value) * 86400000)).toISOString().slice(0, 10),
             })
             setLength(value)
         } else {
@@ -69,10 +69,10 @@ function AddUserModal({ isOpen, onClose }) {
                     </div>
                     <button
                         onClick={onClose}
-                        className="flex-shrink-0 text-red text-2xl hover:bg-gray rounded-full transition-colors"
-                        aria-label="Close modal"
+                        className="w-10 h-10 bg-red hover:bg-red-600 text-white rounded-lg transition flex items-center justify-center text-xl"
+                        title="Annuler"
                     >
-                        X
+                        ✕
                     </button>
                 </div>
                 <div className="flex-1 overflow-y-auto p-6">

@@ -17,11 +17,11 @@ function ArticleModal({ article, isOpen, onClose }) {
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
       onClick={onClose} // Fermer en cliquant sur le fond
     >
-      <div 
+      <div
         className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-lg shadow-xl overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()} // Empêcher la fermeture en cliquant sur le modal
       >
@@ -39,10 +39,10 @@ function ArticleModal({ article, isOpen, onClose }) {
           </div>
           <button
             onClick={onClose}
-            className="flex-shrink-0 p-2 text-red text-2xl hover:bg-gray rounded-full transition-colors"
-            aria-label="Close modal"
+            className="w-10 h-10 bg-red hover:bg-red-600 text-white rounded-lg transition flex items-center justify-center text-xl"
+            title="Annuler"
           >
-            X
+            ✕
           </button>
         </div>
 
