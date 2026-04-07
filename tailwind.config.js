@@ -12,7 +12,6 @@ module.exports = {
         rayonlightblue: "#0080ffff",
         red : "#ff0000", 
         // green: "#00b100"
-
       },
     },
   },

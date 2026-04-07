@@ -227,7 +227,7 @@ function PaymentSuccess() {
                         .update({
                             current_weight: oldWeight + cartWeight,
                             current_price: oldPrice + cartPrice,
-                            current_order: oldOrder + cartOrder
+                            current_order: oldOrder + 1
                         })
                         .eq('id', cartMetadata.client_id)
 

@@ -105,8 +105,8 @@ function AddUserModal({ isOpen, onClose }) {
 
                     <h2 className="ml-[4%] text-xl text-rayonorange font-bold my-2">Quotas : </h2>
                     <div className="grid md:grid-cols-2 gap-4 mx-[8%]">
-                        <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Min poids (kg)" name="weight_min_limit" value={formData.weight_min_limit} onChange={handleChange} isStarred={true} type='number' />
-                        <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Max poids (kg)" name="weight_limit" value={formData.weight_limit} onChange={handleChange} isStarred={true} type='number' />
+                        <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Min poids (g)" name="weight_min_limit" value={formData.weight_min_limit} onChange={handleChange} isStarred={true} type='number' />
+                        <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Max poids (g)" name="weight_limit" value={formData.weight_limit} onChange={handleChange} isStarred={true} type='number' />
                         <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Limite de commandes" name="order_limit" value={formData.order_limit} onChange={handleChange} isStarred={true} type='number' />
                         <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Limite de prix (€)" name="price_limit" value={formData.price_limit} onChange={handleChange} isStarred={true} type='number' />
 

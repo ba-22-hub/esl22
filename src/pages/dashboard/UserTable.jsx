@@ -111,11 +111,19 @@ const UserTable = () => {
 
 	const handleChange = (e) => {
 		const { name, value } = e.target;
-		if(name == "status"){
+		if (name == "status") {
 			setEditedUser(prev => ({ ...prev, ["has_right"]: value == "Actif" }));
+		} else if (name == "end_right") {
+            const endDate = new Date(value);
+            const now = new Date();
+
+            if (!isNaN(endDate) && endDate < now) {
+                updatedUser.status = "Résilié";
+                updatedUser.has_right = false; 
+            }
 		}
 		setEditedUser(prev => ({ ...prev, [name]: value }));
-	};
+	}
 
 	const handleValidate = () => {
 		patchUser(editMode, editedUser)
@@ -470,12 +478,12 @@ const UserTable = () => {
 			</div>
 			{/* modal to add a new user */}
 			<AddUserModal
-                isOpen={modalOpen}
-                onClose={() => {
-					setModalOpen(false); 
+				isOpen={modalOpen}
+				onClose={() => {
+					setModalOpen(false);
 					setUpdate(!update)
 				}}
-            />
+			/>
 		</div>
 	);
 };
