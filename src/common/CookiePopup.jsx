@@ -49,14 +49,6 @@ const CookiePopup = () => {
                 }
             },
 
-            onConsent: ({ cookie }) => {
-                console.log('onConsent fired!', cookie)
-            },
-
-            onChange: ({ changedCategories, changedServices }) => {
-                console.log('onChange fired!', changedCategories, changedServices);
-            },
-
             onModalReady: ({ modalName }) => {
                 console.log('ready:', modalName);
             },
