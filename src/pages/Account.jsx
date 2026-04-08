@@ -48,7 +48,7 @@ function Account() {
                     displayNotification("Erreur lors de la vérification de l'utilisateur", dberror.message, "danger")
                     return;
                 }
-
+                
                 setClientEdit(userdata);
                 setClient(userdata);
             } catch (error) {

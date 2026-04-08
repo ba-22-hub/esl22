@@ -179,6 +179,7 @@ function Cart() {
                 displayNotification("Échec de validation du panier", "Le total produits doit être d'au moins 0.5€ pour pouvoir procéder au payement en ligne", "danger")
                 return;
             }
+
         }
 
         // User's limits check
