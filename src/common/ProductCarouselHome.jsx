@@ -1,14 +1,52 @@
-import "slick-carousel/slick/slick.css"; 
+import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-
-
 import Slider from "react-slick";
 
-{/* TODO: Add here the real showcase products (the showcase isn't linked tho the database) */}
+function SampleNextArrow(props) {
+  const { className, style, onClick } = props;
+  return (
+    <div
+      className={className}
+      style={{
+        ...style,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#FF8200",
+        borderRadius: "50%",
+        width: "40px",
+        height: "40px",
+        zIndex: 10
+      }}
+      onClick={onClick}
+    />
+  );
+}
+
+function SamplePrevArrow(props) {
+  const { className, style, onClick } = props;
+  return (
+    <div
+      className={className}
+      style={{
+        ...style,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#FF8200",
+        borderRadius: "50%",
+        width: "40px",
+        height: "40px",
+        zIndex: 10
+      }}
+      onClick={onClick}
+    />
+  );
+}
 
 function ProductCarousel({ data }) {
-    const settings = {
-    dots: true,
+  const settings = {
+    dots: false,
     infinite: true,
     speed: 500,
     slidesToShow: 3,
@@ -16,7 +54,9 @@ function ProductCarousel({ data }) {
     responsive: [
       { breakpoint: 1024, settings: { slidesToShow: 2 } },
       { breakpoint: 640, settings: { slidesToShow: 1 } },
-    ]
+    ],
+    nextArrow: <SampleNextArrow />,
+    prevArrow: <SamplePrevArrow />,
   };
 
   return (
@@ -24,17 +64,50 @@ function ProductCarousel({ data }) {
       <Slider {...settings}>
         {data.map((product, idx) => (
           <div key={idx} className="p-4">
-            <div className="bg-white shadow-md rounded-xl overflow-hidden text-center">
-              <img src={product.imageUrl} alt={product.name} className="w-full h-40 object-contain" />
-              <div className="p-4">
-                <h3 className="text-[#3435FF] text-lg font-semibold mb-2">{product.name}</h3>
-                <p className="text-gray-500 line-through">{product.price || ''}€</p>
-                <p className="text-rayonorange text-xl font-bold">{product.salePrice}€</p>
+            <div className="bg-white shadow-lg rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 border border-gray-100">
+              {/* En-tête avec prix */}
+              <div className="bg-gradient-to-br from-blue-50 to-white p-4 border-b-2 border-[#3435FF]">
+                <div className="text-center">
+                  <div className="text-[#FF8200] text-3xl font-bold mb-1">
+                    {product.salePrice}€
+                  </div>
+                  <div className="text-red-500 text-sm line-through mb-2">
+                    Prix magasin : {product.price}€
+                  </div>
+                  <div className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded-full inline-block">
+                    -{((1 - product.salePrice / product.price) * 100).toFixed(0)}%
+                  </div>
+                </div>
+              </div>
+
+              {/* Image du produit */}
+              <div className="bg-white h-48 flex items-center justify-center p-4">
+                <img
+                  src={product.imageUrl}
+                  alt={product.name}
+                  className="max-h-full max-w-full object-contain"
+                />
+              </div>
+
+              {/* Informations produit */}
+              <div className="p-4 text-center">
+                <h3 className="text-[#3435FF] text-lg font-bold min-h-[3.5rem] flex items-center justify-center">
+                  {product.name}
+                </h3>
               </div>
             </div>
           </div>
         ))}
       </Slider>
+
+      <style jsx>{`
+        .slick-dots li button:before {
+          color: #3435FF;
+        }
+        .slick-dots li.slick-active button:before {
+          color: #FF8200;
+        }
+      `}</style>
     </div>
   );
 }

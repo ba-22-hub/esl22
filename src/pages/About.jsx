@@ -4,84 +4,168 @@ import womanShelf from "@assets/Photos/womanShelf.jpg";
 import ticketLogo from "@assets/Assets/ticket-logo.png";
 import logo from "@assets/logos/logo2.png";
 
+// Importing content
+import content from "../content/about_content.json";
+
 /**
  * The About page.
  * @returns {React.ReactElement} About component.
  */
 function About() {
   return (
-    <div className="w-full min-h-screen bg-white relative">
-      {/* HERO SECTION */}
-      <section className="w-full bg-gradient-to-b from-[#3435FF] via-[#2526B7] to-[#1F2099] relative overflow-hidden px-4 sm:px-8 md:px-0 pt-12 pb-8">
-        <div className="max-w-6xl mx-auto relative z-10">
-          <h1 className="text-white font-bold leading-tight text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl mb-6">
-            Les banques alimentaires,<br />
-            premier <span className="text-rayonorange">réseau</span> de distribution<br />
-            d’aide alimentaire en <span className="text-rayonorange">France</span>
+    <div className="w-full min-h-screen bg-white">
+      {/* HERO SECTION avec design moderne */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#3435FF] via-[#2526B7] to-[#1F2099]">
+        {/* Formes géométriques décoratives */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#FF8200] opacity-10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-white opacity-5 rounded-full blur-3xl"></div>
+
+        <div className="max-w-7xl mx-auto px-6 lg:px-12 py-16 lg:py-24 relative z-10">
+          <h1 className="text-white font-bold leading-tight text-3xl sm:text-4xl md:text-5xl lg:text-6xl mb-8">
+            {content.hero.title.line1}<br />
+            {content.hero.title.line2} <span className="text-[#FF8200]">{content.hero.title.highlight1}</span> {content.hero.title.line3}<br />
+            {content.hero.title.line4} <span className="text-[#FF8200]">{content.hero.title.highlight2}</span>
           </h1>
-          <div className="mt-4 max-w-3xl">
-            <p className="text-white text-base md:text-lg">
-              <span className="font-bold text-white">Le Rayon 22</span> est une épicerie sociale et solidaire dont l’objectif est d’accompagner les personnes en difficulté financière en leur donnant accès à une alimentation à petits prix sur tout le territoire des Côtes d’Armor.
-            </p>
-            <p className="mt-2 text-white text-base md:text-lg">
-              <span className="font-bold text-white">Le Rayon 22</span> permet aussi de donner accès à l’aide alimentaire aux personnes qui ne peuvent se rendre aux distributions de nos partenaires.
-            </p>
-            <p className="mt-2 text-white text-base md:text-lg">
-              Pour accéder à notre <span className="font-bold text-white">épicerie en ligne</span> en point relais, il faut vous connecter à un compte.
-            </p>
+          <div className="max-w-3xl space-y-4 text-white text-lg leading-relaxed">
+            {content.hero.paragraphs.map((para, index) => (
+              <p key={index}>
+                {para.boldText && <span className="font-bold">{` ${para.boldText}`}</span>}
+                {para.text && para.text}
+                {para.textAfter && ` ${para.textAfter}`}
+              </p>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* TICKET LOGO OVERLAPPING */}
-      <img src={ticketLogo} alt="ticket logo" className="hidden lg:block lg:absolute top-[400px] right-8 w-32 md:w-48 rotate-6 drop-shadow-2xl z-50" />
-
-      {/* MAIN IMAGE WITH OVERLAPPING CARDS */}
-      <div className="bg-[#FFF8F4] lg:bg-white w-full relative">
-        <div className="hidden lg:block w-full h-[621px] overflow-hidden">
-          <img src={womanShelf} alt="Woman at shelf" className="hidden lg:block w-[210%] h-[210%] lg:object-cover origin-top-left object-left-top transform -translate-y-[15%]" />
+      {/* SECTION IMAGE + CARTES avec design amélioré */}
+      <div className="relative bg-gradient-to-b from-white to-gray-50">
+        {/* Image de fond avec overlay */}
+        <div className="hidden lg:block relative w-full h-[600px] overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/30 to-white z-10"></div>
+          <img
+            src={womanShelf}
+            alt={content.images.alt.womanShelf}
+            className="w-full h-full object-cover object-center"
+          />
+          {/* Ticket logo flottant */}
+          <img
+            src={ticketLogo}
+            alt={content.images.alt.ticketLogo}
+            className="absolute top-12 right-12 w-32 md:w-40 rotate-6 drop-shadow-2xl z-20 animate-float"
+          />
         </div>
 
-        {/* INFO CARDS STARTING AT IMAGE MIDPOINT */}
-        <div className="flex lg:absolute lg:top-[310px] left-0 right-0 flex justify-center px-2 ">
-          <div className="flex flex-col md:flex-row lg:gap-[25%] w-full max-w-5xl">
-            {/* LEFT CARD */}
-            <div className="my-10 lg:my-0 flex-1 bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center border border-[#F3F4F6]">
-              <div className="flex items-center justify-center mb-4">
-                <img src={birdLogo} alt="Banque Alimentaire logo" className="w-32 h-32 object-contain" />
+        {/* Cartes d'information */}
+        <div className="relative z-30 max-w-7xl mx-auto px-6 lg:px-12 lg:-mt-64 pb-16">
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Carte Banque Alimentaire */}
+            <div className="bg-white rounded-2xl shadow-2xl p-8 border-t-4 border-[#3435FF] hover:shadow-3xl transition-all duration-300 transform hover:-translate-y-2">
+              <div className="flex justify-center mb-6">
+                <div className="w-32 h-32 bg-blue-50 rounded-full flex items-center justify-center p-4">
+                  <img src={birdLogo} alt={content.images.alt.birdLogo} className="w-full h-full object-contain" />
+                </div>
               </div>
-              <h2 className="text-[#3435FF] font-bold text-2xl mb-3 text-center">La banque alimentaire des côtes d’Armor</h2>
-              <p className="text-center text-base text-[#3435FF] mb-2">
-                La banque alimentaire des côtes d’Armor a été créée le 10 décembre 1984, elle est une des toutes première en France !
-              </p>
-              <p className="text-center text-base text-[#3435FF] mb-2">
-                Avec le <span className="font-bold">RAYON 22 Epicerie en ligne</span>, la Banque Alimentaire des Côtes d’Armor innove dans le domaine de la distribution alimentaire.
-              </p>
-              <p className="text-center text-base text-[#3435FF] mb-4">
-                Vous voulez en savoir plus sur l’organisation de la banque alimentaire ?
-              </p>
-              <a href="https://www.banquealimentaire.org/" className="mt-2 bg-[#FF8200] text-white px-8 py-3 rounded-lg font-mono text-base font-semibold shadow hover:bg-[#ff9800] transition-all">site national BA →</a>
+
+              <h2 className="text-[#3435FF] font-bold text-2xl mb-6 text-center">
+                {content.cards.banqueAlimentaire.title}
+              </h2>
+
+              <div className="space-y-4 text-gray-700 leading-relaxed mb-8">
+                {content.cards.banqueAlimentaire.paragraphs.map((para, index) => (
+                  <p key={index} className="text-center">
+                    {para.text}
+                    {para.highlight && (
+                      <span className={`font-${para.highlight === "10 décembre 1984" ? "semibold" : "bold"} text-[#3435FF]`}>
+                        {` ${para.highlight}`}
+                      </span>
+                    )}
+                    {para.textAfter && para.textAfter}
+                  </p>
+                ))}
+              </div>
+
+              <div className="flex justify-center">
+                <a
+                  href={content.cards.banqueAlimentaire.button.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block bg-[#FF8200] hover:bg-[#ff9800] text-white px-8 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
+                >
+                  {content.cards.banqueAlimentaire.button.text}
+                </a>
+              </div>
             </div>
-            {/* RIGHT CARD */}
-            <div className="my-10 lg:my-0 flex-1 bg-[#F3F4FF] rounded-2xl shadow-xl p-8 flex flex-col items-center border border-[#F3F4F6]">
-              <div className="flex items-center justify-center w-40 h-40 bg-[#F3F4FF] rounded-full mb-4">
-                <img src={logo} alt="RAYON logo" className="w-28 h-28 object-contain" />
+
+            {/* Carte Le Rayon */}
+            <div className="bg-gradient-to-br from-blue-50 to-white rounded-2xl shadow-2xl p-8 border-t-4 border-[#FF8200] hover:shadow-3xl transition-all duration-300 transform hover:-translate-y-2">
+              <div className="flex justify-center mb-6">
+                <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center p-4 shadow-lg">
+                  <img src={logo} alt={content.images.alt.rayonLogo} className="w-full h-full object-contain" />
+                </div>
               </div>
-              <h2 className="text-[#3435FF] font-bold text-2xl mb-3 text-center">Le réseau le RAYON</h2>
-              <p className="text-center text-base text-[#3435FF] mb-2">
-                C’est un réseau des <span className="font-bold">Banques Alimentaires</span> dédié à la distribution directe via des épiceries sociales, des camions itinérants et des initiatives spécifiquement pensées pour les jeunes et les étudiants. Il offre une aide diversifiée et de qualité aux personnes vulnérables, là où elles en ont le plus besoin.
-              </p>
-              <p className="text-center text-base text-[#3435FF] mb-4">
-                À l’heure actuelle, six <span className="font-bold">épiceries solidaires</span> sont réparties à travers la France.
-              </p>
-              <a href="https://lerayon.banquealimentaire.org" className="mt-2 bg-[#3435FF] text-white px-8 py-3 rounded-lg font-mono text-base font-semibold shadow hover:bg-[#5253ff] transition-all">site national le RAYON →</a>
+
+              <h2 className="text-[#3435FF] font-bold text-2xl mb-6 text-center">
+                {content.cards.leRayon.title}
+              </h2>
+
+              <div className="space-y-4 text-gray-700 leading-relaxed mb-8">
+                {content.cards.leRayon.paragraphs.map((para, index) => (
+                  <p key={index} className="text-center">
+                    {para.text}
+                    {para.highlight && (
+                      <span className={`font-bold text-[${para.highlight === "Banques Alimentaires" ? "#3435FF" : "#FF8200"}]`}>
+                        {` ${para.highlight}`}
+                      </span>
+                    )}
+                    {para.textAfter && ` ${para.textAfter}`}
+                  </p>
+                ))}
+              </div>
+
+              <div className="flex justify-center">
+                <a
+                  href={content.cards.leRayon.button.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block bg-[#3435FF] hover:bg-[#5253ff] text-white px-8 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
+                >
+                  {content.cards.leRayon.button.text}
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Section Mission & Valeurs */}
+        <div className="max-w-7xl mx-auto px-6 lg:px-12 pb-20">
+          <div className="bg-white rounded-2xl shadow-xl p-8 lg:p-12">
+            <h2 className="text-3xl lg:text-4xl font-bold text-center text-[#3435FF] mb-12">
+              {content.mission.title}
+            </h2>
+
+            <div className="grid md:grid-cols-3 gap-8">
+              {content.mission.values.map((value, index) => (
+                <div key={index} className="text-center">
+                  <div className={`w-16 h-16 bg-gradient-to-br ${
+                    value.number === "2" ? "from-[#FF8200] to-[#ff9800]" : "from-[#3435FF] to-[#5253ff]"
+                  } rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold`}>
+                    {value.number}
+                  </div>
+                  <h3 className={`text-xl font-bold ${
+                    value.number === "2" ? "text-[#FF8200]" : "text-[#3435FF]"
+                  } mb-3`}>
+                    {value.title}
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    {value.description}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </div>
-
-      {/* SPACER TO ACCOUNT FOR CARD OVERFLOW */}
-      <div className="hidden lg:block h-80"></div>
     </div>
   )
 }

@@ -1,0 +1,31 @@
+# Dossiers de dépendances
+node_modules
+
+# Fichiers de build
+dist
+build
+
+# Fichiers de cache
+.cache
+.parcel-cache
+
+# Fichiers de configuration IDE
+.vscode
+
+# Fichiers Git
+.git
+.gitignore
+
+# Fichiers Docker
+Dockerfile*
+.dockerignore
+
+# Fichiers des variables d'environnement
+.env
+
+# Documentation
+README.md
+*.md
+
+# Electron (pour éviter de copier les binaires inutiles)
+electron

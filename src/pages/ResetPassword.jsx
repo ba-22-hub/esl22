@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 
 // Importing common components
 import FormInput from "@common/FormInput";
+import PasswrdInput from "@common/PasswrdInput.jsx"
 
 // Importing assets
 import illustration from "@assets/logos/password.png"

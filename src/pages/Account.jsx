@@ -17,12 +17,9 @@ function Account() {
     const [editing, setEditing] = useState(false)
     const [clientEdit, setClientEdit] = useState(null)
     const [client, setClient] = useState(null)
-    const [file, setFile] = useState(null)
     const [activeRequests, setActiveRequest] = useState(false)
     const { user, logout, isAdmin, loading, checkIsAdmin } = useAuthor()
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const fileInputRef = useRef(null);
 
 
     // options for the radio buttons when the edit mod is enable
@@ -128,52 +125,6 @@ function Account() {
         }
     }
 
-    function handleFileSelection(e) {
-        const incomingFile = e.target.files[0]
-        displayNotification("Le fichier " + incomingFile.name + " a été déposé", "", "info")
-        setFile(incomingFile)
-    }
-
-    async function handleFileSubmit() {
-        if (!file) {
-            displayNotification("Veuillez sélectionner un fichier avant de valider", "", "warning");
-            return;
-        }
-
-        setIsSubmitting(true); // start the loading
-
-        try {
-            // 1) upload the fichier
-            const name = `${Date.now()}_${file.name}`;
-            const { success, error } = await uploadPDF(file, name, "requests");
-
-            if (!success) {
-                displayNotification("Échec de l'upload du fichier PDF", error.message, "danger");
-                return;
-            }
-
-            // 2) Insertyion in the db
-            const newRequest = { user_id: user.id, pdf_name: name };
-            const { error: insertError } = await supabase.from('Requests').insert([newRequest]);
-
-            if (insertError) {
-                displayNotification("Erreur lors de l'envoi de la requête", insertError.message, "danger");
-                return;
-            }
-
-            displayNotification("Requête envoyée avec succès", "", "success");
-
-            // reset file input
-            if (fileInputRef.current) fileInputRef.current.value = '';
-            setFile(null);
-            setActiveRequest(true);
-
-        } catch (err) {
-            displayNotification("Erreur inattendue", err.message, "danger");
-        } finally {
-            setIsSubmitting(false); // stop the loading
-        }
-    }
 
     function handleDeconnection() {
         logout()
@@ -318,32 +269,6 @@ function Account() {
                                 <label className="font-semibold">{client.order_limit === null ? "Nombre de commandes déjà effectuées ce mois-ci :" : "Commandes restantes ce mois-ci :"}</label>
                                 <p className="text-right">{client.order_limit === null ? `${client.current_order}` : `${client.order_limit - client.current_order}`}</p>
                             </div>
-                        </div>
-
-                        <div className="border border-rayonblue rounded-lg p-4 mt-6 w-full max-w-full">
-                            <h2 className="text-rayonblue text-xl font-semibold mb-4">Renouveler votre éligibilité</h2>
-                            {activeRequests ? (
-                                <p>Une requête est en cours de traitement...</p>
-                            ) : isSubmitting ? (
-                                <Loading />
-                            ) : (
-                                <div className="flex flex-col md:flex-row gap-2">
-                                    <input
-                                        className="bg-rayonorange block w-full md:w-2/3 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 rounded-2xl text-white text-center item-center p-1 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#2E2EFF] file:text-white hover:file:bg-blue-700"
-                                        type="file"
-                                        onChange={handleFileSelection}
-                                        accept=".pdf"
-                                        name="fileSelector"
-                                        ref={fileInputRef}
-                                    ></input>
-                                    <button
-                                        className="text-rayonorange text-center bg-white w-full md:w-1/4 h-10 border border-rayonorange"
-                                        onClick={handleFileSubmit}
-                                    >
-                                        Valider 🗸
-                                    </button>
-                                </div>
-                            )}
                         </div>
 
                         {!editing ? (

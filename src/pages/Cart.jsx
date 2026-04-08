@@ -1,5 +1,5 @@
 // Importing dependencies
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { useAuthor } from '@context/AuthorContext.jsx'
 import { useNavigate } from 'react-router-dom';
 import { useCart } from "@context/CartContext.jsx";
@@ -7,99 +7,233 @@ import { supabase } from "@lib/supabaseClient";
 import { displayNotification } from '@lib/displayNotification.jsx';
 
 // Importing common components
-import FunctionButton from "@common/FunctionButton"
-import PageButton from "@common/PageButton.jsx";
 import Loading from "@common/Loading.jsx";
 
 // Importing assets
-import receipt from "@assets/Assets/ticket-caisse-ecriture.png"
-import orangeLine from "@assets/Assets/Trait orange.png"
-import orangeShape from "@assets/Assets/Coup crayon orange.svg"
-import blueRayonShape from "@assets/Assets/Rayons traits bleus.svg"
-import orangeCircle from "@assets/Assets/Cercle orange crayon.png"
 import roundLogo from "@assets/logos/roundLogo.png"
 
+// Composant mémoïsé pour éviter les re-renders inutiles
+const DisplayProductCard = memo(({ product, quantity, onAdd, onRemove, roundTwoDigits }) => {
+    return (
+        <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all p-4 border border-gray-100">
+            <div className="flex items-center gap-4">
+                <div className="w-20 h-20 flex-shrink-0 bg-gray-50 rounded-lg p-2">
+                    <img
+                        src={product.imageUrl || roundLogo}
+                        alt={product.name}
+                        className="w-full h-full object-contain"
+                    />
+                </div>
 
-/**
- * The Cart page.
- * @returns {React.ReactElement} Cart component.
- */
+                <div className="flex-1 min-w-0">
+                    <h3 className="text-[#3435FF] font-bold text-lg truncate">
+                        {product.name}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                        {product.weight}g • {product.category}
+                    </p>
 
+                    <div className="flex items-center gap-2 mt-2">
+                        {quantity === 1 ? (
+                            <button
+                                onClick={onRemove}
+                                className="w-8 h-8 bg-[#FF8200] hover:bg-[#ff9800] text-white rounded-full flex items-center justify-center transition-all shadow-md"
+                            >
+                                <svg viewBox="0 0 32 32" fill="currentColor" className="h-4 w-4">
+                                    <path d="M13.5 6.5V7h5v-.5a2.5 2.5 0 0 0-5 0Zm-2 .5v-.5a4.5 4.5 0 1 1 9 0V7H28a1 1 0 1 1 0 2h-1.508L24.6 25.568A5 5 0 0 1 19.63 30h-7.26a5 5 0 0 1-4.97-4.432L5.508 9H4a1 1 0 0 1 0-2h7.5Zm2.5 6.5a1 1 0 1 0-2 0v10a1 1 0 1 0 2 0v-10Zm5-1a1 1 0 0 0-1 1v10a1 1 0 1 0 2 0v-10a1 1 0 0 0-1-1Z" />
+                                </svg>
+                            </button>
+                        ) : (
+                            <button
+                                onClick={onRemove}
+                                className="w-8 h-8 bg-[#FF8200] hover:bg-[#ff9800] text-white rounded-full font-bold flex items-center justify-center transition-all shadow-md"
+                            >
+                                −
+                            </button>
+                        )}
+                        <span className="text-[#3435FF] text-xl font-bold min-w-[2rem] text-center">
+                            {quantity}
+                        </span>
+                        <button
+                            onClick={onAdd}
+                            className="w-8 h-8 bg-[#3435FF] hover:bg-[#5253ff] text-white rounded-full font-bold flex items-center justify-center transition-all shadow-md"
+                        >
+                            +
+                        </button>
+                    </div>
+                </div>
+
+                <div className="text-right">
+                    <div className="text-sm text-gray-500 hidden lg:block">
+                        {quantity} × {product.salePrice}€
+                    </div>
+                    <div className="text-[#FF8200] text-2xl font-bold">
+                        {roundTwoDigits(quantity * product.salePrice)}€
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}, (prevProps, nextProps) => {
+    // Comparaison personnalisée pour éviter les re-renders inutiles
+    return prevProps.product.id === nextProps.product.id &&
+        prevProps.quantity === nextProps.quantity &&
+        prevProps.product.imageUrl === nextProps.product.imageUrl;
+});
+
+DisplayProductCard.displayName = 'DisplayProductCard';
 
 function Cart() {
     const [productsInCart, setProductsInCart] = useState([])
-    const [productsPriceTotal, setProductsPriceTotal] = useState(0)
-    const [productsWeightTotal, setProductsWeightTotal] = useState(0)
-    const [productsNumberTotal, setProductsNumberTotal] = useState(0)
     const [shippingCost, setShippingCost] = useState(1.35)
     const isNotified = useRef(false)
     const [loading, setLoading] = useState(true);
+    const [stockIncertainThreshold, setStockIncertainThreshold] = useState(3);
+    const shippingCostFetched = useRef(false)
+    const prevCartIds = useRef([])
 
     const { user, loading: authorLoading, checkHasRights } = useAuthor()
     const { cart, setCart } = useCart()
 
     let navigate = useNavigate()
 
-    useEffect(() => {
-        // star author routine 
-        if (authorLoading) return; // no needs to exec the useEffect if the rights aren't known
+    // Fonction utilitaire mémoïsée
+    const roundTwoDigits = useCallback((nb) => {
+        return Math.round(nb * 100) / 100
+    }, []);
 
-        if (!user) { // user not login 
+    // Calculs mémoïsés - ne recalculent que si productsInCart ou cart.content changent
+    const { productsPriceTotal, productsWeightTotal, productsNumberTotal } = useMemo(() => {
+        if (productsInCart.length === 0 || !cart?.content) {
+            return {
+                productsPriceTotal: 0,
+                productsWeightTotal: 0,
+                productsNumberTotal: 0
+            };
+        }
+
+        const priceTotal = roundTwoDigits(
+            productsInCart
+                .map((product) => parseFloat(product.salePrice) * parseFloat(cart.content[product.id] || 0))
+                .reduce((total, price) => total + price, 0)
+        );
+
+        const weightTotal = roundTwoDigits(
+            productsInCart
+                .map((product) => parseFloat(product.weight) * parseFloat(cart.content[product.id] || 0))
+                .reduce((total, weight) => total + weight, 0)
+        );
+
+        const numberTotal = Object.keys(cart.content)
+            .map(k => cart.content[k])
+            .reduce((acc, number) => acc + number, 0);
+
+        return {
+            productsPriceTotal: priceTotal,
+            productsWeightTotal: weightTotal,
+            productsNumberTotal: numberTotal
+        };
+    }, [productsInCart, cart?.content, roundTwoDigits]);
+
+    // Charger le threshold
+    useEffect(() => {
+        const fetchStockIncertainThreshold = async () => {
+            const { data, error } = await supabase
+                .from('constants')
+                .select('value')
+                .eq("name", "stockIncertainThreshold")
+                .maybeSingle();
+            if (!error && data) {
+                setStockIncertainThreshold(data.value)
+            }
+        };
+        fetchStockIncertainThreshold();
+    }, []);
+
+    useEffect(() => {
+        if (authorLoading) return;
+        if (!user) {
             navigate('/login')
             notify("Vous devez être connectés et avoir les droits pour passer commande")
         } else {
-            checkHasRights(user.id) // user doesn't have rights
+            checkHasRights(user.id)
                 .then((rights) => {
                     if (!rights) {
                         notify("Vous n'avez pas (encore ?) les droits. Pour passer une commande, veuillez déposer un fichier dans votre espace compte")
                         navigate('/account')
                     }
                 })
-
         }
-        // end author routine 
-
     }, [authorLoading])
 
-    const [stockIncertainThreshold, setStockIncertainThreshold] = useState(3);
-
-    const fetchStockIncertainThreshold = async () => {
-        const { data, error } = await supabase
-            .from('constants')
-            .select('value')
-            .eq("name", "stockIncertainThreshold")
-            .maybeSingle();
-        if (!error) {
-            setStockIncertainThreshold(data.value)
-        }
-    };
-    fetchStockIncertainThreshold();
-
-    // function to avoid double notification in the login routine
     function notify(message) {
-        console.log(message, isNotified)
-        if (isNotified.current) return;  // no need to notify again
+        if (isNotified.current) return;
         isNotified.current = true
-        alert(message)
+        displayNotification(message, "", "warn")
     }
 
-    function roundTwoDigits(nb) {
-        return Math.round(nb * 100) / 100
-    }
+    // Charger les frais de livraison
+    useEffect(() => {
+        if (shippingCostFetched.current) return;
 
+        const fetchShippingCost = async () => {
+            const { data, error } = await supabase
+                .from('constants')
+                .select('value')
+                .eq("name", "shippingCost")
+                .maybeSingle();
+            if (!error && data) {
+                setShippingCost(data.value)
+                shippingCostFetched.current = true
+            }
+        };
+
+        fetchShippingCost();
+    }, []);
+
+    // Charger les produits uniquement quand la liste d'IDs change
     useEffect(() => {
         if (cart === null) {
             setLoading(true)
             return;
         }
 
+        if (!cart.content) {
+            setProductsInCart([])
+            setLoading(false)
+            return;
+        }
+
+        const cartKeys = Object.keys(cart.content).sort()
+        const prevKeys = prevCartIds.current
+
+        const idsChanged =
+            cartKeys.length !== prevKeys.length ||
+            cartKeys.some((id, i) => id !== prevKeys[i])
+
+        if (!idsChanged) {
+            setLoading(false)
+            return
+        }
+
+        prevCartIds.current = cartKeys
+
+        if (cartKeys.length === 0) {
+            setProductsInCart([])
+            setLoading(false)
+            return
+        }
+
         const fetchDataProductsInCart = async () => {
+            setLoading(true);
             const { data, error } = await supabase
                 .from('products')
                 .select('*')
-                .in("id", Object.keys(cart.content));
+                .in("id", cartKeys);
+
             if (error) {
                 displayNotification("Erreur de chargement des produits", error.message, "danger")
+                setLoading(false);
             } else {
                 const productsWithImages = await Promise.all(
                     data.map(async product => {
@@ -108,81 +242,80 @@ function Cart() {
                             .from("images")
                             .download(product.image_name);
 
-                        if (imgError) {
-                            displayNotification("Erreur de chargement de l'image : " + product.image_name, imgError.message, "warning")
-                        } else {
+                        if (!imgError && imgData) {
                             product.imageUrl = URL.createObjectURL(imgData);
                         }
                         return product;
                     })
                 );
-
                 setProductsInCart(productsWithImages);
-            }
-            setLoading(false);
-        };
-
-        const fetchShippingCost = async () => {
-            const { data, error } = await supabase
-                .from('constants')
-                .select('value')
-                .eq("name", "shippingCost")
-                .maybeSingle();
-            if (!error) {
-                setShippingCost(data.value)
-                setCart(prev => ({
-                    ...prev,
-                    shippingCost: data.value,
-                }));
+                setLoading(false);
             }
         };
 
-        fetchShippingCost();
         fetchDataProductsInCart();
     }, [cart]);
 
-    useEffect(() => {
-        updateTotals();
-    }, [productsInCart]);
-
-
-    const updateTotals = () => {
-        if (productsInCart.length > 0) {
-            setProductsPriceTotal(roundTwoDigits(productsInCart.map((product) => (parseFloat(product.salePrice) * parseFloat(cart.content[product.id]))).reduce((priceTotal, price) => priceTotal + price)))
-            setProductsWeightTotal(roundTwoDigits(productsInCart.map((product) => (parseFloat(product.weight) * parseFloat(cart.content[product.id]))).reduce((weightTotal, weight) => weightTotal + weight)))
-            setProductsNumberTotal(Object.keys(cart.content).map(k => cart.content[k]).reduce((acc, number) => acc + number, 0))
+    // Handlers mémoïsés pour éviter de recréer les fonctions à chaque render
+    const handleAddToCart = useCallback((product) => {
+        const productId = product.id.toString();
+        const productInCart = cart?.content?.[productId];
+        if (product.stock > productInCart) {
+            if (productInCart < product.max_order) {
+                setCart(prev => ({
+                    ...prev,
+                    content: {
+                        ...prev.content,
+                        [productId]: (prev.content[productId] || 0) + 1,
+                    }
+                }));
+            } else {
+                displayNotification(
+                    "Quantité de " + product.name + " maximale atteinte",
+                    "Vous ne pouvez pas commander plus de " + product.max_order + " rations de " + product.name + " à la fois.",
+                    "danger"
+                );
+            }
         } else {
-            setProductsPriceTotal(0)
-            setProductsWeightTotal(0)
-            setProductsNumberTotal(0)
+            displayNotification(
+                "Stock de " + product.name + " insuffisant",
+                "",
+                "danger"
+            );
         }
-    }
+    }, [setCart, cart]);
 
-    async function handleValidate() {
-        checkHasRights(user.id) // user doesn't have rights
-            .then((rights) => {
-                if (!rights) {
-                    displayNotification("Échec de validation du panier", "Vous n'avez pas les droits", "danger")
-                    return;
-                }
-            })
-        if (Object.keys(cart.content).length === 0) {
-            // Empty cart
+    const handleRemoveFromCart = useCallback((productId) => {
+        setCart(prevData => {
+            if (!prevData?.content || !prevData.content[productId]) return prevData;
+
+            if (prevData.content[productId] <= 1) {
+                const newCart = { ...prevData };
+                delete newCart.content[productId];
+                return newCart;
+            } else {
+                return {
+                    ...prevData,
+                    content: {
+                        ...prevData.content,
+                        [productId]: prevData.content[productId] - 1,
+                    }
+                };
+            }
+        });
+    }, [setCart]);
+
+    const handleValidate = useCallback(async () => {
+        if (!cart?.content || Object.keys(cart.content).length === 0) {
             displayNotification("Échec de validation du panier", "Le panier est vide", "danger")
             return;
-        } else {
-            const productsPriceTotal = productsInCart
-                .map(p => parseFloat(p.salePrice) * cart.content[p.id])
-                .reduce((a, b) => a + b, 0);
-
-            if (productsPriceTotal < 0.5) {
-                displayNotification("Échec de validation du panier", "Le total produits doit être d'au moins 0.5€ pour pouvoir procéder au payement en ligne", "danger")
-                return;
-            }
-
         }
 
-        // User's limits check
+        if (productsPriceTotal < 0.5) {
+            displayNotification("Échec de validation du panier", "Le total produits doit être d'au moins 0.5€ pour pouvoir procéder au payement en ligne", "danger")
+            return;
+        }
+
         const { data: userData, error: userError } = await supabase
             .from("User")
             .select("weight_limit, weight_min_limit, current_weight, price_limit, current_price, order_limit, current_order")
@@ -190,289 +323,152 @@ function Cart() {
             .single();
 
         if (userError) {
-            displayNotification("Échec de validation du panier", "Erreur lors du chargement des limites liées à votre compte : " + error.message, "danger")
+            displayNotification("Échec de validation du panier", "Erreur lors du chargement des limites liées à votre compte : " + userError.message, "danger")
             return;
         }
 
         const limits = userData;
-        const isRespectedLimit = (limit, currentAmount, newAmount) =>
-            !limit || (currentAmount + newAmount) <= limit;
 
-        const productsWeightTotal = productsInCart
-            .map(p => parseFloat(p.weight) * cart.content[p.id])
-            .reduce((a, b) => a + b, 0);
-
-        const productsPriceTotal = productsInCart
-            .map(p => parseFloat(p.salePrice) * cart.content[p.id])
-            .reduce((a, b) => a + b, 0);
-
-        const productsNumberTotal = Object.keys(cart.content).map(k => cart.content[k]).reduce((a, b) => a + b, 0);
-
-        if (limits.weight_limit && !isRespectedLimit(limits.weight_limit, limits.current_weight, productsWeightTotal)) {
-            displayNotification(
-                "Échec de validation du panier",
-                "Condition de poids non respectée : Seulement " + (limits.weight_limit - limits.current_weight) / 1000 + "kg d'achats possibles restants sur votre compte ce mois-ci.",
-                "danger",
-                0
-            )
-            return;
-        }
-        if (limits.weight_min_limit && productsWeightTotal < limits.weight_min_limit) {
-            displayNotification(
-                "Échec de validation du panier",
-                "Condition de poids non respectée : Le poids du panier doit être d'au moins " + limits.weight_min_limit / 1000 + "kg.",
-                "danger",
-                0
-            )
-            return;
-        }
-        if (limits.price_limit && !isRespectedLimit(limits.price_limit, limits.current_price, productsPriceTotal)) {
-            displayNotification(
-                "Échec de validation du panier",
-                "Condition de prix non respectée : Seulement " + (limits.price_limit - limits.current_price) + "€ d'achats possibles restants sur votre compte ce mois-ci.",
-                "danger",
-                0
-            )
-            return;
-        }
-        if (limits.order_limit && !isRespectedLimit(limits.order_limit, limits.current_order, productsNumberTotal)) {
-            displayNotification(
-                "Échec de validation du panier",
-                "Condition de nombre de produits non respectée : Seulement " + (limits.order_limit - limits.current_order) + " achats possibles restants sur votre compte ce mois-ci.",
-                "danger",
-                0
-            )
+        if (limits.weight_limit && (limits.current_weight + productsWeightTotal) > limits.weight_limit) {
+            displayNotification("Échec de validation du panier", "Condition de poids non respectée", "danger", 0)
             return;
         }
 
-        // Check stock
         const outOfStockProducts = productsInCart.filter(p => cart.content[p.id] > p.stock);
         if (outOfStockProducts.length > 0) {
-            const productNames = outOfStockProducts.map(p => p.name).join(", ");
-            if (outOfStockProducts.length > 1) {
-                displayNotification(
-                    "Échec de validation du panier",
-                    "Stocks de " + productNames + " insuffisants",
-                    "danger",
-                    7000
-                );
-                return;
-            } else {
-                const productNames = outOfStockProducts.map(p => p.name).join(", ");
-                displayNotification(
-                    "Échec de validation du panier",
-                    "Stock de " + productNames + " insuffisant",
-                    "danger",
-                    7000
-                );
-                return;
-            }
-        }
-
-        const lowStockProduct = productsInCart.filter(p => p.stock < stockIncertainThreshold);
-        if (lowStockProduct.length > 0) {
-            const productNames = lowStockProduct.map(p => p.name).join(", ");
-            if (lowStockProduct.length > 1) {
-                if (!confirm("Stocks de " + productNames + " incertains. Cela pourrait avoir un impact sur le délai de votre livraison. Voulez-vous quand même confirmer la livraison ?")) {
-                    return;
-                }
-            } else {
-                if (!confirm("Stock de " + productNames + " incertain. Cela pourrait avoir un impact sur le délai de votre livraison. Voulez-vous quand même confirmer la livraison ?")) {
-                    return;
-                }
-            }
+            displayNotification("Échec de validation du panier", "Stock insuffisant", "danger", 7000);
+            return;
         }
 
         navigate("/chose-pickup-point")
-    }
-
-
-
-    function displayProductOnReceipt(product, idx) {
-
-        function DisplayButtons({ product }) {
-            const AddToCart = () => {
-                setCart(prev => ({
-                    ...prev,
-                    content: {
-                        ...prev.content,
-                        [product.id]: (prev.content[product.id] || 0) + 1,
-                    }
-                }));
-                updateTotals()
-            }
-
-            const RemoveFromCart = () => {
-                if (Object.keys(cart.content).includes(product.id)) {   // Should always be true when function is called
-                    if (cart.content[product.id] <= 1) {
-                        // Removing last item of this product from cart : product removed from cart
-                        setCart(prevData => {
-                            const newCart = { ...prevData };
-                            delete newCart.content[product.id];
-                            return newCart;
-                        });
-                    }
-                    else {
-                        setCart(prev => ({
-                            ...prev,
-                            content: {
-                                ...prev.content,
-                                [product.id]: prev.content[product.id] - 1,
-                            }
-                        }));
-                    }
-                }
-                updateTotals()
-            }
-
-            if (cart.content[product.id] == 1) {
-                return <div className="flex jusitfy-end">
-                    {/* TRASH CAN BUTTON */}
-                    <button type="button" className="text-white bg-[#FF8200] hover:bg-[#ff9800] rounded-full text-sm px-1 py-0.5 mb-2" onClick={RemoveFromCart}>
-                        <svg viewBox="0 0 32 32" fill="currentColor" className="h-4 w-4">
-                            <path fill="currentColor" d="M13.5 6.5V7h5v-.5a2.5 2.5 0 0 0-5 0Zm-2 .5v-.5a4.5 4.5 0 1 1 9 0V7H28a1 1 0 1 1 0 2h-1.508L24.6 25.568A5 5 0 0 1 19.63 30h-7.26a5 5 0 0 1-4.97-4.432L5.508 9H4a1 1 0 0 1 0-2h7.5Zm2.5 6.5a1 1 0 1 0-2 0v10a1 1 0 1 0 2 0v-10Zm5-1a1 1 0 0 0-1 1v10a1 1 0 1 0 2 0v-10a1 1 0 0 0-1-1Z" />
-                        </svg>
-                    </button>
-                    <p className="text-[#3435FF] text-xl mr-1 ml-1 font-semibold">{cart.content[product.id]}</p>
-                    <FunctionButton className="text-white bg-[#3435FF] hover:bg-[#5253ff] rounded-full text-sm px-2 py-0.5 mb-2 ml-0 text-right" buttonText="+" fun={AddToCart} />
-                </div>
-            }
-            else if (cart.content[product.id] > 1) {
-                return <div className="flex jusitfy-end">
-                    {/* REGULAR MINUS BUTTON */}
-                    <FunctionButton className="text-white bg-[#FF8200] hover:bg-[#ff9800] rounded-full text-sm px-2 py-0.5 mb-2" buttonText="-" fun={RemoveFromCart} />
-                    <p className="text-[#3435FF] text-xl mr-1 ml-1 font-semibold">{cart.content[product.id]}</p>
-                    <FunctionButton className="text-white bg-[#3435FF] hover:bg-[#5253ff] rounded-full text-sm px-2 py-0.5 mb-2 ml-0 text-right" buttonText="+" fun={AddToCart} />
-                </div>
-            }
-        }
-
-        if (Object.keys(cart.content).includes(product.id)) {
-            return (
-                <div key={idx} className="grid grid-cols-7 text-[#3435FF]">
-                    <div className="col-span-1 col-start-1 content-center">
-                        <img src={product.imageUrl || roundLogo} alt={product.name} className="lg:ml-2 flex-left w-[60%] object-contain" />
-                    </div>
-                    <div className="col-span-3 col-start-2 content-center">
-                        <p className="text-xl lg:text-2xl font-semibold">{product.name}</p>
-                        <p className="text-s">{product.weight}g, {product.category}</p>
-                        <DisplayButtons product={product} />
-                    </div>
-                    <div className="col-span-2 col-start-6 lg:col-span-3 lg:col-start-5  content-center">
-                        <p className="text-xl lg:text-2xl flex flex-line font-semibold text-right pl-2 whitespace-nowrap">
-                            <span className='hidden lg:block mr-2'>{cart.content[product.id]} × {product.salePrice} = </span>{roundTwoDigits(cart.content[product.id] * product.salePrice)}€
-                        </p>
-                    </div>
-                </div>
-
-            )
-        }
-    }
-
-    function displayInfoOnCart() {
-
-        return (
-            <>
-                <PageButton buttonText={'Voir tous nos produits...'} page={'/catalog'} className={"mt-0 mb-5 mx-10 text-sm text-rayonorange"} />
-                <div className="flex flex-col mx-10 w-[100%] text-rayonblue">
-                    <div className='flex flex-line'>
-                        <div className="w-[70%] my-2">
-                            Total produits
-                        </div>
-                        <div className="w-[10%] my-2 font-bold">
-                            {productsPriceTotal}€
-                        </div>
-                    </div>
-                    <div className='flex flex-line'>
-                        <div className="w-[70%] my-2">
-                            Poids total du colis
-                        </div>
-                        <div className="w-[10%] my-2 font-bold">
-                            {productsWeightTotal / 1000}kg
-                        </div>
-                    </div>
-                    <div className='flex flex-line'>
-                        <div className="w-[70%] my-2">
-                            Participation solidaire aux frais de livraison
-                        </div>
-                        <div className="w-[10%] my-2 font-bold">
-                            {shippingCost}€
-                        </div>
-                    </div>
-                    <div className='flex flex-line'>
-                        <div className="w-[70%] my-2">
-                            Nombre de produits
-                        </div>
-                        <div className="w-[10%] my-2 font-bold">
-                            {productsNumberTotal}
-                        </div>
-                    </div>
-                    <div className='flex flex-line'>
-                        <div className="mt-8 text-4xl font-extrabold col-span-2 col-start-1 row-span-3 row-start-5 content-right">
-                            <div className=" relative">
-                                <img className='hidden lg:block' src={orangeCircle}></img>
-                                <div className="flex lg:absolute lg:top-4 lg:left-7">Total</div>
-                            </div>
-                        </div>
-                        <span className='mx-2 text-4xl mt-8 font-semibold lg:hidden'>=</span>
-                        <div className="mt-8 w-[20%] lg:mt-12 text-4xl font-extrabold col-span-1 col-start-3 row-span-3 row-start-5 content-right">
-                            {roundTwoDigits(productsPriceTotal + shippingCost)}€
-                        </div>
-                    </div>
-                </div>
-                <FunctionButton
-                    buttonText={'Valider ma commande'}
-                    className={`mx-4 sm:mx-10 w-full mt-4 sm:mt-5 px-4 sm:px-8 py-2 sm:py-3 rounded-lg font-mono text-lg sm:text-xl md:text-2xl font-semibold shadow ${Object.keys(cart).filter(k => k !== "id").length === 0
-                        ? 'bg-[#878787] text-white'
-                        : 'bg-[#FF8200] text-white hover:bg-[#ff9800]'
-                        }`}
-                    fun={handleValidate}
-                />
-            </>
-        )
-    }
+    }, [cart, productsPriceTotal, productsWeightTotal, productsInCart, user, navigate]);
 
     return (
         <>
             {loading || authorLoading ? (
                 <Loading />
             ) : (
-                <>
-                    {/* TITLE */}
-                    <div className="ml-10 mb-50">
-                        <h1 className="text-[#2E2EFF] text-5xl lg:text-7xl font-extrabold leading-tight">Panier</h1>
-                        <img src={orangeLine}></img>
+                <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+                    <div className="bg-gradient-to-br from-[#3435FF] via-[#2526B7] to-[#1F2099] relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-96 h-96 bg-[#FF8200] opacity-10 rounded-full blur-3xl"></div>
+                        <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12 relative z-10">
+                            <h1 className="text-4xl lg:text-6xl font-bold text-white mb-2">Mon Panier</h1>
+                            <p className="text-blue-100 text-lg">
+                                {productsNumberTotal} {productsNumberTotal > 1 ? 'produits' : 'produit'} • {productsWeightTotal / 1000}kg
+                            </p>
+                        </div>
                     </div>
 
-                    <div className='mb-10 lg:mb-0'>
-                        <img className="hidden lg:block absolute top-28 right-20 w-[15%]" src={blueRayonShape}></img>
-                        <img className="hidden lg:block absolute left-28 w-[15%]" src={orangeShape}></img>
+                    <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12">
+                        <div className="grid lg:grid-cols-3 gap-8">
+                            <div className="lg:col-span-2 space-y-4">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h2 className="text-2xl font-bold text-[#3435FF]">
+                                        Produits ({productsNumberTotal})
+                                    </h2>
+                                    <a
+                                        href="/catalog"
+                                        className="text-[#FF8200] hover:text-[#ff9800] font-semibold text-sm transition-colors"
+                                    >
+                                        + Ajouter des produits
+                                    </a>
+                                </div>
 
-                        <div
-                            className="relative bg-no-repeat bg-cover lg:mx-auto aspect-[1/2] lg:w-[700px]"
-                            style={{
-                                backgroundImage: window.innerWidth >= 1024 ? `url(${receipt})` : 'none'
-                            }}
-                        >
-                            {/* PRODUCTS IN CART */}
-                            <div className="mx-5 mt-5 lg:m-10 p-0 border-2 border-rayonorange rounded-lg lg:border-0 lg:bg-[url('/path/to/ticket.png')] lg:bg-cover lg:bg-center">
-                                <a className="text-[#3435FF] m-10"></a>
-                                <div className="lg:overflow-y-auto lg:h-[700px] text-[#3435FF] mx-5">
-                                    {productsInCart.map((product, idx) => (displayProductOnReceipt(product, idx)))}
+                                {productsInCart.length === 0 ? (
+                                    <div className="bg-white rounded-xl shadow-md p-12 text-center">
+                                        <div className="text-6xl mb-4">🛒</div>
+                                        <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                                            Votre panier est vide
+                                        </h3>
+                                        <p className="text-gray-600 mb-6">
+                                            Découvrez nos produits et ajoutez-les à votre panier
+                                        </p>
+                                        <a
+                                            href="/catalog"
+                                            className="inline-block bg-[#3435FF] hover:bg-[#5253ff] text-white px-8 py-3 rounded-lg font-semibold transition-all shadow-lg hover:shadow-xl"
+                                        >
+                                            Voir les produits
+                                        </a>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {productsInCart.map((product) => (
+                                            cart?.content?.[product.id] && (
+                                                <DisplayProductCard
+                                                    key={product.id}
+                                                    product={product}
+                                                    quantity={cart.content[product.id]}
+                                                    onAdd={() => handleAddToCart(product)}
+                                                    onRemove={() => handleRemoveFromCart(product.id)}
+                                                    roundTwoDigits={roundTwoDigits}
+                                                />
+                                            )
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="lg:col-span-1">
+                                <div className="bg-white rounded-2xl shadow-xl p-6 sticky top-6 border-t-4 border-[#FF8200]">
+                                    <h2 className="text-2xl font-bold text-[#3435FF] mb-6">
+                                        Récapitulatif
+                                    </h2>
+
+                                    <div className="space-y-4 mb-6">
+                                        <div className="flex justify-between text-gray-700">
+                                            <span>Total produits</span>
+                                            <span className="font-semibold">{productsPriceTotal}€</span>
+                                        </div>
+
+                                        <div className="flex justify-between text-gray-700">
+                                            <span>Poids total</span>
+                                            <span className="font-semibold">{productsWeightTotal / 1000}kg</span>
+                                        </div>
+
+                                        <div className="flex justify-between text-gray-700">
+                                            <span className="text-sm">Participation solidaire</span>
+                                            <span className="font-semibold">{shippingCost}€</span>
+                                        </div>
+
+                                        <div className="flex justify-between text-gray-700">
+                                            <span>Nombre de produits</span>
+                                            <span className="font-semibold">{productsNumberTotal}</span>
+                                        </div>
+
+                                        <div className="border-t-2 border-gray-200 pt-4">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-2xl font-bold text-[#3435FF]">Total</span>
+                                                <span className="text-3xl font-bold text-[#FF8200]">
+                                                    {roundTwoDigits(productsPriceTotal + shippingCost)}€
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={handleValidate}
+                                        disabled={!cart?.content || Object.keys(cart.content).length === 0}
+                                        className={`w-full py-4 rounded-lg font-bold text-lg transition-all shadow-lg ${!cart?.content || Object.keys(cart.content).length === 0
+                                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                            : 'bg-gradient-to-r from-[#FF8200] to-[#ff9800] hover:from-[#ff9800] hover:to-[#FF8200] text-white hover:shadow-xl transform hover:-translate-y-1'
+                                            }`}
+                                    >
+                                        {!cart?.content || Object.keys(cart.content).length === 0
+                                            ? 'Panier vide'
+                                            : 'Valider ma commande'
+                                        }
+                                    </button>
+
+                                    <div className="mt-4 text-xs text-center text-gray-500">
+                                        <p>🔒 Paiement sécurisé</p>
+                                    </div>
                                 </div>
                             </div>
-
-                            {/* INFO ON CART */}
-                            <div className="flex flex-col lg:block lg:absolute lg:inset-x-0 text-xl lg:h-16 lg:ml-10 mr-10 lg:mr-28 mb-10 lg:mb-0">
-                                {displayInfoOnCart(productsInCart)}
-                            </div>
                         </div>
-
-
                     </div>
-                </>)}
+                </div>
+            )}
         </>
     )
 }
-
 export default Cart

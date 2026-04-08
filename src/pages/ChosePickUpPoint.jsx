@@ -1,5 +1,5 @@
 // Importing dependencies
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@lib/supabaseClient.js';
 import { useNavigate } from 'react-router-dom';
 import { useAuthor } from '@context/AuthorContext.jsx';
@@ -17,16 +17,13 @@ import FunctionButton from '@common/FunctionButton.jsx';
 import redMarker from "@assets/Assets/marker-icon-2x-red.png"
 import orangeMarker from "@assets/Assets/marker-icon-2x-orange.png"
 
-/**
- * The Delivery page.
- * @returns {React.ReactElement} Delivery component.
- */
-
 function ChosePickUpPoint() {
     const [loading, setLoading] = useState(false);
     const [currentLatitude, setCurrentLatitude] = useState(null);
     const [currentLongitude, setCurrentLongitude] = useState(null);
-    const [productsInCart, setProductsInCart] = useState({})
+    const [productsInCart, setProductsInCart] = useState([])
+    const [shippingCost, setShippingCost] = useState(1.35) // État pour les frais de port
+    const shippingCostFetched = useRef(false)
 
     const [currPoint, setCurrPoint] = useState({ id: 0 })
 
@@ -67,6 +64,25 @@ function ChosePickUpPoint() {
         7: "Dimanche",
     };
 
+    // Charger les frais de livraison
+    useEffect(() => {
+        if (shippingCostFetched.current) return;
+
+        const fetchShippingCost = async () => {
+            const { data, error } = await supabase
+                .from('constants')
+                .select('value')
+                .eq("name", "shippingCost")
+                .maybeSingle();
+            if (!error && data) {
+                setShippingCost(data.value)
+                shippingCostFetched.current = true
+            }
+        };
+
+        fetchShippingCost();
+    }, []);
+
     // only accessible to users (this page needs user info)
     useEffect(() => {
         if (!user && !loading) {
@@ -75,7 +91,9 @@ function ChosePickUpPoint() {
             return;
         }
 
-        fetchProductsInCart();
+        if (cart?.content && Object.keys(cart.content).length > 0) {
+            fetchProductsInCart();
+        }
     }, [user, loading, navigate])
 
     useEffect(() => {
@@ -175,60 +193,86 @@ function ChosePickUpPoint() {
     };
 
     const fetchProductsInCart = async () => {
+        if (!cart?.content || Object.keys(cart.content).length === 0) {
+            setProductsInCart([])
+            return;
+        }
+
         const { data, error } = await supabase
             .from('products')
             .select('id, name, salePrice, weight')
             .in("id", Object.keys(cart.content));
+
         if (error) {
-            displayNotification("Erreur de chargement des produits du panie", error.message, "danger")
+            displayNotification("Erreur de chargement des produits du panier", error.message, "danger")
             return;
         }
 
-        setProductsInCart(data)
+        setProductsInCart(data || [])
     }
 
     async function handleValidate() {
-        if (currPoint.id != 0) {
-            setCart(prev => ({
-                ...prev,
-                pickupPoint: { currPoint }
+        if (currPoint.id === 0) {
+            displayNotification("Aucun point relais sélectionné", "", "danger");
+            return;
+        }
+
+        if (!productsInCart || productsInCart.length === 0) {
+            displayNotification("Panier vide", "Impossible de valider un panier vide", "danger");
+            return;
+        }
+
+        // Sauvegarder le point relais dans le panier
+        setCart(prev => ({
+            ...prev,
+            pickupPoint: currPoint
+        }));
+
+        try {
+            // CHANGEMENT : Ne plus inclure pickupPointId dans chaque produit
+            const cartItems = productsInCart.map(p => ({
+                id: p.id,
+                name: p.name,
+                salePrice: parseFloat(p.salePrice),
+                weight: parseFloat(p.weight),
+                quantity: parseInt(cart.content[p.id])
             }));
 
-            try {
-                // We invoke the supabase edge function to create the Stripe checkout session
-                const { data, error } = await supabase.functions.invoke("create-checkout-session", {
-                    body: {
-                        cart: productsInCart.map(p => ({
-                            id: p.id,
-                            name: p.name,
-                            salePrice: p.salePrice,
-                            weight: p.weight,
-                            quantity: cart.content[p.id],
-                            pickupPointId: currPoint.id
-                        })),
-                        shippingCost: cart.shippingCost,
-                        userId: user.id,
-                        successUrl: `${window.location.origin}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-                        cancelUrl: `${window.location.origin}/cart`,
-                    }
-                });
+            console.log("Données envoyées à Stripe:", {
+                cart: cartItems,
+                pickupPointId: currPoint.id, // UNE SEULE FOIS ici
+                shippingCost: parseFloat(shippingCost),
+                userId: user.id
+            });
 
-                if (error) {
-                    console.error("Erreur fonction edge Stripe :", error);
-                    return;
+            // Invoquer la fonction edge pour créer la session Stripe
+            const { data, error } = await supabase.functions.invoke("create-checkout-session", {
+                body: {
+                    cart: cartItems,
+                    pickupPointId: currPoint.id, // Envoyé au niveau racine
+                    shippingCost: parseFloat(shippingCost),
+                    userId: user.id,
+                    successUrl: `${window.location.origin}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+                    cancelUrl: `${window.location.origin}/cart`,
                 }
+            });
 
-                if (data.url) {
-                    window.location.href = data.url;
-                } else {
-                    console.error("Aucune URL Stripe renvoyée par la fonction edge.");
-                }
-
-            } catch (err) {
-                console.error("Erreur Stripe :", err);
+            if (error) {
+                console.error("Erreur fonction edge Stripe :", error);
+                displayNotification("Erreur de paiement", error.message || "Une erreur est survenue", "danger");
+                return;
             }
-        } else {
-            displayNotification("Aucun point relais selectionné", "", "danger");
+
+            if (data?.url) {
+                window.location.href = data.url;
+            } else {
+                console.error("Aucune URL Stripe renvoyée par la fonction edge.");
+                displayNotification("Erreur de paiement", "Aucune URL de paiement reçue", "danger");
+            }
+
+        } catch (err) {
+            console.error("Erreur Stripe :", err);
+            displayNotification("Erreur de paiement", err.message || "Une erreur est survenue", "danger");
         }
     }
 
@@ -309,7 +353,7 @@ function ChosePickUpPoint() {
                                                 </li>
                                                 {currPoint.id == p.id && (
                                                     <div>
-                                                        {currPoint.openingHours != [] ? (
+                                                        {currPoint.openingHours && currPoint.openingHours.length > 0 ? (
                                                             <div>
                                                                 <strong>Horaires d'ouverture :</strong>
 
@@ -332,7 +376,7 @@ function ChosePickUpPoint() {
                                                                     );
                                                                 })}
                                                             </div>
-                                                        ) :(
+                                                        ) : (
                                                             <div>Non renseignées</div>
                                                         )}
                                                     </div>

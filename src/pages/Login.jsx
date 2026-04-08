@@ -54,84 +54,45 @@ function Login() {
 			return;
 		}
 
-		const uid = loginData.user.id;
-
-		// Checks if the user already exists in the database
-		const { data: existingUser, error: fetchError } = await supabase
-			.from('User')
-			.select('id')
-			.eq('id', uid)
-			.single();
-
-		if (fetchError && fetchError.code !== 'PGRST116') {
-			// other error
-			displayNotification("Erreur lors de la vérification de votre compte", fetchError.message, "danger")
-			return;
-		}
-
-		if (!existingUser) {
-			const pendingData = localStorage.getItem("pendingUserData");
-			if (pendingData) {
-				const parsedData = JSON.parse(pendingData);
-
-				const newUser = {
-					id: uid,
-					email: parsedData.step1.email,
-					gender: parsedData.step1.gender,
-					firstName: parsedData.step1.firstName,
-					lastName: parsedData.step1.lastName,
-					phone: parsedData.step1.phone,
-					birthday: '01/01/2001',
-					address: parsedData.step1.address,
-					addAddress: parsedData.step1.addAddress,
-					city: parsedData.step1.city,
-					postalCode: parsedData.step1.postalCode,
-					situation: '',
-					quotient: '',
-					wageType: '',
-					otherWage: '',
-					has_right: false,
-				};
-
-				const { error: insertError } = await supabase
-					.from('User')
-					.insert([newUser]);
-
-				if (insertError) {
-					displayNotification("Erreur lors de la création du compte", insertError.message, "danger")
-					return;
-				}
-
-				localStorage.removeItem("pendingUserData");
-				displayNotification("Compte créé avec succès", "", "success")
-			}
-		}
-
 		displayNotification("Connexion réussie", "", "success")
-
-		// resets the inputs and formData to blank
-		setFormData({
-			mail: '',
-			password: ''
-		});
 
 		// update session
 		setUser(loginData.user)
-		navigate('/account')
+
+		// verify si user status == "Enregistré"
+            const { data: userdata, error: dberror } = await supabase
+                .from('User')
+                .select('*')
+                .eq('id', loginData.user.id) // in theory we come from "Login" where we use setUser
+                .single();
+
+            if (dberror && dberror.code !== 'PGRST116') {
+                displayNotification("Erreur lors de la vérification de l'utilisateur", dberror.message, "danger")
+                return;
+            }
+
+            if (userdata.status != "Enregistré") {
+                navigate('/account')
+            } else {
+				navigate('/first-connection')
+			}
+
+		
+		
 
 	}
 
 	return (
 		<>
-			<div className="bg-[#ffffff] w-[65.56vw] mx-auto mt-32 mb-10 rounded-2xl shadow-sm py-12 px-6">
-				<h1 className="text-[#2E2EFF] text-7xl font-extrabold text-center leading-tight mb-2">
+			<div className="bg-[#ffffff] lg:w-[65.56vw] mx-auto mt-10 lg:mt-32 mb-10 rounded-2xl shadow-sm lg:py-12 px-6">
+				<h1 className="text-[#2E2EFF] lg:text-7xl text-5xl font-extrabold text-center leading-tight mb-2">
 					Bienvenue sur votre Espace Utilisateur
 				</h1>
 				<p className="text-black text-base text-center mb-10 mt-4">
 					Connectez vous en utilisant le formulaire ci-dessous
 				</p>
 				<form onSubmit={handleSubmit} className="space-y-6">
-					<div className="w-[65%] mx-auto">
+					<div className="lg:w-[65%] w-[90%] mx-auto">
 						<FormInput
 							inputText={<span className="text-rayonblue">Adresse email</span>}
 							name={'mail'}
@@ -141,7 +102,7 @@ function Login() {
 							className="border border-[#2E2EFF] rounded-md text-sm px-4 py-2 w-full"
 						/>
 					</div>
-					<div className="w-[65%] mx-auto">
+					<div className="lg:w-[65%] w-[90%] mx-auto">
 						<PasswrdInput
 							inputText={<span className="text-rayonblue">Mot de passe</span>}
 							name={'password'}
@@ -162,26 +123,16 @@ function Login() {
 						<PageButton
 							buttonText={'Je me connecte'}
 							type="submit"
-							className="w-[400px] h-10 bg-[#FF8200] text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition"
+							className="w-[90vw] lg:w-[400px] h-10 bg-[#FF8200] text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition"
 						/>
 					</div>
 				</form>
 
-				<p className="text-[#2E2EFF] text-sm text-center mt-10 mb-4 font-medium">
-					Vous n'avez pas encore de compte ?
-				</p>
-				<div className="flex justify-center">
-					<PageButton
-						buttonText={'Créez votre compte'}
-						page={'/register'}
-						className="w-[400px] h-10 bg-[#FF8200] text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition"
-					/>
-				</div>
 				<div className="flex justify-center">
 					<PageButton
 						buttonText='Admin'
 						page='/admin'
-						className='w-[400px] h-10 bg-[#FF8200] text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition mt-4' />
+						className='w-[90vw] lg:w-[400px] h-10 bg-[#FF8200] text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition mt-4' />
 				</div>
 			</div>
 		</>

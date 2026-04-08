@@ -1,15 +1,11 @@
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCart } from "../context/CartContext.jsx";
 import Slider from "react-slick";
 import { supabase } from "../lib/supabaseClient";
 import { useAuthor } from "../context/AuthorContext";
 
-// Importing common components
-import FunctionButton from "../common/FunctionButton";
-
-// Importing assets
 import roundLogo from "../assets/logos/roundLogo.png";
 import { displayNotification } from "../lib/displayNotification.jsx";
 
@@ -18,7 +14,17 @@ function SampleNextArrow(props) {
   return (
     <div
       className={className}
-      style={{ ...style, display: "block", background: "#FF8200" }}
+      style={{
+        ...style,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#FF8200",
+        borderRadius: "50%",
+        width: "40px",
+        height: "40px",
+        zIndex: 10
+      }}
       onClick={onClick}
     />
   );
@@ -29,7 +35,17 @@ function SamplePrevArrow(props) {
   return (
     <div
       className={className}
-      style={{ ...style, display: "triangle", background: "#FF8200" }}
+      style={{
+        ...style,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#FF8200",
+        borderRadius: "50%",
+        width: "40px",
+        height: "40px",
+        zIndex: 10
+      }}
       onClick={onClick}
     />
   );
@@ -37,21 +53,32 @@ function SamplePrevArrow(props) {
 
 function ProductCarousel({ data }) {
   const { user } = useAuthor();
-  const { cart, setCart } = useCart();
+  const { cart, setCart, isLoaded, clearCart } = useCart();
+
   const [stockIncertainThreshold, setStockIncertainThreshold] = useState(3);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
-  const fetchStockIncertainThreshold = async () => {
-    const { data, error } = await supabase
-      .from("constants")
-      .select("value")
-      .eq("name", "stockIncertainThreshold")
-      .maybeSingle();
-    if (!error) {
-      setStockIncertainThreshold(data.value);
-    }
-  };
-  fetchStockIncertainThreshold();
+  // 🧪 Log utile pour debug reload
+  useEffect(() => {
+    console.log("🔄 Rechargement des produits du cart :", cart);
+  }, [cart]);
+
+  // Charger le threshold
+  useEffect(() => {
+    const fetchStockIncertainThreshold = async () => {
+      const { data, error } = await supabase
+        .from("constants")
+        .select("value")
+        .eq("name", "stockIncertainThreshold")
+        .maybeSingle();
+
+      if (!error && data) {
+        setStockIncertainThreshold(data.value);
+      }
+    };
+
+    fetchStockIncertainThreshold();
+  }, []);
 
   const settings = {
     infinite: false,
@@ -66,181 +93,237 @@ function ProductCarousel({ data }) {
     prevArrow: <SamplePrevArrow />,
   };
 
-  function DisplayProduct({ product }) {
-    function DisplayButtons({ product }) {
-      if (user) {
-        const AddToCart = () => {
-          const productAmountInCart = cart.content[product.id] || 0
-          if (product.stock >= productAmountInCart) {
-            setCart(prev => ({
-              ...prev,
-              content: {
-                ...prev.content,
-                [product.id]: (prev.content[product.id] || 0) + 1,
-              }
-            }));
-          } else {
-            displayNotification("Stock de " + product.name + " insuffisant", "", "danger")
-          }
-        };
+  // 🔧 DisplayButtons au niveau ProductCarousel (accessible partout)
+  function DisplayButtons({ product }) {
+    if (!user || !isLoaded) return null;
 
-        const RemoveFromCart = () => {
-          if (Object.keys(cart.content).includes(product.id)) {
-            if (cart.content[product.id] <= 1) {
-              setCart((prevData) => {
-                const newCart = { ...prevData };
-                delete newCart.content[product.id];
-                return newCart;
-              });
-            } else {
-              setCart(prev => ({
-                ...prev,
-                content: {
-                  ...prev.content,
-                  [product.id]: prev.content[product.id] -1,
-                }
-              }));
+    const productId = product.id.toString();
+    const productInCart = cart?.content?.[productId] || 0;
+
+    const AddToCart = () => {
+      console.log("➕ Ajout :", product.name);
+      console.log("📦 Cart avant :", cart);
+
+      if (product.stock >= productInCart + 1) {
+        if (productInCart < product.max_order) {
+          setCart(prev => ({
+            ...prev,
+            content: {
+              ...prev.content,
+              [productId]: productInCart + 1
             }
-          }
-        };
-        
-        if (Object.keys(cart.content).includes(product.id) && cart.content[product.id] > 0) {
-          return (
-            <div className="flex jusitfy-end">
-              <FunctionButton
-                className="text-white bg-[#FF8200] hover:bg-[#ff9800] rounded-full text-sm px-2 py-0.5 mb-2"
-                buttonText="-"
-                fun={RemoveFromCart}
-              />
-              <p className="text-[#3435FF] text-xl mr-1 ml-1 font-semibold">
-                {cart.content[product.id] || ""}
-              </p>
-              <FunctionButton
-                className="text-white bg-[#3435FF] hover:bg-[#5253ff] rounded-full text-sm px-2 py-0.5 mb-2 ml-0 text-right"
-                buttonText="+"
-                fun={AddToCart}
-              />
-            </div>
-          );
+          }));
         } else {
-          return (
-            <div className="flex jusitfy-end">
-              <FunctionButton
-                className="text-white bg-[#3435FF] hover:bg-[#5253ff] rounded-full text-sm px-2 py-0.5 mb-2 ml-0 text-right"
-                buttonText="+"
-                fun={AddToCart}
-              />
-            </div>
+          displayNotification(
+            "Quantité de " + product.name + " maximale atteinte",
+            "Vous ne pouvez pas commander plus de " + product.max_order + " rations de " + product.name + " à la fois.",
+            "danger"
           );
         }
+      } else {
+        displayNotification(
+          "Stock de " + product.name + " insuffisant",
+          "",
+          "danger"
+        );
       }
+    };
+
+    const RemoveFromCart = () => {
+      console.log("➖ Retrait :", product.name);
+      console.log("📦 Cart avant :", cart);
+
+      if (!cart?.content?.[productId]) return;
+
+      if (productInCart <= 1) {
+        const newCart = {
+          ...cart,
+          content: { ...cart.content }
+        };
+        delete newCart.content[productId];
+
+        setCart(newCart);
+      } else {
+        setCart(prev => ({
+          ...prev,
+          content: {
+            ...prev.content,
+            [productId]: productInCart - 1
+          }
+        }));
+      }
+    };
+
+    if (productInCart > 0) {
+      return (
+        <div className="flex items-center gap-2">
+          {productInCart === 1 ? (
+            <button
+              onClick={RemoveFromCart}
+              className="w-8 h-8 bg-[#FF8200] hover:bg-[#ff9800] text-white rounded-full flex items-center justify-center transition-all shadow-md"
+            >
+              <svg viewBox="0 0 32 32" fill="currentColor" className="h-4 w-4">
+                <path d="M13.5 6.5V7h5v-.5a2.5 2.5 0 0 0-5 0Zm-2 .5v-.5a4.5 4.5 0 1 1 9 0V7H28a1 1 0 1 1 0 2h-1.508L24.6 25.568A5 5 0 0 1 19.63 30h-7.26a5 5 0 0 1-4.97-4.432L5.508 9H4a1 1 0 0 1 0-2h7.5Zm2.5 6.5a1 1 0 1 0-2 0v10a1 1 0 1 0 2 0v-10Zm5-1a1 1 0 0 0-1 1v10a1 1 0 1 0 2 0v-10a1 1 0 0 0-1-1Z" />
+              </svg>
+            </button>
+          ) : (
+            <button
+              onClick={RemoveFromCart}
+              className="w-8 h-8 bg-[#FF8200] hover:bg-[#ff9800] text-white rounded-full font-bold flex items-center justify-center transition-all shadow-md"
+            >
+              −
+            </button>
+          )}
+          <span className="text-[#3435FF] text-xl font-bold min-w-[2rem] text-center">
+            {productInCart}
+          </span>
+          <button
+            onClick={AddToCart}
+            className="w-8 h-8 bg-[#3435FF] hover:bg-[#5253ff] text-white rounded-full font-bold flex items-center justify-center"
+          >
+            +
+          </button>
+        </div>
+      );
     }
 
     return (
-      <>
-        <div className="bg-white shadow-md lg:rounded-xl overflow-hidden lg:w-60 w-44 ml-0.1">
-          <div className="p-2 lg:p-4">
-            <div className="flex justify-between">
-              <h3 className="text-[#3435FF] text-2xl lg:text-3xl font-semibold text-left">
+      <button
+        onClick={AddToCart}
+        className="w-8 h-8 bg-[#3435FF] hover:bg-[#5253ff] text-white rounded-full font-bold flex items-center justify-center"
+      >
+        +
+      </button>
+    );
+  }
+
+  function DisplayProduct({ product }) {
+    return (
+      <div className="bg-white shadow-lg rounded-2xl overflow-hidden w-64 lg:w-72 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 border border-gray-100">
+        <div className="bg-gradient-to-br from-blue-50 to-white p-4 border-b-2 border-[#3435FF]">
+          <div className="flex justify-between items-center mb-2">
+            <div>
+              <div className="text-[#FF8200] text-3xl font-bold">
                 {product.salePrice}€
-              </h3>
-              <DisplayButtons product={product} />
-            </div>
-            <div className="text-[#ff6161] text-xs ml-0">
-              Prix moyen en magasin : {product.price}€
-            </div>
-          </div>
-          <div className="relative text-center">
-            <img
-              src={product.imageUrl || roundLogo}
-              alt={product.name}
-              className="w-full h-28 lg:h-40 object-contain"
-            />
-            {((product.productStockIncertainThreshold && product.stock <= product.productStockIncertainThreshold) || (product.stock <= stockIncertainThreshold)) && (
-              <div className="w-full absolute top-0 left-0 text-center mt-0">
-                <p className="lg:text-xl text-white bg-rayonorange bg-opacity-80 text-center">
-                  STOCK INCERTAIN
-                </p>
               </div>
-            )}
-          </div>
-          <div className="p-2 lg:p-4">
-            <p className="text-[#3435FF] text-lg font-semibold">
-              {product.name}
-            </p>
-            <p className="text-[#3435FF] text-xs">
-              {product.weight}g, {product.category || ""}
-            </p>
-            <button
-              className="mt-2 text-[#FF8200] underline text-sm lg:text-lg"
-              onClick={() => setSelectedProduct(product)}
-            >
-              Voir plus
-            </button>
+              <div className="text-red-500 text-xs line-through">
+                Prix magasin : {product.price}€
+              </div>
+            </div>
+            <DisplayButtons product={product} />
           </div>
         </div>
-      </>
+
+        <div className="relative bg-white h-48 flex items-center justify-center p-4">
+          <img
+            src={product.imageUrl || roundLogo}
+            alt={product.name}
+            className="max-h-full max-w-full object-contain"
+          />
+          {product.stock <=
+            (product.productStockIncertainThreshold ||
+              stockIncertainThreshold) && (
+              <div className="absolute top-0 left-0 right-0 bg-[#FF8200] bg-opacity-95 text-white text-center py-2 px-4 font-bold text-sm shadow-lg">
+                STOCK INCERTAIN
+              </div>
+            )}
+        </div>
+
+        <div className="p-4">
+          <h3 className="text-[#3435FF] text-lg font-bold mb-1 line-clamp-2 min-h-[3.5rem]">
+            {product.name}
+          </h3>
+
+          <button
+            className="w-full bg-gradient-to-r from-[#3435FF] to-[#5253ff] hover:from-[#5253ff] hover:to-[#3435FF] text-white py-2 rounded-lg font-semibold transition-all shadow-md hover:shadow-lg"
+            onClick={() => setSelectedProduct(product)}
+          >
+            Voir les détails
+          </button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <div className="px-8 mx-auto mb-12 bg-rayonblue lg:bg-inherit">
+    <div className="px-8 mx-auto mb-12">
       <Slider {...settings}>
-        {data.map((product, idx) => (
-          <div key={idx} className="p-4">
-            <DisplayProduct product={product}></DisplayProduct>
+        {data.map(product => (
+          <div key={product.id} className="p-4">
+            <DisplayProduct product={product} />
           </div>
         ))}
       </Slider>
 
-      {/* Details */}
       {selectedProduct && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-lg w-3/4 max-w-4xl p-6 relative flex flex-col md:flex-row ">
-            {/* Close button */}
-            <button
-              className="absolute top-2 right-2 text-black hover:text-red text-7xl"
-              onClick={() => setSelectedProduct(null)}
-            >
-              ✕
-            </button>
-
-            {/* Picture */}
-            <div className="md:w-1/2 flex items-center justify-center">
-              <img
-                src={selectedProduct.imageUrl || roundLogo}
-                alt={selectedProduct.name}
-                className="max-h-80 object-contain"
-              />
-            </div>
-
-            {/* Informations */}
-            <div className="md:w-1/2 pl-6 text-left">
-              <h2 className="text-2xl font-bold text-[#3435FF] mb-4">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+          onClick={() => setSelectedProduct(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl relative overflow-hidden max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-gradient-to-r from-[#3435FF] to-[#5253ff] p-6 text-white">
+              <button
+                onClick={() => setSelectedProduct(null)}
+                className="absolute top-4 right-4 w-10 h-10 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full flex items-center justify-center text-white text-2xl font-bold transition-all"
+              >
+                ✕
+              </button>
+              <h2 className="text-3xl font-bold pr-12">
                 {selectedProduct.name}
               </h2>
-              <ul className="space-y-2 text-gray-700">
-                <li>
-                  <strong>Catégorie :</strong> {selectedProduct.category}
-                </li>
-                <li>
-                  <strong>Poids :</strong> {selectedProduct.weight} g
-                </li>
-                <li>
-                  <strong>Prix au rayon :</strong> {selectedProduct.salePrice} €
-                </li>
-                <li>
-                  <strong>Prix moyen en magasin :</strong> {selectedProduct.price} €
-                </li>
-                <li>
-                  <strong>Stock :</strong> {selectedProduct.stock}
-                </li>
-              </ul>
-              {selectedProduct.description && (
-                <p className="mt-4 text-gray-600">
-                  <strong>Description : </strong>{selectedProduct.description}
-                </p>
-              )}
+            </div>
+
+            <div className="p-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Image */}
+                <div className="bg-gray-50 rounded-xl p-6 flex items-center justify-center">
+                  <img
+                    src={selectedProduct.imageUrl || roundLogo}
+                    alt={selectedProduct.name}
+                    className="max-h-80 max-w-full object-contain"
+                  />
+                </div>
+
+                {/* Détails */}
+                <div>
+                  <div className="mb-6">
+                    <div className="flex items-baseline gap-3 mb-2">
+                      <span className="text-4xl font-bold text-[#FF8200]">
+                        {selectedProduct.salePrice}€
+                      </span>
+                      <span className="text-xl text-red-500 line-through">
+                        {selectedProduct.price}€
+                      </span>
+                    </div>
+                    <div className="text-green-600 font-semibold">
+                      Économie : {(selectedProduct.price - selectedProduct.salePrice).toFixed(2)}€
+                    </div>
+                  </div>
+
+                  {selectedProduct.stock <= (selectedProduct.productStockIncertainThreshold || stockIncertainThreshold) && (
+                    <div className="bg-[#FF8200] bg-opacity-10 border-l-4 border-[#FF8200] p-4 mb-4">
+                      <p className="text-[#FF8200] font-bold">⚠️ Stock incertain</p>
+                    </div>
+                  )}
+
+                  {selectedProduct.description && (
+                    <div className="mb-6">
+                      <h3 className="text-lg font-bold text-[#3435FF] mb-2">Description</h3>
+                      <p className="text-gray-700">{selectedProduct.description}</p>
+                    </div>
+                  )}
+
+                  <div className="mb-6">
+                    <h3 className="text-lg font-bold text-[#3435FF] mb-2">Stock disponible</h3>
+                    <p className="text-gray-700">{selectedProduct.stock} unité(s)</p>
+                  </div>
+
+                  <DisplayButtons product={selectedProduct} />
+                </div>
+              </div>
             </div>
           </div>
         </div>

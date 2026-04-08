@@ -1,0 +1,96 @@
+{
+  "hero": {
+    "title": {
+      "line1": "Les Banques Alimentaires,",
+      "line2": "premier",
+      "highlight1": "réseau",
+      "line3": "de distribution",
+      "line4": "d'aide alimentaire en",
+      "highlight2": "France"
+    },
+    "paragraphs": [
+      {
+        "boldText": "Le Rayon 22 ",
+        "text": "est une initiative lancée par les Banques Alimentaires afin de fédérer leurs dispositifs de distribution directe d’aide alimentaire où les besoins ne sont pas couverts. Le réseau le RAYON regroupe différents dispositifs tels que des épiceries sociales, des dispositifs dédiés aux jeunes et aux étudiants et des camions itinérants, qui permettent d’aller vers des publics vulnérables et éloignés d’une aide alimentaire."
+      },
+      {
+        "boldText": "La Banque Alimentaire des Côtes d’Armor ",
+        "textAfter": "met en place une Epicerie Sociale en Ligne pour permettre d’avoir accès quand on veut et ou on veut à l’aide alimentaire. Son fonctionnement s’apparente à un Drive avec Livraison de proximité."
+      }
+    ]
+  },
+  "cards": {
+    "banqueAlimentaire": {
+      "title": "La Banque Alimentaire des Côtes d'Armor",
+      "paragraphs": [
+        {
+          "text": "La banque alimentaire des Côtes d'Armor a été créée le",
+          "highlight": "10 décembre 1984",
+          "textAfter": ", elle est une des toutes premières en France !"
+        },
+        {
+          "text": "Avec le",
+          "highlight": "RAYON 22 - épicerie en ligne -",
+          "textAfter": ", la Banque Alimentaire des Côtes d'Armor innove dans le domaine de la distribution alimentaire."
+        },
+        {
+          "highlight": "Vous voulez en savoir plus sur l'organisation de la banque alimentaire ?"
+        }
+      ],
+      "button": {
+        "text": "Site de la Banque Alimentaire des Côtes d' Armor",
+        "url": "https://ba22.banquealimentaire.org/"
+      }
+    },
+    "leRayon": {
+      "title": "Le réseau Le RAYON",
+      "paragraphs": [
+        {
+          "text": "C'est un réseau des",
+          "highlight": "Banques Alimentaires",
+          "textAfter": "dédié à la distribution directe via des épiceries sociales, des camions itinérants et des initiatives spécifiquement pensées pour les jeunes et les étudiants."
+        },
+        {
+          "text": "Il offre une aide diversifiée et de qualité aux personnes vulnérables, là où elles en ont le plus besoin."
+        },
+        {
+          "text": "À l'heure actuelle, le nombre d’initiatives",
+          "highlight": "Le Rayon",
+          "textAfter": "s’étoffe de jour en jour partout en France"
+        }
+      ],
+      "button": {
+        "text": "Site national Le RAYON",
+        "url": "https://lerayon.banquealimentaire.org"
+      }
+    }
+  },
+  "mission": {
+    "title": "Notre Mission & Nos Valeurs",
+    "values": [
+      {
+        "number": "1",
+        "title": "Solidarité",
+        "description": "Lutter contre la précarité alimentaire en offrant un accès digne et respectueux à une alimentation de qualité."
+      },
+      {
+        "number": "2",
+        "title": "Innovation",
+        "description": "Moderniser la distribution alimentaire avec des solutions digitales accessibles à tous."
+      },
+      {
+        "number": "3",
+        "title": "Proximité",
+        "description": "Être présent sur tout le territoire pour atteindre ceux qui en ont besoin, partout en Côtes d'Armor."
+      }
+    ]
+  },
+  "images": {
+    "alt": {
+      "womanShelf": "Woman at shelf",
+      "ticketLogo": "ticket logo",
+      "birdLogo": "Banque Alimentaire logo",
+      "rayonLogo": "RAYON logo"
+    }
+  }
+}

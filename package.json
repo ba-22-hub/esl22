@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "vite",
     "electron:dev": "vite dev",
-    "build": "vite build && electron-builder",
+    "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -28,7 +28,8 @@
     "react-slick": "^0.30.3",
     "slick-carousel": "^1.8.1",
     "styled-components": "^6.1.17",
-    "supabase": "^2.31.8"
+    "supabase": "^2.31.8",
+    "vanilla-cookieconsent": "^3.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",

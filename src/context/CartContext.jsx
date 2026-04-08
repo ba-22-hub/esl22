@@ -1,67 +1,47 @@
-import { createContext, useContext, useState, useEffect } from 'react'
-import { useAuthor } from './AuthorContext'
-import { displayNotification } from '../lib/displayNotification'
+import { createContext, useContext, useEffect, useState } from "react";
 
-/*
-HOW TO USE THE CONTEXT ?? 
-1. import : import { useCart } from '../context/CartContext.jsx';
-2. declare what you need at the begining of the component
-    => const {cart, setCart, clearCart } = useCart()
+const CartContext = createContext();
 
-cart : current cart : {idCart: _,
-                        content: {id1: nb1, id2: nb2, ...}
-                        trackingUrl: _,
-                        orderReference: _},
-setCart : to update the cart
-*/
+export function CartProvider({ children }) {
+    const [cart, setCart] = useState({ content: {} });
+    const [isLoaded, setIsLoaded] = useState(false);
 
-
-const CartContext = createContext()
-
-function CartProvider({ children }) {
-    const { user, loading } = useAuthor()
-    const [cart, setCart] = useState({ "content": {} })
-
-    // Retrieving old cart
+    // 🔄 Charger le panier depuis localStorage au montage
     useEffect(() => {
-        if (!loading) {
-            if (user?.id) {
-                try {
-                    const saved = localStorage.getItem(user.id)
-                    setCart(saved ? JSON.parse(saved) : { "content": {} })
-                } catch (e) {
-                    displayNotification("Erreur de récupération du panier", "", "danger")
-                    setCart({ "content": {} })
+        const storedCart = localStorage.getItem("cart");
+        console.log("📦 localStorage cart brut :", storedCart);
+
+        if (storedCart) {
+            try {
+                const parsed = JSON.parse(storedCart);
+
+                if (parsed && typeof parsed === "object" && parsed.content) {
+                    setCart(parsed);
+                    console.log("✅ Cart chargé depuis localStorage :", parsed);
+                } else {
+                    console.warn("⚠️ Cart invalide dans localStorage, reset.");
                 }
-            } else {
-                setCart({ "content": {} })
+            } catch (err) {
+                console.error("❌ Erreur parsing cart depuis localStorage :", err);
             }
         }
-    }, [user, loading])
 
-    // Updating cart
+        setIsLoaded(true);
+    }, []);
+
+    // 💾 Sauvegarder le panier à chaque modification (après chargement initial)
     useEffect(() => {
-        if (user?.id && cart !== null) {
-            localStorage.setItem(user.id, JSON.stringify(cart))
-        }
-    }, [cart, user])
+        if (!isLoaded) return;
 
-    function clearCart() {
-        if (user?.id) {
-            localStorage.setItem(user.id, JSON.stringify({ "content": {} }))
-            setCart({ "content": {} })
-        }
-    }
+        console.log("💾 Sauvegarde cart dans localStorage :", cart);
+        localStorage.setItem("cart", JSON.stringify(cart));
+    }, [cart, isLoaded]);
 
     return (
-        <CartContext.Provider value={{ cart, setCart, clearCart }}>
+        <CartContext.Provider value={{ cart, setCart, isLoaded }}>
             {children}
         </CartContext.Provider>
     );
-
 }
 
-
-const useCart = () => useContext(CartContext)
-
-export { CartProvider, useCart }
+export const useCart = () => useContext(CartContext);

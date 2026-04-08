@@ -1,5 +1,5 @@
 // Importing dependencies
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@lib/supabaseClient.js';
 import { deleteUser } from '@lib/deleteUser';
 import { patchUser } from '@lib/patchUser';
@@ -8,10 +8,10 @@ import { useAuthor } from '@context/AuthorContext';
 import { useNavigate } from 'react-router-dom';
 import { displayNotification } from '@lib/displayNotification.jsx';
 
-// Importing common components
-import FunctionButton from '@common/FunctionButton.jsx';
 
+// Importing common components
 import Loading from '@common/Loading.jsx';
+import AddUserModal from '../../common/AddUserModal';
 
 
 const UserTable = () => {
@@ -21,17 +21,18 @@ const UserTable = () => {
 	const [editMode, setEditMode] = useState(null);
 	const [editedUser, setEditedUser] = useState({});
 	const [update, setUpdate] = useState(true)
-
-	// State to manage loading state to display the Loading component
 	const [isLoading, setIsLoading] = useState(true);
+	const [modalOpen, setModalOpen] = useState(false)
 
 	const { isAdmin, loading } = useAuthor()
 	const navigate = useNavigate()
 
+	const selectStatus = ["Enregistré", "Validé", "Actif", "Suspendu", "Résilié", "En attente", "Inactif"]
+
 	let isNotifying = false;
 
 	useEffect(() => {
-		if (loading) return; // wait for the author informations to be fetch
+		if (loading) return;
 		if (!isAdmin) {
 			navigate('/admin')
 			return;
@@ -105,10 +106,14 @@ const UserTable = () => {
 	const handleEdit = (user) => {
 		setEditMode(user.id);
 		setEditedUser(user);
+		setExpanded(user.id); // Déplier automatiquement
 	};
 
 	const handleChange = (e) => {
 		const { name, value } = e.target;
+		if(name == "status"){
+			setEditedUser(prev => ({ ...prev, ["has_right"]: value == "Actif" }));
+		}
 		setEditedUser(prev => ({ ...prev, [name]: value }));
 	};
 
@@ -116,267 +121,362 @@ const UserTable = () => {
 		patchUser(editMode, editedUser)
 			.then(() => setUpdate(!update))
 			.then(() => setEditMode(null))
-
 	};
 
 	const handleDelete = (id) => {
+		if (!confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) return;
+
 		console.log('Suppression utilisateur :', id);
 		deleteUser(id)
-			.then(() =>
-				displayNotification("Suppression effectuée avec succès", "", "success")
-			)
 			.then(() => setUpdate(!update))
-			.catch((e) =>
-				console.error("Erreur inattendue : ", e),
+			.catch((e) => {
+				console.error("Erreur inattendue : ", e);
 				displayNotification("Erreur inattendue", e.message, "danger")
-			)
+			})
 	};
 
-	// Displaying the Loading component
+	function formatDate(datestr) {
+		return new Intl.DateTimeFormat('fr-FR', {
+			dateStyle: 'short',
+		}).format(new Date(datestr));
+	}
+
 	if (isLoading || loading) {
 		return <Loading />;
 	}
 
 	return (
-		<>
-			{loading ? (
-				<Loading />
-			) : (
-				<div className="p-6 max-w-7xl mx-auto">
-					<h1 className="text-2xl font-bold mb-4">Liste des Utilisateurs</h1>
+		<div className="p-6 bg-gray-50 min-h-screen">
+			<div className="max-w-7xl mx-auto">
+				<h1 className="text-3xl font-bold mb-6 text-rayonblue">Gestion des Utilisateurs</h1>
+				<button
+					className='text-white bg-rayonorange ml-[77%] mb-3 w-[23%] 	rounded-lg p-2'
+					onClick={() => setModalOpen(true)}
+				>Inscrire un utilisateur</button>
+				<input
+					type="text"
+					placeholder="🔍 Rechercher par nom, email, téléphone..."
+					className="mb-6 p-3 border-2 border-rayonblue rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-rayonorange transition"
+					value={search}
+					onChange={(e) => setSearch(e.target.value)}
+				/>
 
-					<input
-						type="text"
-						placeholder="Rechercher par nom, email, téléphone..."
-						className="mb-6 px-4 py-2 border border-gray-300 rounded w-full"
-						value={search}
-						onChange={(e) => setSearch(e.target.value)}
-					/>
-
-					<div className="overflow-x-auto bg-white shadow rounded">
-						<table className="min-w-full divide-y divide-gray-200">
-							<thead className="bg-gray-100 text-left text-sm font-medium text-gray-700">
-								<tr>
-									<th className="px-6 py-3">Prénom</th>
-									<th className="px-6 py-3">Nom</th>
-									<th className="px-6 py-3">Email</th>
-									<th className="px-6 py-3">Téléphone</th>
-									<th className="px-6 py-3">Action</th>
-								</tr>
-							</thead>
-							<tbody className="divide-y divide-gray-200 text-sm">
-								{filteredUsers.map(user => (
-									<React.Fragment key={user.id}>
-										<tr>
-											{/* firstName */}
-											<td className="px-6 py-4">
-												{editMode === user.id ? (
-													<input
-														name="firstName"
-														value={editedUser.firstName || ''}
-														onChange={handleChange}
-														className="border px-2 py-1 rounded w-full"
-													/>
-												) : (
-													user.firstName
-												)}
-											</td>
-
-											{/* lastName */}
-											<td className="px-6 py-4">
-												{editMode === user.id ? (
-													<input
-														name="lastName"
-														value={editedUser.lastName || ''}
-														onChange={handleChange}
-														className="border px-2 py-1 rounded w-full"
-													/>
-												) : (
-													user.lastName
-												)}
-											</td>
-
-											{/* email */}
-											<td className="px-6 py-4">
-												{editMode === user.id ? (
-													<input
-														name="email"
-														value={editedUser.email || ''}
-														onChange={handleChange}
-														className="border px-2 py-1 rounded w-full"
-													/>
-												) : (
-													user.email
-												)}
-											</td>
-
-											{/* phone */}
-											<td className="px-6 py-4">
-												{editMode === user.id ? (
-													<input
-														name="phone"
-														value={editedUser.phone || ''}
-														onChange={handleChange}
-														className="border px-2 py-1 rounded w-full"
-													/>
-												) : (
-													user.phone
-												)}
-											</td>
-
-											{/* Fold / unfold buttons */}
-											<td className="px-6 py-4">
-												<FunctionButton
-													buttonText={expanded === user.id ? 'Fermer' : 'Déplier'}
-													fun={() => toggleExpand(user.id)}
-													className="text-blue-600 hover:underline mr-4 bg-transparent p-0 shadow-none"
+				{/* Liste des utilisateurs en cartes */}
+				<div className="space-y-4 mb-6">
+					{filteredUsers.map(user => (
+						<div key={user.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
+							{/* En-tête de la carte */}
+							<div className="p-4 bg-gradient-to-r from-blue-50 to-white border-b border-rayonblue">
+								<div className="flex items-center justify-between">
+									<div className="flex-1 grid grid-cols-12 gap-3 items-center">
+										{/* Prénom */}
+										<div className="col-span-2 min-w-0">
+											<p className="text-xs text-gray-500 mb-1">Prénom</p>
+											{editMode === user.id ? (
+												<input
+													name="firstName"
+													value={editedUser.firstName || ''}
+													onChange={handleChange}
+													className="w-full border-2 border-rayonblue rounded px-2 py-1 text-lg font-semibold"
 												/>
-											</td>
-										</tr>
-										{expanded === user.id && (
-											<tr className="bg-gray-50">
-												<td colSpan="5" className="px-6 py-4">
-													<div className="grid grid-cols-2 gap-4 text-sm mb-4">
-														{[
-															['gender', 'Sexe'],
-															['birthday', 'Date de naissance'],
-															['address', 'Adresse'],
-															['addAddress', 'Complément d’adresse'],
-															['city', 'Ville'],
-															['postalCode', 'Code postal'],
-															['situation', 'Situation'],
-															['quotient', 'Quotient'],
-															['wageType', 'Type de revenu'],
-															['otherWage', 'Autres revenus'],
-														].map(([field, label]) => (
-															<div key={field}>
-																<strong>{label}:</strong>{' '}
-																{editMode === user.id ? (
-																	<input
-																		name={field}
-																		value={editedUser[field] || ''}
-																		onChange={handleChange}
-																		className="border px-2 py-1 rounded w-full mt-1"
-																	/>
-																) : (
-																	<span className="ml-1">
-																		{user[field] || '—'}
-																	</span>
-																)}
-															</div>
-														))}
+											) : (
+												<p className="text-lg font-semibold text-gray-800 truncate">{user.firstName}</p>
+											)}
+										</div>
 
-														{/* weight limits */}
-														<div>
-															<strong>Limite de poids maximal :</strong>{' '}
-															{editMode === user.id ? (
-																<input
-																	name="weight_limit"
-																	type="number"
-																	value={editedUser.weight_limit ?? ''}
-																	onChange={handleChange}
-																	className="border px-2 py-1 rounded w-full mt-1"
-																/>
-															) : (
-																<span className="ml-1">
-																	{user.current_weight} / {user.weight_limit}
-																</span>
-															)}
-														</div>
+										{/* Nom */}
+										<div className="col-span-2 min-w-0">
+											<p className="text-xs text-gray-500 mb-1">Nom</p>
+											{editMode === user.id ? (
+												<input
+													name="lastName"
+													value={editedUser.lastName || ''}
+													onChange={handleChange}
+													className="w-full border-2 border-rayonblue rounded px-2 py-1 text-lg font-semibold"
+												/>
+											) : (
+												<p className="text-lg font-semibold text-gray-800 truncate">{user.lastName}</p>
+											)}
+										</div>
 
-														<div>
-															<strong>Limite de poids minimal :</strong>{' '}
-															{editMode === user.id ? (
-																<input
-																	name="weight_min_limit"
-																	type="number"
-																	value={editedUser.weight_min_limit ?? ''}
-																	onChange={handleChange}
-																	className="border px-2 py-1 rounded w-full mt-1"
-																/>
-															) : (
-																<span className="ml-1">
-																	{user.current_weight} / {user.weight_limit}
-																</span>
-															)}
-														</div>
+										{/* Email */}
+										<div className="col-span-5 min-w-0">
+											<p className="text-xs text-gray-500 mb-1">Email</p>
+											{editMode === user.id ? (
+												<input
+													name="email"
+													value={editedUser.email || ''}
+													onChange={handleChange}
+													className="w-full border-2 border-rayonblue rounded px-2 py-1 text-lg font-semibold"
+												/>
+											) : (
+												<p className="text-lg font-semibold text-gray-800 truncate" title={user.email}>{user.email}</p>
+											)}
+										</div>
 
-														{/* price limit */}
-														<div>
-															<strong>Limite de prix :</strong>{' '}
-															{editMode === user.id ? (
-																<input
-																	name="price_limit"
-																	type="number"
-																	step="0.01"
-																	value={editedUser.price_limit ?? ''}
-																	onChange={handleChange}
-																	className="border px-2 py-1 rounded w-full mt-1"
-																/>
-															) : (
-																<span className="ml-1">
-																	{user.current_price} / {user.price_limit}
-																</span>
-															)}
-														</div>
+										{/* Téléphone */}
+										<div className="col-span-3 min-w-0">
+											<p className="text-xs text-gray-500 mb-1">Téléphone</p>
+											{editMode === user.id ? (
+												<input
+													name="phone"
+													value={editedUser.phone || ''}
+													onChange={handleChange}
+													className="w-full border-2 border-rayonblue rounded px-2 py-1 text-lg font-semibold"
+												/>
+											) : (
+												<p className="text-lg font-semibold text-gray-800">{user.phone}</p>
+											)}
+										</div>
+									</div>
 
-														{/* order limit */}
-														<div>
-															<strong>Limite de commandes :</strong>{' '}
-															{editMode === user.id ? (
-																<input
-																	name="order_limit"
-																	type="number"
-																	value={editedUser.order_limit ?? ''}
-																	onChange={handleChange}
-																	className="border px-2 py-1 rounded w-full mt-1"
-																/>
-															) : (
-																<span className="ml-1">
-																	{user.current_order} / {user.order_limit}
-																</span>
-															)}
-														</div>
-													</div>
+									{/* Boutons d'action */}
+									<div className="flex items-center gap-2 ml-4">
+										<button
+											onClick={() => toggleExpand(user.id)}
+											className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition text-sm font-medium text-rayonblue"
+											title="Voir détails"
+										>
+											{expanded === user.id ? "▲ Masquer" : "▼ Détails"}
+										</button>
 
-													<div className="flex gap-4">
-														{editMode === user.id ? (
-															<FunctionButton
-																buttonText="Valider"
-																fun={handleValidate}
-																className="px-4 py-2 bg-green text-white rounded"
-															/>
-														) : (
-															<FunctionButton
-																buttonText="Modifier"
-																fun={() => handleEdit(user)}
-																className="px-4 py-2 bg-blue-600 text-white rounded"
-															/>
-														)}
-
-														<FunctionButton
-															buttonText="Supprimer"
-															fun={() => handleDelete(user.id)}
-															className="px-4 py-2 bg-red text-white rounded"
-														/>
-													</div>
-												</td>
-											</tr>
+										{editMode === user.id ? (
+											<div className="flex gap-2">
+												<button
+													onClick={handleValidate}
+													className="w-10 h-10 bg-green-500 hover:bg-green-600 text-white rounded-lg transition flex items-center justify-center text-xl"
+													title="Valider"
+												>
+													✓
+												</button>
+												<button
+													onClick={() => setEditMode(null)}
+													className="w-10 h-10 bg-red hover:bg-red-600 text-white rounded-lg transition flex items-center justify-center text-xl"
+													title="Annuler"
+												>
+													✕
+												</button>
+											</div>
+										) : (
+											<div className="flex gap-2">
+												<button
+													onClick={() => handleEdit(user)}
+													className="w-10 h-10 bg-rayonblue hover:opacity-90 text-white rounded-lg transition flex items-center justify-center text-lg"
+													title="Modifier"
+												>
+													✎
+												</button>
+												<button
+													onClick={() => handleDelete(user.id)}
+													className="w-10 h-10 bg-red hover:bg-red-600 text-white rounded-lg transition flex items-center justify-center text-xl"
+													title="Supprimer"
+												>
+													✕
+												</button>
+											</div>
 										)}
-									</React.Fragment>
-								))}
-								{filteredUsers.length === 0 && (
-									<tr>
-										<td colSpan="5" className="px-6 py-4 text-center text-gray">
-											Aucun utilisateur trouvé.
-										</td>
-									</tr>
-								)}
-							</tbody>
-						</table>
-					</div>
-				</div>)}
-		</>
+									</div>
+								</div>
+							</div>
+
+							{/* Détails étendus */}
+							{expanded === user.id && (
+								<div className="p-4 bg-gray-50 border-t">
+									<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+										{/* Informations personnelles */}
+										{[
+											['gender', 'Sexe'],
+											['birthday', 'Date de naissance'],
+											['address', 'Adresse'],
+											['addAddress', "Complément d'adresse"],
+											['city', 'Ville'],
+											['postalCode', 'Code postal'],
+											['situation', 'Situation'],
+											['quotient', 'Quotient'],
+											['wageType', 'Type de revenu'],
+											['otherWage', 'Autres revenus'],
+										].map(([field, label]) => (
+											<div key={field} className="bg-white p-3 rounded-lg border border-gray-200">
+												<label className="text-xs font-medium text-rayonblue block mb-1">
+													{label}
+												</label>
+												{editMode === user.id ? (
+													<input
+														name={field}
+														value={editedUser[field] || ''}
+														onChange={handleChange}
+														className="w-full border-2 border-rayonblue rounded px-2 py-1"
+													/>
+												) : (
+													<p className="text-gray-800">{user[field] || '—'}</p>
+												)}
+											</div>
+										))}
+
+										{/* Limites */}
+										<div className="bg-white p-3 rounded-lg border border-gray-200">
+											<label className="text-xs font-medium text-rayonblue block mb-1">
+												Limite de poids maximal
+											</label>
+											{editMode === user.id ? (
+												<input
+													name="weight_limit"
+													type="number"
+													value={editedUser.weight_limit ?? ''}
+													onChange={handleChange}
+													className="w-full border-2 border-rayonblue rounded px-2 py-1"
+												/>
+											) : (
+												<p className="text-gray-800">
+													{user.current_weight} / {user.weight_limit}
+												</p>
+											)}
+										</div>
+
+										<div className="bg-white p-3 rounded-lg border border-gray-200">
+											<label className="text-xs font-medium text-rayonblue block mb-1">
+												Limite de poids minimal
+											</label>
+											{editMode === user.id ? (
+												<input
+													name="weight_min_limit"
+													type="number"
+													value={editedUser.weight_min_limit ?? ''}
+													onChange={handleChange}
+													className="w-full border-2 border-rayonblue rounded px-2 py-1"
+												/>
+											) : (
+												<p className="text-gray-800">
+													{user.current_weight} / {user.weight_min_limit}
+												</p>
+											)}
+										</div>
+
+										<div className="bg-white p-3 rounded-lg border border-gray-200">
+											<label className="text-xs font-medium text-rayonblue block mb-1">
+												Limite de prix
+											</label>
+											{editMode === user.id ? (
+												<input
+													name="price_limit"
+													type="number"
+													step="0.01"
+													value={editedUser.price_limit ?? ''}
+													onChange={handleChange}
+													className="w-full border-2 border-rayonblue rounded px-2 py-1"
+												/>
+											) : (
+												<p className="text-gray-800">
+													{user.current_price}€ / {user.price_limit}€
+												</p>
+											)}
+										</div>
+
+										<div className="bg-white p-3 rounded-lg border border-gray-200">
+											<label className="text-xs font-medium text-rayonblue block mb-1">
+												Limite de commandes
+											</label>
+											{editMode === user.id ? (
+												<input
+													name="order_limit"
+													type="number"
+													value={editedUser.order_limit ?? ''}
+													onChange={handleChange}
+													className="w-full border-2 border-rayonblue rounded px-2 py-1"
+												/>
+											) : (
+												<p className="text-gray-800">
+													{user.current_order} / {user.order_limit}
+												</p>
+											)}
+										</div>
+
+										{/* ########## Date des droits ############## */}
+
+										{/* padding to end line*/}
+										<div className="bg-white p-3 rounded-lg border border-gray-200">
+											<label className="text-xs font-medium text-rayonblue block mb-1"></label>
+											<p className="text-gray-800"></p>
+										</div>
+
+										<div className="bg-white p-3 rounded-lg border border-gray-200">
+											<label className="text-xs font-medium text-rayonblue block mb-1">
+												Début des droits
+											</label>
+											{editMode === user.id ? (
+												<input
+													type="date"
+													name="start_right"
+													value={editedUser["start_right"] || ''}
+													onChange={handleChange}
+													className="w-full border-2 border-rayonblue rounded px-2 py-1"
+												/>
+											) : (
+												<p className="text-gray-800">{formatDate(user["start_right"]) || '—'}</p>
+											)}
+										</div>
+										<div className="bg-white p-3 rounded-lg border border-gray-200">
+											<label className="text-xs font-medium text-rayonblue block mb-1">
+												Fin des droits
+											</label>
+											{editMode === user.id ? (
+												<input
+													type="date"
+													name="end_right"
+													value={editedUser["end_right"] || ''}
+													onChange={handleChange}
+													className="w-full border-2 border-rayonblue rounded px-2 py-1"
+												/>
+											) : (
+												<p className="text-gray-800">{formatDate(user["end_right"]) || '—'}</p>
+											)}
+										</div>
+										<div className="bg-white p-3 rounded-lg border border-gray-200">
+											<label className="text-xs font-medium text-rayonblue block mb-1">
+												Statut du compte
+											</label>
+											{editMode === user.id ? (
+												<select
+													className="w-full px-3 py-2 border border-gray-200 rounded-md text-rayonblue bg-white focus:outline-none focus:ring-2 focus:ring-rayonblue"
+													name="status"
+													value={editedUser["status"]}
+													onChange={handleChange}
+												>
+													<option value="">Sélectionner...</option>
+													{selectStatus.map((option) => (
+														<option key={option} value={option}>
+															{option}
+														</option>
+													))}
+												</select>
+											) : (
+												<p className="text-gray-800">{user["status"] || '—'}</p>
+											)}
+										</div>
+
+
+									</div>
+								</div>
+							)}
+						</div>
+					))}
+
+					{filteredUsers.length === 0 && (
+						<div className="text-center py-12 text-gray-500 bg-white rounded-lg">
+							<p className="text-lg">Aucun utilisateur trouvé</p>
+						</div>
+					)}
+				</div>
+			</div>
+			{/* modal to add a new user */}
+			<AddUserModal
+                isOpen={modalOpen}
+                onClose={() => {
+					setModalOpen(false); 
+					setUpdate(!update)
+				}}
+            />
+		</div>
 	);
 };
 

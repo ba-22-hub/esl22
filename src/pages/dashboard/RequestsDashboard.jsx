@@ -14,8 +14,7 @@ import Loading from '@common/Loading.jsx';
 
 function RequestsDashboard() {
     const [requests, setRequests] = useState([]);
-
-    // State to manage loading state to display the Loading component
+    const [expandedRequest, setExpandedRequest] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
     const { isAdmin, loading } = useAuthor()
@@ -23,7 +22,7 @@ function RequestsDashboard() {
 
     useEffect(() => {
         console.log(loading, isAdmin)
-        if (loading) return; // wait for the author informations to be fetch
+        if (loading) return;
         if (!isAdmin) {
             navigate('/admin')
             return;
@@ -31,7 +30,6 @@ function RequestsDashboard() {
         fetchRequests();
     }, [loading]);
 
-    // Function to fetch requests from the database
     const fetchRequests = async () => {
         const { data, error } = await supabase
             .from('Requests')
@@ -57,8 +55,9 @@ function RequestsDashboard() {
         setIsLoading(false);
     };
 
-    // Function to handle deletion of the request
     const handleDelete = async (id) => {
+        if (!confirm('Êtes-vous sûr de vouloir supprimer cette demande ?')) return;
+
         const fileName = requests.find(req => req.id === id)?.pdf_name;
         deletePDF(fileName);
         const { error } = await supabase
@@ -75,25 +74,23 @@ function RequestsDashboard() {
         }
     };
 
-    // Functioon to open the PDF file in a new tab
     const handleDownloadPDF = (pdfName) => {
+        displayNotification("Ouverture de " + pdfName, "", "info")
         openPDF(pdfName, 10, "requests");
     };
 
-    // Function to handle approval and deletion of the request
     const handleApprove = async (id, user_id) => {
-        // updated user informations
+        if (!confirm('Êtes-vous sûr de vouloir approuver cette demande ?')) return;
+
         try {
-            // Date + 1 year
             const endDate = new Date();
             endDate.setFullYear(endDate.getFullYear() + 1);
 
-            // update
             const { data, error } = await supabase
                 .from('User')
                 .update({
                     has_right: true,
-                    end_right: endDate.toISOString() // format compatible PostgreSQL
+                    end_right: endDate.toISOString()
                 })
                 .eq('id', user_id)
                 .select();
@@ -109,15 +106,13 @@ function RequestsDashboard() {
             console.error("Erreur inattendue :", err);
             displayNotification("Erreur inattendue", err.message, "danger")
         }
-
     }
 
-    // Function to handle decline and deletion of the request
     const handleDecline = async (id) => {
+        if (!confirm('Êtes-vous sûr de vouloir décliner cette demande ?')) return;
         handleDelete(id);
     }
 
-    // Displaying the Loading component
     if (isLoading || loading) {
         return <Loading />;
     }
@@ -127,52 +122,147 @@ function RequestsDashboard() {
             {loading ? (
                 <Loading />
             ) : (
-                <div className="p-4">
-                    <h2 className="text-2xl font-bold mb-4">Demandes d'éligibilité</h2>
-                    <div className="space-y-4">
-                        {requests.length === 0 ? (
-                            <p className="text-gray-500">Aucune demande disponible.</p>
-                        ) : (
-                            requests.map((req) => (
-                                <div key={req.id} className="bg-white border rounded-lg p-4 shadow-md">
+                <div className="p-6 bg-gray-50 min-h-screen">
+                    <div className="max-w-7xl mx-auto">
+                        <h1 className="text-3xl font-bold mb-6 text-rayonblue">Demandes d'Éligibilité</h1>
 
-                                    <p><strong>Date de création :</strong> {new Date(req.created_at).toLocaleString()}</p>
-
-                                    <p>
-                                        <strong>Demandeur :</strong>{' '}
-                                        {req.User
-                                            ? `${req.User.firstName} ${req.User.lastName} (${req.User.email})`
-                                            : 'Utilisateur inconnu'}
-                                    </p>
-
-                                    {req.pdf_name && (
-                                        <FunctionButton
-                                            fun={() => handleDownloadPDF(req.pdf_name)}
-                                            buttonText={req.pdf_name}
-                                            className="mt-2 text-blue-600 underline bg-transparent p-0 shadow-none"
-                                        />
-                                    )}
-
-                                    <div className="mt-3 flex space-x-2">
-                                        <button
-                                            onClick={() => handleApprove(req.id, req.User.id)}
-                                            className="bg-green hover:bg-green text-white px-4 py-2 rounded"
-                                        >
-                                            Accepter
-                                        </button>
-                                        <button
-                                            onClick={() => handleDecline(req.id)}
-                                            className="bg-red hover:bg-red text-white px-4 py-2 rounded"
-                                        >
-                                            Décliner
-                                        </button>
-                                    </div>
-
+                        {/* Liste des demandes en cartes */}
+                        <div className="space-y-4 mb-6">
+                            {requests.length === 0 ? (
+                                <div className="text-center py-12 text-gray-500 bg-white rounded-lg">
+                                    <p className="text-lg">Aucune demande d'éligibilité en attente</p>
                                 </div>
-                            ))
-                        )}
+                            ) : (
+                                requests.map((req) => (
+                                    <div key={req.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
+                                        {/* En-tête de la demande */}
+                                        <div className="p-4 bg-gradient-to-r from-blue-50 to-white border-b border-rayonblue">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-3 mb-2">
+                                                        <div className="w-10 h-10 bg-rayonorange rounded-full flex items-center justify-center text-white font-semibold">
+                                                            {req.User ? `${req.User.firstName.charAt(0)}${req.User.lastName.charAt(0)}` : '?'}
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="text-lg font-semibold text-gray-800">
+                                                                {req.User
+                                                                    ? `${req.User.firstName} ${req.User.lastName.toUpperCase()}`
+                                                                    : 'Utilisateur inconnu'}
+                                                            </h3>
+                                                            {req.User && (
+                                                                <p className="text-xs text-gray-500">
+                                                                    {req.User.email}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-xs text-gray-500">
+                                                        Demande créée le {new Date(req.created_at).toLocaleDateString('fr-FR')} à {new Date(req.created_at).toLocaleTimeString('fr-FR')}
+                                                    </p>
+                                                </div>
+
+                                                {/* Boutons d'action */}
+                                                <div className="flex items-center gap-2 ml-4">
+                                                    <button
+                                                        onClick={() => setExpandedRequest(expandedRequest === req.id ? null : req.id)}
+                                                        className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition text-sm font-medium text-rayonblue"
+                                                        title="Voir détails"
+                                                    >
+                                                        {expandedRequest === req.id ? "▲ Masquer" : "▼ Détails"}
+                                                    </button>
+
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => req.User && handleApprove(req.id, req.User.id)}
+                                                            className="w-10 h-10 bg-green-500 hover:bg-green-600 text-white rounded-lg transition flex items-center justify-center text-xl"
+                                                            title="Accepter"
+                                                        >
+                                                            ✓
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDecline(req.id)}
+                                                            className="w-10 h-10 bg-red hover:bg-red-600 text-white rounded-lg transition flex items-center justify-center text-xl"
+                                                            title="Décliner"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Détails de la demande */}
+                                        {expandedRequest === req.id && (
+                                            <div className="p-4 bg-gray-50 border-t">
+                                                {req.pdf_name && (
+                                                    <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                                        <label className="text-xs font-medium text-rayonblue block mb-2">
+                                                            Justificatif d'éligibilité
+                                                        </label>
+                                                        <button
+                                                            onClick={() => handleDownloadPDF(req.pdf_name)}
+                                                            className="inline-flex items-center gap-2 px-4 py-2 bg-rayonorange hover:opacity-90 text-white rounded-lg transition"
+                                                        >
+                                                            📎 {req.pdf_name}
+                                                        </button>
+                                                    </div>
+                                                )}
+
+                                                {/* Informations complémentaires */}
+                                                <div className="mt-4 bg-white p-4 rounded-lg border border-gray-200">
+                                                    <label className="text-xs font-medium text-rayonblue block mb-2">
+                                                        Informations de la demande
+                                                    </label>
+                                                    <div className="grid grid-cols-2 gap-3 text-sm">
+                                                        <div>
+                                                            <p className="text-gray-500 text-xs">ID de la demande</p>
+                                                            <p className="text-gray-800 font-medium">{req.id}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-gray-500 text-xs">Date complète</p>
+                                                            <p className="text-gray-800 font-medium">
+                                                                {new Date(req.created_at).toLocaleString('fr-FR')}
+                                                            </p>
+                                                        </div>
+                                                        {req.User && (
+                                                            <>
+                                                                <div>
+                                                                    <p className="text-gray-500 text-xs">ID utilisateur</p>
+                                                                    <p className="text-gray-800 font-medium">{req.User.id}</p>
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-gray-500 text-xs">Email de contact</p>
+                                                                    <p className="text-gray-800 font-medium">{req.User.email}</p>
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Boutons d'action en bas */}
+                                                <div className="mt-4 flex gap-3">
+                                                    <button
+                                                        onClick={() => req.User && handleApprove(req.id, req.User.id)}
+                                                        className="flex-1 px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition"
+                                                    >
+                                                        ✓ Accepter la demande
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDecline(req.id)}
+                                                        className="flex-1 px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition"
+                                                    >
+                                                        ✕ Décliner la demande
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))
+                            )}
+                        </div>
                     </div>
-                </div>)}
+                </div>
+            )}
         </>
     );
 }

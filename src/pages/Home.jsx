@@ -1,4 +1,3 @@
-// Importing dependencies
 import { useEffect, useState } from 'react';
 import { supabase } from '@lib/supabaseClient.js';
 import { displayNotification } from '@lib/displayNotification.jsx';
@@ -18,17 +17,28 @@ import avatar from "@assets/Assets/avatar.png"
 import file from "@assets/Assets/file.png"
 import cart from "@assets/Assets/cart.png"
 import phoneApp from "@assets/Photos/phoneApp.png"
-
-{/* Data product carousel */ }
-
-/**
- * The Home page.
- * @returns {React.ReactElement} Home component.
- */
+import content from "../content/home_content.json"
 
 function Home() {
     const [products, setProducts] = useState([])
-    const [update, setUpdate] = useState(true);
+    const [counters, setCounters] = useState({ ccas: 0, meals: 0, shops: 0 });
+    const [hasAnimated, setHasAnimated] = useState(false);
+
+    // Mapping des icônes
+    const iconMap = {
+        file: file,
+        avatar: avatar,
+        cart: cart
+    };
+
+    // Mapping des logos partenaires
+    const logoMap = {
+        "DPD": dpd,
+        "Mondial Relay": mondialRelay,
+        "Pickup": pickup
+    };
+
+    const { hero, howToOrder, instagram: instagramContent, partners } = content.home;
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -53,201 +63,210 @@ function Home() {
                         return product;
                     })
                 );
-
                 setProducts(productsWithImages)
             }
         };
         fetchProducts();
-    }, [update]);
+    }, []);
+
+    // Animation des compteurs
+    useEffect(() => {
+        const handleScroll = () => {
+            const statsSection = document.getElementById('stats-section');
+            if (statsSection && !hasAnimated) {
+                const rect = statsSection.getBoundingClientRect();
+                if (rect.top < window.innerHeight * 0.8) {
+                    setHasAnimated(true);
+                    animateCounters();
+                }
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [hasAnimated]);
+
+    const animateCounters = () => {
+        const duration = 2000;
+        const targets = { ccas: 67, meals: 1400000, shops: 6 };
+        const steps = 60;
+        const interval = duration / steps;
+
+        let step = 0;
+        const timer = setInterval(() => {
+            step++;
+            const progress = step / steps;
+            setCounters({
+                ccas: Math.floor(targets.ccas * progress),
+                meals: Math.floor(targets.meals * progress),
+                shops: Math.floor(targets.shops * progress)
+            });
+
+            if (step >= steps) {
+                clearInterval(timer);
+                setCounters(targets);
+            }
+        }, interval);
+    };
 
     return (
         <>
-            {/* Hero section with blue background */}
-            <div className="text-white bg-gradient-to-b from-[#3435FF] via-[#2526B7] to-[#1F2099] box-border pb-12">
-                <h1 className="lg:w-[47vw] pt-8 pl-5 lg:pl-20 text-5xl lg:text-7xl font-semibold mb-8">Pour <span className="text-rayonorange">accéder</span> à notre épicerie en ligne </h1>
-                <div className="flex flex-col lg:flex-row">
-                    <p className=" mx-5 lg:ml-20 lg:mr-0 mt-4 lg:w-[39.31vw] text-xl">
-                        Le <strong>Rayon 22</strong> est une épicerie sociale et solidaire dont l'objectif est d'accompagner les personnes pour qui une aide alimentaire représente un soutien non négligeable pour leurs quotidiens, en leur donnant accès à des produits alimentaires à petits prix, partout sur le territoire des Côtes-d'Armor.
-                        <span className="block mt-4"></span>
-                        Le <strong>Rayon 22</strong>  permet aussi de donner accès à l'aide alimentaire aux personnes qui ne peuvent se rendre aux distributions de nos partenaires.
-                        <span className="block mt-4"></span>
-                        Afin de pouvoir commander des produits, il vous faut vous connecter à un compte.
-                    </p>
-                    <img src={orangeWoman} className="m-5 lg:m-0 lg:ml-40 lg:w-[600px] lg:h-[452px]" alt="Woman in orange" />
-                </div>
-                <div className="mx-[10%] lg:ml-20 lg:mr-0 lg:mb-8">
-                    <PageButton buttonText={'Se Connecter ➜'} page={'/login'} className={'text-white bg-rayonorange rounded-tight w-[100%] lg:w-[20rem] h-[2em]'} />
-                </div>
-            </div>
+            {/* Hero section avec design moderne */}
+            <div className="relative overflow-hidden bg-gradient-to-br from-[#3435FF] via-[#2526B7] to-[#1F2099]">
+                {/* Formes géométriques décoratives */}
+                <div className="absolute top-0 right-0 w-96 h-96 bg-[#FF8200] opacity-10 rounded-full blur-3xl"></div>
+                <div className="absolute bottom-0 left-0 w-80 h-80 bg-white opacity-5 rounded-full blur-3xl"></div>
 
-            {/* Instagram and Partners sections */}
-            <div className="flex flex-col lg:flex-row justify-center">
-                {/* Instagram Section */}
-                <div className="lg:w-1/2 h-52 border border-rayonblue box-border bg-white flex flex-col items-center justify-center">
-                    <img src={instagram} alt="Instagram" className="w-20 h-20 mb-4" />
-                    <a target="_blank" rel="noopener noreferrer" href="https://www.instagram.com/banque.alimentaire22/" className="bg-blue-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-600 transition-colors">
-                        Suivez-nous sur Instagram
-                    </a>
-                </div>
-
-                {/* Partners Section */}
-                <div className="lg:w-1/2 lg:h-52 border border-rayonblue box-border bg-gray-50 flex flex-col items-center justify-between py-4">
-                    <div className="flex items-center">
-                        <h3 className="text-[#3435FF] font-semibold text-[32px] mr-4">Nos partenaires</h3>
-                        <div className="flex text-[#3435FF]">
-                            <span className="text-2xl">★★★★★</span>
-                        </div>
-                    </div>
-                    <div className="flex flex-col lg:flex-row items-center justify-between px-8 w-full">
-                        <img src={dpd} alt="DPD" className="h-28 object-contain" />
-                        <img src={mondialRelay} alt="Mondial Relay" className="h-28 object-contain" />
-                        <img src={pickup} alt="Pickup" className="h-28 object-contain" />
-                    </div>
-                </div>
-            </div>
-
-            {/* Comment commander section */}
-            <div className="py-16 bg-gray-50">
-                <h2 className="text-center text-[#3435FF] text-4xl font-bold mb-12">Comment commander ?</h2>
-
-                <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start justify-center px-8">
-                    {/* Column 1 - Inscription */}
-                    <div className="flex-1 text-center px-8">
-                        <div className="flex justify-center mb-4">
-                            <ShapeNumber nb={"01"} />
-                        </div>
-                        <h3 className="text-[#3435FF] text-xl font-semibold mb-4">Inscription</h3>
-                        <div className="flex justify-center my-6">
-                            <img src={avatar} alt="Avatar" className="w-30 h-20 object-contain" />
-                        </div>
-                        <p className="text-[#3435FF] text-base leading-relaxed">
-                            Crée ton espace et remplis le formulaire d'inscription.
-                        </p>
-                    </div>
-
-                    {/* Vertical Line 1 */}
-                    <div className="hidden md:block w-px bg-[#3435FF] h-80 mx-4"></div>
-
-                    {/* Column 2 - Étude de dossier */}
-                    <div className="flex-1 text-center px-8">
-                        <div className="flex justify-center mb-4">
-                            <ShapeNumber nb={"02"} />
-                        </div>
-                        <h3 className="text-[#3435FF] text-xl font-semibold mb-4">Étude de dossier</h3>
-                        <div className="flex justify-center my-6">
-                            <img src={file} alt="File" className="w-20 h-20 object-contain" />
-                        </div>
-                        <p className="text-[#3435FF] text-base leading-relaxed">
-                            Une fois ton dossier envoyé, il est étudié par notre équipe. Dans certains cas, un rendez-vous avec une assistante sociale de proximité sera nécessaire. Dans tout les cas, une validation des conditions de ressources sera réalisée. Tu peux suivre l'évolution de ton dossier à tout moment.
-                        </p>
-                    </div>
-
-                    {/* Vertical Line 2 */}
-                    <div className="hidden md:block w-px bg-[#3435FF] h-80 mx-4"></div>
-
-                    {/* Column 3 - À vos courses */}
-                    <div className="flex-1 text-center px-8">
-                        <div className="flex justify-center mb-4">
-                            <ShapeNumber nb={"03"} />
-                        </div>
-                        <h3 className="text-[#3435FF] text-xl font-semibold mb-4">À vos courses !</h3>
-                        <div className="flex justify-center my-6">
-                            <img src={cart} alt="Cart" className="w-20 h-20 object-contain" />
-                        </div>
-                        <p className="text-[#3435FF] text-base leading-relaxed">
-                            Si ton dossier est admis, tu pourras commander et faire tes courses à petit prix !
-                        </p>
-                    </div>
-                </div>
-
-                {/* Button */}
-                <div className="flex justify-center mt-12">
-                    <PageButton buttonText={'Je m\'inscris ➔'} page={'/register'} className={'text-white bg-rayonorange rounded-tight w-[20rem] h-[2em]'} />
-                </div>
-            </div>
-
-            {/* Nos Produits */}
-            <h2 className="text-center text-[#3435FF] text-4xl font-bold mb-12">Nos produits</h2>
-            <ProductCarousel data={products} />
-
-            {/* Chiffres clés à retenir section */}
-            <div className="py-16 bg-white">
-                <h2 className="text-center text-[#3435FF] text-4xl font-bold mb-12">Chiffres clés à retenir</h2>
-
-                <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-center px-8">
-                    {/* Stat 1 - CCAS */}
-                    <div className="flex-1 text-center px-8">
-                        <div className="text-6xl font-bold text-black mb-2">67</div>
-                        <div className="text-xl font-semibold text-black">CCAS*</div>
-                    </div>
-
-                    {/* Stat 2 - Repas */}
-                    <div className="flex-1 text-center px-8">
-                        <div className="text-6xl font-bold text-black mb-2">1 400 000</div>
-                        <div className="text-xl font-semibold text-black">Repas/an distribués</div>
-                    </div>
-
-                    {/* Stat 3 - Épiceries */}
-                    <div className="flex-1 text-center px-8">
-                        <div className="text-6xl font-bold text-black mb-2">6</div>
-                        <div className="text-xl font-semibold text-black">Épiceries solidaires</div>
-                    </div>
-                </div>
-
-                <div className="text-center mt-8">
-                    <p className="text-sm text-gray-600">*CCAS : Centre Communaux d'Action Sociale, Associations et épiceries solidaires</p>
-                </div>
-            </div>
-
-            {/* Le rayon initiative section */}
-            <div className="py-16 bg-gray-100">
-                <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center px-8">
-                    {/* Phone Image */}
-                    <div className="flex-1 flex justify-center mb-8 md:mb-0">
-                        <div className="relative">
-                            <img src={phoneApp} alt="Phone App" className="object-contain" />
-                        </div>
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 pl-0 md:pl-12">
-                        <h2 className="text-3xl font-bold mb-6">
-                            <span className="text-[#3435FF]">Le rayon est une initiative des </span>
-                            <span className="text-[#FF8200]">banques alimentaires.</span>
-                        </h2>
-
-                        <div className="space-y-4 mb-8">
-                            <div className="flex items-start">
-                                <span className="text-[#3435FF] text-3xl mr-3 font-bold">→</span>
-                                <p className="text-lg">
-                                    <span className="text-[#FF8200] font-semibold text-3xl">85%</span>
-                                    <span className="text-[#3435FF] font-semibold text-3xl"> des personnes aidées vivent avec moins de 200€ par mois.</span>
-                                </p>
+                <div className="max-w-7xl mx-auto px-6 lg:px-12 py-16 lg:py-24 relative z-10">
+                    <div className="flex flex-col lg:flex-row items-center gap-12">
+                        <div className="flex-1">
+                            <h1 className="text-4xl lg:text-6xl font-bold text-white mb-6 leading-tight">
+                                {hero.title.main} <span className="text-[#FF8200]">{hero.title.highlight}</span> {hero.title.end}
+                            </h1>
+                            <div className="space-y-6 text-white text-lg leading-relaxed mb-8">
+                                {hero.description.map((para, index) => (
+                                    <p key={index} className={para.isBold ? 'font-semibold' : ''}>
+                                        {para.text && para.text}
+                                        {para.bold && <strong>{` ${para.bold}`}</strong>}
+                                        {para.textAfter && ` ${para.textAfter}`}
+                                    </p>
+                                ))}
                             </div>
-
-                            <div className="flex items-start">
-                                <span className="text-[#3435FF] text-3xl mr-3 font-bold">→</span>
-                                <p className="text-lg">
-                                    <span className="text-[#FF8200] font-semibold text-3xl">1 sur 5</span>
-                                    <span className="text-[#3435FF] font-semibold text-3xl"> est en insécurité alimentaire.</span>
-                                </p>
-                            </div>
-
-                            <div className="flex items-start">
-                                <span className="text-[#3435FF] text-3xl mr-3 font-bold">→</span>
-                                <p className="text-lg">
-                                    <span className="text-[#FF8200] font-semibold text-3xl">47%</span>
-                                    <span className="text-[#3435FF] font-semibold text-3xl"> ont dû renoncer à des soins de santé.</span>
-                                </p>
+                            <div className="flex flex-col sm:flex-row gap-4">
+                                <button
+                                    onClick={() => window.location.href = hero.buttons.primary.link}
+                                    className="bg-[#FF8200] hover:bg-[#ff9800] text-white px-8 py-4 rounded-lg text-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
+                                >
+                                    {hero.buttons.primary.text}
+                                </button>
+                                <a
+                                    href={hero.buttons.secondary.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-block text-center bg-white text-[#3435FF] px-8 py-4 rounded-lg text-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
+                                >
+                                    {hero.buttons.secondary.text}
+                                </a>
                             </div>
                         </div>
-
-                        <div className="mb-6">
-                            <p className="text-sm italic text-[#3435FF]">Source : La fage</p>
+                        <div className="hidden lg:flex relative">
+                            <div className="relative z-10 transform hover:scale-105 transition-transform duration-500">
+                                <img
+                                    src={orangeWoman}
+                                    className="w-full h-auto max-w-lg xl:max-w-xl mx-auto drop-shadow-2xl"
+                                    alt={hero.image.alt}
+                                />
+                                {console.log(orangeWoman)}
+                            </div>
                         </div>
+                    </div>
+                </div>
+            </div>
 
-                        <div>
-                            <PageButton buttonText={'Toujours plus ➔'} page={'/more'} className={'text-white bg-rayonorange rounded-tight w-[70%] h-[2em]'} />
+            {/* Comment commander avec design amélioré */}
+            <div className="py-20 bg-gradient-to-b from-white to-gray-50">
+                <div className="max-w-7xl mx-auto px-6 lg:px-12">
+                    <h2 className="text-center text-[#3435FF] text-4xl lg:text-5xl font-bold mb-16">
+                        {howToOrder.title}
+                    </h2>
+
+                    <div className="grid md:grid-cols-3 gap-8 relative">
+                        {/* Ligne de connexion décorative */}
+                        <div className="hidden md:block absolute top-16 left-1/4 right-1/4 h-1 bg-gradient-to-r from-[#3435FF] via-[#FF8200] to-[#3435FF] opacity-20"></div>
+
+                        {howToOrder.steps.map((step, index) => (
+                            <div 
+                                key={index}
+                                className={`relative bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border-t-4 group`}
+                                style={{ borderColor: step.color }}
+                            >
+                                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2">
+                                    <div 
+                                        className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg group-hover:scale-110 transition-transform"
+                                        style={{ backgroundColor: step.color }}
+                                    >
+                                        {step.number}
+                                    </div>
+                                </div>
+                                <div className="mt-8 text-center">
+                                    <h3 
+                                        className="text-2xl font-bold mb-6"
+                                        style={{ color: step.color }}
+                                    >
+                                        {step.title}
+                                    </h3>
+                                    <div 
+                                        className={`flex justify-center my-6 rounded-full p-6 w-32 h-32 mx-auto`}
+                                        style={{ backgroundColor: step.color === '#FF8200' ? '#fff7ed' : '#eff6ff' }}
+                                    >
+                                        <img 
+                                            src={iconMap[step.icon]} 
+                                            alt={step.title} 
+                                            className={`w-16 h-16 object-contain ${step.icon === 'cart' ? 'translate-y-2' : ''}`}
+                                        />
+                                    </div>
+                                    <p className="text-gray-700 leading-relaxed">
+                                        {step.description}
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>                    
+                </div>
+            </div>
+            
+             {/* Instagram et Partenaires avec cartes modernes */}
+            <div className="grid md:grid-cols-2 gap-0 -mt-8 max-w-6xl mx-auto px-6 lg:px-12 relative z-20">
+                {/* Instagram Card */}
+                <div className="bg-white p-8 rounded-l-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-2 border-[#3435FF]">
+                    <div className="flex flex-col items-center justify-center h-full">
+                        <img src={instagram} alt={instagramContent.alt} className="w-20 h-20 mb-6" />
+                        <h3 className="text-xl font-bold text-[#3435FF] mb-4">{instagramContent.title}</h3>
+                        <a
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            href={instagramContent.url}
+                            className="bg-[#3435FF] hover:bg-[#2526B7] text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 shadow-md hover:shadow-lg"
+                        >
+                            {instagramContent.buttonText}
+                        </a>
+                    </div>
+                </div>
+
+                {/* Partenaires Card */}
+                <div className="bg-gradient-to-br from-gray-50 to-white p-8 rounded-r-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-2 border-[#FF8200]">
+                    <div className="flex flex-col h-full justify-between">
+                        <div className="text-center mb-6">
+                            <h3 className="text-2xl font-bold text-[#3435FF] mb-2">{partners.title}</h3>
+                            <div className="flex justify-center text-[#FF8200] text-2xl">
+                                <span>{partners.rating}</span>
+                            </div>
+                        </div>
+                        <div className="flex justify-around items-center gap-4">
+                            {partners.logos.map((logo, index) => (
+                                logo.url ? (
+                                    <a 
+                                        key={index}
+                                        href={logo.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-block"
+                                    >
+                                        <img 
+                                            src={logoMap[logo.name]} 
+                                            alt={logo.alt} 
+                                            className="h-16 object-contain hover:scale-110 transition-transform duration-300 grayscale hover:grayscale-0" 
+                                        />
+                                    </a>
+                                ) : (
+                                    <img 
+                                        key={index}
+                                        src={logoMap[logo.name]} 
+                                        alt={logo.alt} 
+                                        className="h-16 object-contain hover:scale-110 transition-transform duration-300 grayscale hover:grayscale-0" 
+                                    />
+                                )
+                            ))}
                         </div>
                     </div>
                 </div>

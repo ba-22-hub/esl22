@@ -17,6 +17,8 @@ import Loading from "@common/Loading.jsx";
 function OrderTable() {
     const [orders, setOrders] = useState([]);
     const [loadingOrders, setLoadingOrders] = useState(true);
+    const [expandedOrder, setExpandedOrder] = useState(null);
+    const [activeTab, setActiveTab] = useState('pending'); // 'pending' or 'delivered'
 
     const { isAdmin, loading } = useAuthor();
     const navigate = useNavigate();
@@ -59,6 +61,8 @@ function OrderTable() {
     };
 
     const confirmDelivery = async (id) => {
+        if (!confirm('Êtes-vous sûr de vouloir marquer cette commande comme livrée ?')) return;
+
         const { error } = await supabase.from("cart").update({ delivered: true }).eq("id", id);
 
         if (error) {
@@ -82,74 +86,191 @@ function OrderTable() {
         try {
             const items = Array.isArray(content) ? content : JSON.parse(content);
             return (
-                <ul className="list-disc pl-5 text-sm space-y-1">
+                <div className="space-y-2">
                     {items.map((item) => (
-                        <li key={item.id}>
-                            {item.quantity} x {item.name} ({item.salePrice.toFixed(2)} €)
-                        </li>
+                        <div key={item.id} className="flex justify-between items-center bg-white p-2 rounded border border-gray-200">
+                            <div className="flex items-center gap-2">
+                                <span className="bg-rayonblue text-white px-2 py-1 rounded text-xs font-semibold">
+                                    {item.quantity}x
+                                </span>
+                                <span className="text-gray-800">{item.name}</span>
+                            </div>
+                            <span className="text-rayonorange font-semibold">{item.salePrice.toFixed(2)} €</span>
+                        </div>
                     ))}
-                </ul>
+                </div>
             );
         } catch (e) {
-            return <pre className="text-xs">{JSON.stringify(content, null, 2)}</pre>;
+            return <pre className="text-xs bg-red-50 p-2 rounded">{JSON.stringify(content, null, 2)}</pre>;
         }
     };
 
+    const displayOrders = activeTab === 'pending' ? pendingOrders : deliveredOrders;
+
     return (
-        <div className="p-4 space-y-6">
-            <h2 className="text-2xl font-bold">Gestion des commandes</h2>
+        <div className="p-6 bg-gray-50 min-h-screen">
+            <div className="max-w-7xl mx-auto">
+                <h1 className="text-3xl font-bold mb-6 text-rayonblue">Gestion des Commandes</h1>
 
-            {/* Commandes en attente */}
-            <div>
-                <h3 className="text-xl font-semibold mb-2">
-                    Commandes en attente ({pendingOrders.length})
-                </h3>
-                {pendingOrders.length === 0 ? (
-                    <p>Aucune commande en attente.</p>
-                ) : (
-                    pendingOrders.map((order) => (
-                        <div key={order.id} className="border rounded-lg p-4 shadow bg-white space-y-2 mb-4">
-                            <p className="text-sm text-gray-500">
-                                Créée le {new Date(order.created_at).toLocaleString()} par{" "}
-                                <strong>
-                                    {order.User?.firstName} {order.User?.lastName?.toUpperCase()}
-                                </strong>{" "}
-                                ({order.User?.email})
-                            </p>
-                            {renderContent(order.content)}
-                            <p className="font-semibold">Prix : {order.price.toFixed(2)} €</p>
-                            <FunctionButton
-                                fun={() => confirmDelivery(order.id)}
-                                buttonText="Commande validée"
-                                className="text-white bg-green px-3 py-1 rounded hover:bg-green"
-                            />
-                        </div>
-                    ))
-                )}
-            </div>
+                {/* Onglets */}
+                <div className="flex gap-2 mb-6">
+                    <button
+                        onClick={() => setActiveTab('pending')}
+                        className={`flex-1 px-6 py-3 rounded-lg font-semibold transition ${activeTab === 'pending'
+                            ? 'bg-rayonblue text-white'
+                            : 'bg-white text-rayonblue border-2 border-rayonblue hover:bg-blue-50'
+                            }`}
+                    >
+                        📦 En attente ({pendingOrders.length})
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('delivered')}
+                        className={`flex-1 px-6 py-3 rounded-lg font-semibold transition ${activeTab === 'delivered'
+                            ? 'bg-green-500 text-white'
+                            : 'bg-white text-green-600 border-2 border-green-500 hover:bg-green-50'
+                            }`}
+                    >
+                        ✅ Livrées ({deliveredOrders.length})
+                    </button>
+                </div>
 
-            {/* Commandes livrées */}
-            <div>
-                <h3 className="text-xl font-semibold mb-2">
-                    Commandes livrées ({deliveredOrders.length})
-                </h3>
-                {deliveredOrders.length === 0 ? (
-                    <p>Aucune commande livrée.</p>
-                ) : (
-                    deliveredOrders.map((order) => (
-                        <div key={order.id} className="border rounded-lg p-4 shadow bg-gray-50 space-y-2 mb-4">
-                            <p className="text-sm text-gray-500">
-                                Livrée (créée le {new Date(order.created_at).toLocaleString()}) par{" "}
-                                <strong>
-                                    {order.User?.firstName} {order.User?.lastName?.toUpperCase()}
-                                </strong>{" "}
-                                ({order.User?.email})
+                {/* Liste des commandes */}
+                <div className="space-y-4 mb-6">
+                    {displayOrders.length === 0 ? (
+                        <div className="text-center py-12 text-gray-500 bg-white rounded-lg">
+                            <p className="text-lg">
+                                {activeTab === 'pending'
+                                    ? 'Aucune commande en attente'
+                                    : 'Aucune commande livrée'}
                             </p>
-                            {renderContent(order.content)}
-                            <p className="font-semibold">Prix : {order.price.toFixed(2)} €</p>
                         </div>
-                    ))
-                )}
+                    ) : (
+                        displayOrders.map((order) => (
+                            <div key={order.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
+                                {/* En-tête de la commande */}
+                                <div className="p-4 bg-gradient-to-r from-blue-50 to-white border-b border-rayonblue">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <div className="w-10 h-10 bg-rayonorange rounded-full flex items-center justify-center text-white font-semibold">
+                                                    {order.User ? `${order.User.firstName.charAt(0)}${order.User.lastName.charAt(0)}` : '?'}
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-lg font-semibold text-gray-800">
+                                                        {order.User
+                                                            ? `${order.User.firstName} ${order.User.lastName.toUpperCase()}`
+                                                            : 'Client inconnu'}
+                                                    </h3>
+                                                    {order.User && (
+                                                        <p className="text-xs text-gray-500">
+                                                            {order.User.email}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-4 text-xs text-gray-500">
+                                                <span>{new Date(order.created_at).toLocaleDateString('fr-FR')} à {new Date(order.created_at).toLocaleTimeString('fr-FR')}</span>
+                                                <span className="font-semibold text-rayonorange text-lg">
+                                                    {order.price.toFixed(2)} €
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Boutons d'action */}
+                                        <div className="flex items-center gap-2 ml-4">
+                                            <button
+                                                onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
+                                                className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition text-sm font-medium text-rayonblue"
+                                                title="Voir détails"
+                                            >
+                                                {expandedOrder === order.id ? "▲ Masquer" : "▼ Détails"}
+                                            </button>
+
+                                            {!order.delivered && (
+                                                <button
+                                                    onClick={() => confirmDelivery(order.id)}
+                                                    className="w-10 h-10 bg-green-500 hover:bg-green-600 text-white rounded-lg transition flex items-center justify-center text-xl"
+                                                    title="Marquer comme livrée"
+                                                >
+                                                    ✓
+                                                </button>
+                                            )}
+
+                                            {order.delivered && (
+                                                <div className="w-10 h-10 bg-green-100 text-green-600 rounded-lg flex items-center justify-center text-xl">
+                                                    ✓
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Détails de la commande */}
+                                {expandedOrder === order.id && (
+                                    <div className="p-4 bg-gray-50 border-t">
+                                        <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                            <label className="text-xs font-medium text-rayonblue block mb-3">
+                                                Contenu de la commande
+                                            </label>
+                                            {renderContent(order.content)}
+
+                                            {/* Total */}
+                                            <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
+                                                <span className="text-lg font-semibold text-gray-800">Total</span>
+                                                <span className="text-2xl font-bold text-rayonorange">
+                                                    {order.price.toFixed(2)} €
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Informations complémentaires */}
+                                        <div className="mt-4 bg-white p-4 rounded-lg border border-gray-200">
+                                            <label className="text-xs font-medium text-rayonblue block mb-2">
+                                                Informations de la commande
+                                            </label>
+                                            <div className="grid grid-cols-2 gap-3 text-sm">
+                                                <div>
+                                                    <p className="text-gray-500 text-xs">ID de la commande</p>
+                                                    <p className="text-gray-800 font-medium">{order.id.slice(0, 8)}...</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-gray-500 text-xs">Statut</p>
+                                                    <p className={`font-medium ${order.delivered ? 'text-green-600' : 'text-orange-600'}`}>
+                                                        {order.delivered ? '✓ Livrée' : '📦 En attente'}
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-gray-500 text-xs">Date de création</p>
+                                                    <p className="text-gray-800 font-medium">
+                                                        {new Date(order.created_at).toLocaleString('fr-FR')}
+                                                    </p>
+                                                </div>
+                                                {order.User && (
+                                                    <div>
+                                                        <p className="text-gray-500 text-xs">ID client</p>
+                                                        <p className="text-gray-800 font-medium">{order.client_id.slice(0, 8)}...</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Bouton de confirmation en bas */}
+                                        {!order.delivered && (
+                                            <div className="mt-4">
+                                                <button
+                                                    onClick={() => confirmDelivery(order.id)}
+                                                    className="w-full px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition"
+                                                >
+                                                    ✓ Confirmer la livraison
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        ))
+                    )}
+                </div>
             </div>
         </div>
     );

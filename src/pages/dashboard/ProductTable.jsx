@@ -1,7 +1,7 @@
 // Importing dependencies
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@lib/supabaseClient";
-import { uploadImage } from '@lib/uploadImage.js'
+import { uploadImage, normalizeFileName } from '@lib/uploadImage.js'
 import { useAuthor } from '@context/AuthorContext';
 import { useNavigate } from 'react-router-dom';
 import { displayNotification } from '@lib/displayNotification.jsx';
@@ -22,33 +22,42 @@ function ProductTable() {
   const [search, setSearch] = useState("");
   const [editingProductId, setEditingProductId] = useState(null);
   const [editedValues, setEditedValues] = useState({});
-  const [expanded, setExpanded] = useState(false);    // new product form expanded or not
+  const [expanded, setExpanded] = useState(false);
   const [expandedSettings, setExpandedSettings] = useState(false);
-  const [oldImageName, setOldImageName] = useState("");   // Old image name when product's image changed (so the old image can be removed from the bucket)
+  const [expandedRow, setExpandedRow] = useState(null); // Pour afficher/masquer les détails
+  const [oldImageName, setOldImageName] = useState("");
   const [productImages, setProductImages] = useState({});
 
   // For image upload
   const [image, setImage] = useState("");
   const inputFile = useRef(null);
 
+  const [settings, setSettings] = useState({
+    stockIncertainThreshold: '',
+    shippingCost: '',
+    max_order: '',
+  })
 
-  // useState init to store the form data in a JSON format
   const [formData, setFormData] = useState({
     name: '',
     price: '',
     salePrice: '',
     category: '',
     weight: '',
+    max_order: settings.max_order,
     stock: '',
-    productStockIncertainThreshold: '',
+    productStockIncertainThreshold: settings.stockIncertainThreshold,
     description: '',
     image_name: '',
   });
 
-  const [settings, setSettings] = useState({
-    stockIncertainThreshold: '',
-    shippingCost: '',
-  })
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      max_order: settings.max_order,
+      productStockIncertainThreshold: settings.stockIncertainThreshold
+    }));
+  }, [settings]);
 
   const fetchProducts = async () => {
     const { data, error } = await supabase.from("products").select("*");
@@ -71,7 +80,7 @@ function ProductTable() {
           setProductImages(prev => ({
             ...prev,
             [product.id]: url
-          }));;
+          }));
         }
         return product;
       })
@@ -82,19 +91,20 @@ function ProductTable() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (loading) return; // wait for the author informations to be fetch
+    if (loading) return;
     if (!isAdmin) {
       navigate('/admin')
       return;
     }
 
     fetchProducts();
-    fetchCurrentStockIncertainThreshold();
+    fetchCurrentSettings();
   }, [loading]);
 
   const handleEdit = (product) => {
     setEditingProductId(product.id);
     setEditedValues(product);
+    setExpandedRow(product.id); // Déplier automatiquement les détails
   };
 
   const handleChangeInProd = (e) => {
@@ -106,7 +116,8 @@ function ProductTable() {
   };
 
   const removeProd = async (product) => {
-    // Removing image from bucket
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer ${product.name} ?`)) return;
+
     const { error } = await supabase
       .storage
       .from('images')
@@ -116,7 +127,6 @@ function ProductTable() {
       displayNotification("Erreur lors de la suppression de l'image " + product.image_name, error.message, "danger")
     }
 
-    // Removing product row from 'products' table
     const { response, errorDelete } = await supabase
       .from("products")
       .delete()
@@ -130,7 +140,6 @@ function ProductTable() {
     fetchProducts()
   }
 
-  // function to set the new formData value whenever the inputs are changed
   function handleChangeInForm(e) {
     const { name, value } = e.target;
     setFormData(prevData => ({
@@ -141,7 +150,6 @@ function ProductTable() {
 
   const handleValidate = async () => {
     if (oldImageName != "") {
-      // Removing old image from bucket
       const { error } = await supabase
         .storage
         .from('images')
@@ -153,13 +161,12 @@ function ProductTable() {
     }
 
     if (image != "") {
-      // Uploading new image to bucket
       await uploadImage(image, image.name)
       const url = URL.createObjectURL(image);
       setProductImages(prev => ({
         ...prev,
         [editingProductId]: url
-      }));;
+      }));
     }
 
     const { error } = await supabase
@@ -183,24 +190,17 @@ function ProductTable() {
     p.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  async function nullProductStockIncertainThreshold() {
-    if (formData.productStockIncertainThreshold == "") {
-      setFormData(prevData => ({
-        ...prevData,
-        "productStockIncertainThreshold": null
-      }));
-    }
-  }
-
   async function handleSubmit(e) {
     e.preventDefault();
 
-    await nullProductStockIncertainThreshold();
+    const dataToSubmit = {
+      ...formData,
+      productStockIncertainThreshold: formData.productStockIncertainThreshold === "" ? null : formData.productStockIncertainThreshold
+    };
 
-    // Adding a new row to the 'products' database
     const { error } = await supabase
       .from('products')
-      .insert(formData)
+      .insert(dataToSubmit)
 
     if (error) {
       console.error("Erreur lors de l'ajout du nouveau produit", error);
@@ -208,14 +208,10 @@ function ProductTable() {
       return;
     }
 
-    // Uploading the image to the 'images' bucket
-    if (image.name != "") {
+    if (image && image.name) {
       await uploadImage(image, image.name)
     }
     setImage("")
-
-    // Saving locally the user info to use it after the mail verification
-    localStorage.setItem("pendingUserData", JSON.stringify(formData));
 
     setFormData({
       name: '',
@@ -223,7 +219,10 @@ function ProductTable() {
       salePrice: '',
       category: '',
       weight: '',
-      productStockIncertainThreshold: '',
+      max_order: settings.max_order,
+      stock: '',
+      productStockIncertainThreshold: settings.stockIncertainThreshold,
+      description: '',
       image_name: '',
     })
 
@@ -235,17 +234,18 @@ function ProductTable() {
     const handleFileUpload = e => {
       const { files } = e.target;
       if (files && files.length) {
+        const normalizedName = normalizeFileName(files[0].name);
         {
           newProduct ? (
             setFormData(prevData => ({
               ...prevData,
-              image_name: files[0].name
+              image_name: normalizedName
             }))
           ) : (
             () => handleEdit(product),
             setEditedValues(prevData => ({
               ...prevData,
-              image_name: files[0].name
+              image_name: normalizedName
             })),
             () => handleChangeInProd(product)
           )
@@ -265,9 +265,10 @@ function ProductTable() {
           ref={inputFile}
           onChange={handleFileUpload}
           type="file"
+          accept="image/*"
         />
-        <div className="bg-rayonorange px-2 py-1 rounded button text-white text-center mx-[8%]" onClick={onButtonClick}>
-          Browse
+        <div className="bg-rayonorange px-3 py-2 rounded button text-white text-center cursor-pointer hover:opacity-90 transition" onClick={onButtonClick}>
+          📷 Parcourir
         </div>
       </div>
     );
@@ -290,14 +291,15 @@ function ProductTable() {
 
         setOldImageName(data.image_name);
       }
-      await fetchOldImageName();    // waiting for old image name to be fetched before uploading new image
+      await fetchOldImageName();
 
       const { files } = e.target;
       if (files && files.length) {
+        const normalizedName = normalizeFileName(files[0].name);
         () => handleEdit(product),
           setEditedValues(prevData => ({
             ...prevData,
-            image_name: files[0].name
+            image_name: normalizedName
           }))
       }
       setImage(files[0]);
@@ -314,29 +316,59 @@ function ProductTable() {
           ref={inputFile}
           onChange={handleFileUpload}
           type="file"
+          accept="image/*"
         />
-        <div className="bg-rayonorange px-2 py-1 rounded button text-white" onClick={onButtonClick}>
-          Browse
+        <div className="bg-rayonorange px-3 py-2 rounded button text-white cursor-pointer hover:opacity-90 transition text-sm" onClick={onButtonClick}>
+          📷 Changer
         </div>
       </div>
     );
   };
 
-  async function fetchCurrentStockIncertainThreshold() {
-    // Fetches global stock incertain threshold
-    const { data, error } = await supabase
+  async function fetchCurrentSettings() {
+    const { data: stockIncertainThresholdData, error: stockIncertainThresholdError } = await supabase
       .from('constants')
       .select('value')
       .eq("name", "stockIncertainThreshold")
       .maybeSingle();
-    if (!error) {
+    if (!stockIncertainThresholdError) {
       setSettings(prevData => ({
         ...prevData,
-        stockIncertainThreshold: data.value
+        stockIncertainThreshold: stockIncertainThresholdData.value
       }))
     } else {
-      console.error("Erreur lors du téléchargement de l'ancienne valeur seuil ", error)
-      displayNotification("Erreur lors du téléchargement de l'ancienne valeur seuil", error.message, "danger")
+      console.error("Erreur lors du téléchargement de l'ancienne valeur seuil", stockIncertainThresholdError)
+      displayNotification("Erreur lors du téléchargement de l'ancienne valeur seuil", stockIncertainThresholdError.message, "danger")
+    }
+
+    const { data: max_orderData, error: max_orderError } = await supabase
+      .from('constants')
+      .select('value')
+      .eq("name", "max_order")
+      .maybeSingle();
+    if (!max_orderError) {
+      setSettings(prevData => ({
+        ...prevData,
+        max_order: max_orderData.value
+      }))
+    } else {
+      console.error("Erreur lors du téléchargement de l'ancienne valeur de la quantité maximale par panier", max_orderError)
+      displayNotification("Erreur lors du téléchargement de l'ancienne valeur de la quantité maximale par panier", max_orderError.message, "danger")
+    }
+
+    const { data: shippingCostData, error: shippingCostError } = await supabase
+      .from('constants')
+      .select('value')
+      .eq("name", "shippingCost")
+      .maybeSingle();
+    if (!shippingCostError) {
+      setSettings(prevData => ({
+        ...prevData,
+        shippingCost: shippingCostData.value
+      }))
+    } else {
+      console.error("Erreur lors du téléchargement de l'ancienne valeur de la participation solidaire aux frais de livraison", shippingCostError)
+      displayNotification("Erreur lors du téléchargement de l'ancienne valeur de la participation solidaire aux frais de livraison", shippingCostError.message, "danger")
     }
   }
 
@@ -369,7 +401,7 @@ function ProductTable() {
   }
 
   function modifySettings() {
-    fetchCurrentStockIncertainThreshold();
+    fetchCurrentSettings();
     setExpandedSettings(true);
   }
 
@@ -378,302 +410,405 @@ function ProductTable() {
       {loading ? (
         <Loading />
       ) : (
-        <div className="p-4">
-          <h1 className="text-2xl font-semibold mb-4">Produits</h1>
-          <input
-            type="text"
-            placeholder="Rechercher un produit..."
-            className="mb-4 p-2 border rounded w-full"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white rounded shadow">
-              <thead>
-                <tr className="bg-gray-100 text-left">
-                  <th className="p-2">Nom</th>
-                  <th className="p-2">Prix en magasin (euro)</th>
-                  <th className="p-2">Prix rayon22 (euro)</th>
-                  <th className="p-2">Poids (gramme)</th>
-                  <th className="p-2">Catégorie</th>
-                  <th className="p-2">Stock</th>
-                  <th className="p-2">Limite stock incertain</th>
-                  <th className="p-2">Description</th>
-                  <th className="p-2">Image</th>
-                  <th className="p-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredProducts.map((p) => (
-                  <tr key={p.id} className="border-t">
-                    {editingProductId === p.id ? (
-                      <>
-                        <td className="p-2">
-                          <input
-                            name="name"
-                            value={editedValues["name"]}
-                            onChange={handleChangeInProd}
-                            className="border p-1 rounded w-full"
-                          />
-                        </td>
-                        <td className="p-2">
-                          <input
-                            name="price"
-                            value={editedValues["price"]}
-                            onChange={handleChangeInProd}
-                            type="number"
-                            className="border p-1 rounded w-full"
-                          />
-                        </td>
-                        <td className="p-2">
-                          <input
-                            name="salePrice"
-                            value={editedValues["salePrice"]}
-                            onChange={handleChangeInProd}
-                            type="number"
-                            className="border p-1 rounded w-full"
-                          />
-                        </td>
-                        <td className="p-2">
-                          <input
-                            name="weight"
-                            value={editedValues["weight"]}
-                            onChange={handleChangeInProd}
-                            type="number"
-                            className="border p-1 rounded w-full"
-                          />
-                        </td>
-                        <td className="p-2">
-                          {
-                            categoriesList.map((category) => (
-                              <div key={category}>
-                                <input
-                                  type="radio"
-                                  name="category"
-                                  value={category}
-                                  onChange={handleChangeInProd}
-                                  defaultChecked={category == editedValues["category"]}
-                                  required />
-                                <a className="ml-1 mr-5">{category}</a>
-                              </div>
-                            ))}
-                        </td>
-                        <td className="p-2">
-                          <input
-                            name="stock"
-                            value={editedValues["stock"]}
-                            onChange={handleChangeInProd}
-                            type="number"
-                            className="border p-1 rounded w-full"
-                          />
-                        </td>
-                        <td className="p-2">
-                          <input
-                            name="productStockIncertainThreshold"
-                            value={editedValues["productStockIncertainThreshold"] || settings.stockIncertainThreshold}
-                            onChange={handleChangeInProd}
-                            type="number"
-                            className="border p-1 rounded w-full"
-                          />
-                        </td>
-                        <td className="p-2">
-                          <textarea
-                            name="description"
-                            value={editedValues["description"] || ""}
-                            onChange={handleChangeInProd}
-                            className="border p-1 rounded w-full"
-                            rows={2}
-                          />
-                        </td>
-                        <td className="p-2">
-                          <BrowseImageChange product={p}></BrowseImageChange>
-                        </td>
-                        <td className="p-2 space-x-2">
-                          <FunctionButton
-                            className="bg-green text-white px-2 py-1 rounded"
-                            buttonText="Valider"
-                            fun={handleValidate}
-                          />
-                          <FunctionButton
-                            className="bg-gray text-white px-2 py-1 rounded"
-                            buttonText="Annuler"
-                            fun={() => setEditingProductId(null)}
-                          />
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td className="p-2">{p.name}</td>
-                        <td className="p-2">{p["price"]}</td>
-                        <td className="p-2">{p["salePrice"]}</td>
-                        <td className="p-2">{p["weight"]}</td>
-                        <td className="p-2">{p.category}</td>
-                        <td className="p-2">{p.stock}</td>
-                        <td className="p-2">{p.productStockIncertainThreshold ? p.productStockIncertainThreshold : settings.stockIncertainThreshold}</td>
-                        <td className="p-2">{p.description || "-"}</td>
-                        <td><img src={productImages[p.id] || roundLogo} alt={p.name} className="w-[50%] h-20 object-contain" /></td>
-                        <td className="p-2 space-x-2">
-                          <FunctionButton
-                            className="bg-blue-600 text-white px-2 py-1 rounded"
-                            buttonText="Modifier"
-                            fun={() => handleEdit(p)}
-                          />
-                          <FunctionButton
-                            className="bg-red text-white px-2 py-1 rounded"
-                            buttonText="Supprimer"
-                            fun={() => removeProd(p)}
-                          />
-                        </td>
-                      </>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="p-6 bg-gray-50 min-h-screen">
+          <div className="max-w-7xl mx-auto">
+            <h1 className="text-3xl font-bold mb-6 text-rayonblue">Gestion des Produits</h1>
+            <div className="flex">
+              {/* Bouton Ajouter un produit */}
+              <FunctionButton
+                className="bg-rayonorange w-full md:w-[20vw] text-white px-8 py-3 rounded-lg mb-4 mr-6 hover:opacity-90 transition font-semibold"
+                buttonText={expanded ? '✕ Annuler' : '➕ Ajouter un produit'}
+                fun={expanded ? (() => setExpanded(false)) : (() => setExpanded(true))}
+              />
+              {/* Bouton Paramètres */}
+              <FunctionButton
+                className="bg-rayonorange w-full md:w-[20vw] text-white px-8 py-3 rounded-lg mb-4 hover:opacity-90 transition font-semibold"
+                buttonText={expandedSettings ? '✕ Annuler' : '⚙️ Modifier les paramètres'}
+                fun={expandedSettings ? (() => setExpandedSettings(false)) : (() => modifySettings())}
+              />
+            </div>
+            <div>
+              {/* Formulaire ajout produit */}
+              {expanded && (
+                <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 mb-6">
+                  <p className='text-red-500 text-center text-lg mb-4 font-medium'>
+                    Les informations avec une étoile rouge sont obligatoires
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <FormInput
+                      name="name"
+                      type="text"
+                      value={formData.name ?? ""}
+                      inputText="Nom"
+                      className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
+                      onChange={handleChangeInForm}
+                      isStarred={true}
+                    />
+                    <FormInput
+                      name="price"
+                      type="number"
+                      step="0.01"
+                      value={formData.price ?? ""}
+                      inputText="Prix en magasin (€)"
+                      className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
+                      onChange={handleChangeInForm}
+                      isStarred={true}
+                    />
+                    <FormInput
+                      name="salePrice"
+                      type="number"
+                      step="0.01"
+                      value={formData.salePrice ?? ""}
+                      inputText="Prix rayon22 (€)"
+                      className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
+                      onChange={handleChangeInForm}
+                      isStarred={true}
+                    />
+                    <div>
+                      <p className="text-rayonblue mb-2 font-medium">Catégorie <span className="text-red-500">*</span></p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {categoriesList.map((category) => (
+                          <label key={category} className="flex items-center cursor-pointer">
+                            <input
+                              type="radio"
+                              name="category"
+                              value={category}
+                              onChange={handleChangeInForm}
+                              required
+                              className="mr-2 accent-rayonorange"
+                            />
+                            <span className="text-rayonblue">{category}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <FormInput
+                      name="stock"
+                      type="number"
+                      value={formData.stock ?? ""}
+                      inputText="Stock"
+                      className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
+                      onChange={handleChangeInForm}
+                      isStarred={true}
+                    />
+                    <FormInput
+                      name="productStockIncertainThreshold"
+                      type="number"
+                      value={formData.productStockIncertainThreshold ?? ""}
+                      inputText="Limite stock incertain"
+                      className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
+                      onChange={handleChangeInForm}
+                      isStarred={false}
+                    />
+                    <FormInput
+                      name="weight"
+                      type="number"
+                      value={formData.weight ?? ""}
+                      inputText="Poids (g)"
+                      className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
+                      onChange={handleChangeInForm}
+                      isStarred={true}
+                    />
+                    <FormInput
+                      name="description"
+                      type="text"
+                      value={formData.description ?? ""}
+                      inputText="Description (optionnel)"
+                      className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
+                      onChange={handleChangeInForm}
+                      isStarred={false}
+                    />
+                    <div>
+                      <p className="text-rayonblue mb-2 font-medium">Image du produit</p>
+                      <BrowseImage newProduct={true} />
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full md:w-auto px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition">
+                    ✓ Valider
+                  </button>
+                </form>
+              )}
+
+              
+
+              {/* Formulaire paramètres */}
+              {expandedSettings && (
+                <form onSubmit={handleSubmitSettings} className="bg-white rounded-lg shadow-md p-6 mb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <FormInput
+                      name="stockIncertainThreshold"
+                      type="number"
+                      value={settings.stockIncertainThreshold ?? 3}
+                      inputText="Seuil en deçà duquel le label 'Stock Incertain' apparaît"
+                      className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
+                      onChange={handleChangeInSettings}
+                    />
+                    <FormInput
+                      name="shippingCost"
+                      type="number"
+                      step="0.01"
+                      value={settings.shippingCost ?? 0}
+                      inputText="Participation solidaire aux frais de livraison (€)"
+                      className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
+                      onChange={handleChangeInSettings}
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full md:w-auto px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition">
+                    ✓ Valider
+                  </button>
+                </form>
+              )}
+            </div>
+            <input
+              type="text"
+              placeholder="🔍 Rechercher un produit..."
+              className="mb-6 p-3 border-2 border-rayonblue rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-rayonorange transition"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+
+            {/* Liste des produits en cartes */}
+            <div className="space-y-4 mb-6">
+              {filteredProducts.map((p) => (
+                <div key={p.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
+                  {/* En-tête de la carte */}
+                  <div className="p-4 bg-gradient-to-r from-blue-50 to-white border-b border-rayonblue">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4 flex-1">
+                        <img
+                          src={productImages[p.id] || roundLogo}
+                          alt={p.name}
+                          className="w-20 h-20 object-cover rounded-lg border-2 border-rayonblue"
+                        />
+                        <div className="flex-1">
+                          {editingProductId === p.id ? (
+                            <input
+                              name="name"
+                              value={editedValues.name}
+                              onChange={handleChangeInProd}
+                              className="text-lg font-semibold border-2 border-rayonblue rounded px-2 py-1 w-full"
+                            />
+                          ) : (
+                            <h3 className="text-lg font-semibold text-gray-800">{p.name}</h3>
+                          )}
+                          <span className="inline-block px-3 py-1 bg-rayonblue text-white text-xs rounded-full mt-1">
+                            {p.category}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setExpandedRow(expandedRow === p.id ? null : p.id)}
+                          className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition text-sm font-medium text-rayonblue"
+                          title="Voir détails"
+                        >
+                          {expandedRow === p.id ? "▲ Masquer" : "▼ Détails"}
+                        </button>
+
+                        {editingProductId === p.id ? (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={handleValidate}
+                              className="w-10 h-10 bg-green-500 hover:bg-green-600 text-white rounded-lg transition flex items-center justify-center text-xl"
+                              title="Valider"
+                            >
+                              ✓
+                            </button>
+                            <button
+                              onClick={() => setEditingProductId(null)}
+                              className="w-10 h-10 bg-red hover:bg-red-600 text-white rounded-lg transition flex items-center justify-center text-xl"
+                              title="Annuler"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleEdit(p)}
+                              className="w-10 h-10 bg-rayonblue hover:opacity-90 text-white rounded-lg transition flex items-center justify-center text-lg"
+                              title="Modifier"
+                            >
+                              ✎
+                            </button>
+                            <button
+                              onClick={() => removeProd(p)}
+                              className="w-10 h-10 bg-red hover:bg-red-600 text-white rounded-lg transition flex items-center justify-center text-xl"
+                              title="Supprimer"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Informations principales */}
+                  <div className="p-4 grid grid-cols-4 gap-4">
+                    <div className="text-center">
+                      <p className="text-xs text-gray-500 mb-1">Prix magasin (€)</p>
+                      {editingProductId === p.id ? (
+                        <input
+                          name="price"
+                          value={editedValues.price}
+                          onChange={handleChangeInProd}
+                          type="number"
+                          step="0.01"
+                          className="w-full border-2 border-rayonblue rounded px-2 py-1 text-center"
+                        />
+                      ) : (
+                        <p className="text-lg font-semibold text-gray-800">{p.price}€</p>
+                      )}
+                    </div>
+
+                    <div className="text-center">
+                      <p className="text-xs text-gray-500 mb-1">Prix rayon22 (€)</p>
+                      {editingProductId === p.id ? (
+                        <input
+                          name="salePrice"
+                          value={editedValues.salePrice}
+                          onChange={handleChangeInProd}
+                          type="number"
+                          step="0.01"
+                          className="w-full border-2 border-rayonblue rounded px-2 py-1 text-center"
+                        />
+                      ) : (
+                        <p className="text-lg font-semibold text-rayonorange">{p.salePrice}€</p>
+                      )}
+                    </div>
+
+                    <div className="text-center">
+                      <p className="text-xs text-gray-500 mb-1">Stock</p>
+                      {editingProductId === p.id ? (
+                        <input
+                          name="stock"
+                          value={editedValues.stock}
+                          onChange={handleChangeInProd}
+                          type="number"
+                          className="w-full border-2 border-rayonblue rounded px-2 py-1 text-center"
+                        />
+                      ) : (
+                        <p className="text-lg font-semibold text-gray-800">{p.stock}</p>
+                      )}
+                    </div>
+
+                    <div className="text-center">
+                      <p className="text-xs text-gray-500 mb-1">Poids (grammes)</p>
+                      {editingProductId === p.id ? (
+                        <input
+                          name="weight"
+                          value={editedValues.weight}
+                          onChange={handleChangeInProd}
+                          type="number"
+                          className="w-full border-2 border-rayonblue rounded px-2 py-1 text-center"
+                        />
+                      ) : (
+                        <p className="text-lg font-semibold text-gray-800">{p.weight}g</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Détails étendus */}
+                  {expandedRow === p.id && (
+                    <div className="p-4 bg-gray-50 border-t">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-xs font-medium text-rayonblue block mb-1">
+                            Limite stock incertain
+                          </label>
+                          {editingProductId === p.id ? (
+                            <input
+                              name="productStockIncertainThreshold"
+                              value={editedValues.productStockIncertainThreshold || ''}
+                              onChange={handleChangeInProd}
+                              type="number"
+                              className="w-full border-2 border-rayonblue rounded px-3 py-2"
+                            />
+                          ) : (
+                            <p className="text-gray-800">{p.productStockIncertainThreshold}</p>
+                          )}
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-rayonblue block mb-1">
+                            Quantité maximale dans un panier
+                          </label>
+                          {editingProductId === p.id ? (
+                            <input
+                              name="max_order"
+                              value={editedValues.max_order}
+                              onChange={handleChangeInProd}
+                              type="number"
+                              className="w-full border-2 border-rayonblue rounded px-2 py-1 text-center"
+                            />
+                          ) : (
+                            <p className="text-lg font-semibold text-gray-800">{p.max_order}g</p>
+                          )}
+                        </div>
+
+                        {editingProductId === p.id && (
+                          <div>
+                            <label className="text-xs font-medium text-rayonblue block mb-1">
+                              Catégorie
+                            </label>
+                            <select
+                              name="category"
+                              value={editedValues.category}
+                              onChange={handleChangeInProd}
+                              className="w-full border-2 border-rayonblue rounded px-3 py-2"
+                            >
+                              {categoriesList.map((cat) => (
+                                <option key={cat} value={cat}>{cat}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        <div className="col-span-2">
+                          <label className="text-xs font-medium text-rayonblue block mb-1">
+                            Description
+                          </label>
+                          {editingProductId === p.id ? (
+                            <textarea
+                              name="description"
+                              value={editedValues.description || ""}
+                              onChange={handleChangeInProd}
+                              className="w-full border-2 border-rayonblue rounded px-3 py-2"
+                              rows={3}
+                            />
+                          ) : (
+                            <p className="text-gray-800">{p.description || "Aucune description"}</p>
+                          )}
+                        </div>
+
+                        {editingProductId === p.id && (
+                          <div className="col-span-2">
+                            <label className="text-xs font-medium text-rayonblue block mb-2">
+                              Image du produit
+                            </label>
+                            <BrowseImageChange product={p} />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {filteredProducts.length === 0 && (
+                <div className="text-center py-12 text-gray-500 bg-white rounded-lg">
+                  <p className="text-lg">Aucun produit trouvé</p>
+                </div>
+              )}
+            </div>
           </div>
-          <FunctionButton
-            className="bg-rayonorange  w-[1/2] content-center ml-30 my-4 text-white px-10 py-1 rounded"
-            buttonText={expanded ? 'Annuler' : 'Ajouter un produit'}
-            fun={expanded ? (() => setExpanded(false)) : (() => setExpanded(true))}
-          />
-          {expanded && (
-            <form onSubmit={handleSubmit}>
-              <p className='text-red text-center text-[1.2rem] mlr-[8%] '>Les informations avec une étoile rouge sont indispensables à l'ajout d'un produit dans la base de données.</p>
-              <div className="grid grid-cols-2 gap-4 text-sm mb-4 items-center">
-                <div>
-                  <FormInput
-                    name="name"
-                    type="text"
-                    value={formData["name"] ?? ""}
-                    inputText="Nom"
-                    labelClassName="ml-[8%]"
-                    className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1"
-                    onChange={handleChangeInForm}
-                    isStarred={true} />
-                </div>
-                <div>
-                  <FormInput
-                    name="price"
-                    type="number"
-                    value={formData["price"] ?? ""}
-                    inputText="Prix en magasin (€)"
-                    labelClassName="ml-[8%]"
-                    className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1"
-                    onChange={handleChangeInForm}
-                    isStarred={true} />
-                </div>
-                <div>
-                  <FormInput
-                    name="salePrice"
-                    type="number"
-                    value={formData["salePrice"] ?? ""}
-                    inputText="Prix rayon22 (€)"
-                    labelClassName="ml-[8%]"
-                    className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1"
-                    onChange={handleChangeInForm}
-                    isStarred={true} />
-                </div>
-                <div className="ml-[8%]">
-                  <p className="text-rayonblue mb-1">Catégorie <a className="text-red">*</a></p>
-                  {
-                    categoriesList.map((category) => (
-                      <label key={category}>
-                        <input type="radio" name="category" value={category} onChange={handleChangeInForm} required /> <a className="text-rayonblue ml-1 mr-5">{category}</a>
-                      </label>
-                    ))}
-                </div>
-                <div>
-                  <FormInput
-                    name="stock"
-                    type="number"
-                    value={formData["stock"] ?? ""}
-                    inputText="Stock"
-                    labelClassName="ml-[8%]"
-                    className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1"
-                    onChange={handleChangeInForm}
-                    isStarred={true} />
-                </div>
-                <div>
-                  <FormInput
-                    name="productStockIncertainThreshold"
-                    type="number"
-                    value={formData["productStockIncertainThreshold"] ?? ""}
-                    inputText="Limite stock incertain"
-                    labelClassName="ml-[8%]"
-                    className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1"
-                    onChange={handleChangeInForm}
-                    isStarred={false} />
-                </div>
-                <div>
-                  <FormInput
-                    name="weight"
-                    type="number"
-                    value={formData["weight"] ?? ""}
-                    inputText="Poids (g)"
-                    labelClassName="ml-[8%]"
-                    className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1"
-                    onChange={handleChangeInForm}
-                    isStarred={true} />
-                </div>
-                <div>
-                  <FormInput
-                    name="description"
-                    type="text"
-                    value={formData["description"] ?? ""}
-                    inputText="Description (optionnel)"
-                    labelClassName="ml-[8%]"
-                    className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1"
-                    onChange={handleChangeInForm}
-                    isStarred={false} />
-                </div>
-                <div>
-                  <BrowseImage newProduct={true}></BrowseImage>
-                </div>
-              </div>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-[#038709] text-white rounded mx-[20%]">
-                Valider
-              </button>
-            </form>
-          )}
-          <FunctionButton
-            className="bg-rayonorange  w-[1/2] content-center ml-30 my-4 text-white px-10 py-1 rounded"
-            buttonText={expandedSettings ? 'Annuler' : 'Modifier les paramètres'}
-            fun={expandedSettings ? (() => setExpandedSettings(false)) : (() => modifySettings())}
-          />
-          {expandedSettings && (
-            <form onSubmit={handleSubmitSettings}>
-              <div className="grid grid-cols-2 gap-4 text-sm mb-4 items-center">
-                <div>
-                  <FormInput
-                    name="stockIncertainThreshold"
-                    type="number"
-                    value={settings.stockIncertainThreshold ?? ""}
-                    inputText="Seuil en deçà duquel le label 'Stock Incertain' apparaît dans le catalogue utilisateur"
-                    labelClassName="ml-[8%]"
-                    className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1"
-                    onChange={handleChangeInSettings} />
-                </div>
-                <div>
-                  <FormInput
-                    name="shippingCost"
-                    type="number"
-                    value={settings.shippingCost ?? ""}
-                    inputText="Participation solidaire aux frais de livraison"
-                    labelClassName="ml-[8%]"
-                    className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1"
-                    onChange={handleChangeInSettings} />
-                </div>
-              </div>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-[#038709] text-white rounded mx-[20%]">
-                Valider
-              </button>
-            </form>
-          )}
-        </div>)}
+        </div>
+      )}
     </>
   );
 }

@@ -7,7 +7,6 @@ import { displayNotification } from '@lib/displayNotification.jsx';
 import { supabase } from '@lib/supabaseClient';
 
 // Importing common components
-
 import Loading from '@common/Loading.jsx';
 import FormInput from '@common/FormInput.jsx';
 import FormTextArea from '@common/FormTextArea.jsx';
@@ -25,19 +24,17 @@ function MoreManagment() {
         image: null
     })
     const [articles, setArticles] = useState([])
-
     const [submitting, setSubmitting] = useState(false)
-
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [selectedArticle, setSelectedArticle] = useState(null)
-
+    const [expandedArticle, setExpandedArticle] = useState(null)
+    const [showForm, setShowForm] = useState(false)
 
     const fileInputRef = useRef(null);
     const imageInputRef = useRef(null);
 
-
     useEffect(() => {
-        if (loading) return; // wait for the author informations to be fetch
+        if (loading) return;
         if (!isAdmin) {
             navigate('/admin')
             return;
@@ -79,6 +76,7 @@ function MoreManagment() {
             [name]: value
         }));
     }
+
     function handleFileChange(e, name) {
         const file = e.target.files[0];
         setNewArticle(prevData => ({
@@ -90,7 +88,6 @@ function MoreManagment() {
     async function handleSubmit(e) {
         e.preventDefault();
 
-        // Validation for mandatory field
         if (!newArticle.title.trim()) {
             displayNotification("Erreur", "Le titre est obligatoire", "error");
             return;
@@ -107,7 +104,6 @@ function MoreManagment() {
             let imageName = null;
             let fileName = null;
 
-            // Upload of the image (if there is an image)
             if (newArticle.image) {
                 imageName = `${Date.now()}_${newArticle.image.name}`
                 const imagePath = `images/${imageName}`;
@@ -119,7 +115,6 @@ function MoreManagment() {
                 if (imageError) throw imageError;
             }
 
-            // Upload of the PDF (if there is an image)
             if (newArticle.file) {
                 fileName = `${Date.now()}_${newArticle.file.name}`
                 const filePath = `files/${fileName}`;
@@ -131,7 +126,6 @@ function MoreManagment() {
                 if (fileError) throw fileError;
             }
 
-            // Insertion of the article in the db 
             const { data, error } = await supabase
                 .from('Articles')
                 .insert([
@@ -148,7 +142,6 @@ function MoreManagment() {
 
             displayNotification("Succès", "Article publié avec succès !", "success");
 
-            // clean the form
             setNewArticle({
                 title: '',
                 content: '',
@@ -156,9 +149,9 @@ function MoreManagment() {
                 image: null
             });
 
-            // clean inputs files   
             if (fileInputRef.current) fileInputRef.current.value = '';
             if (imageInputRef.current) imageInputRef.current.value = '';
+            setShowForm(false);
 
         } catch (error) {
             console.error('Erreur lors de la publication:', error);
@@ -168,17 +161,13 @@ function MoreManagment() {
         }
     }
 
-    function truncateContent(text, maxLength = 50) {
+    function truncateContent(text, maxLength = 100) {
         if (!text) return '';
-
-        // find first \n
         const firstNewlineIndex = text.indexOf('\n');
 
-        // if '/n' < max length truncate to \n
         if (firstNewlineIndex !== -1 && firstNewlineIndex < maxLength) {
             return text.substring(0, firstNewlineIndex) + '...';
         }
-        // else truncate to max length
         if (text.length > maxLength) {
             return text.substring(0, maxLength) + '...';
         }
@@ -204,7 +193,6 @@ function MoreManagment() {
             fileUrl = data?.publicUrl;
         }
 
-        // Préparer l'article avec les URLs
         const articleWithUrls = {
             ...article,
             image: imageUrl,
@@ -221,7 +209,6 @@ function MoreManagment() {
     }
 
     const handleDelete = async (article) => {
-        // ask for confirmation 
         const confirmDelete = window.confirm(
             `Êtes-vous sûr de vouloir supprimer l'article "${article.title}" ?\n\nCette action est irréversible.`
         );
@@ -231,7 +218,6 @@ function MoreManagment() {
         setSubmitting(true);
 
         try {
-            // delete image
             if (article.image) {
                 const imagePath = `images/${article.image}`;
                 const { error: imageError } = await supabase.storage
@@ -240,11 +226,9 @@ function MoreManagment() {
 
                 if (imageError) {
                     console.error('Erreur lors de la suppression de l\'image:', imageError);
-                    // On continue quand même pour supprimer le reste
                 }
             }
 
-            // delete pdf 
             if (article.file) {
                 const filePath = `files/${article.file}`;
                 const { error: fileError } = await supabase.storage
@@ -256,7 +240,6 @@ function MoreManagment() {
                 }
             }
 
-            // delete from db 
             const { error: deleteError } = await supabase
                 .from('Articles')
                 .delete()
@@ -276,112 +259,178 @@ function MoreManagment() {
         }
     }
 
-
-
     return (
         <>
             {loading || submitting ? (
                 <Loading text={submitting ? "Publication de l'article..." : undefined} />
             ) : (
-                <div className='p-4 px-10'>
-                    <h2 className="text-2xl font-bold">Gestion des articles</h2 >
-                    <table className="min-w-full divide-y divide-gray-200 mb-5">
-                        <thead className="bg-gray-100 text-left text-sm font-medium text-gray-700">
-                            <tr>
-                                <th className="px-6 py-3">Titre</th>
-                                <th className="px-6 py-3">Text</th>
-                                <th className="px-6 py-3">Publication</th>
-                                <th className="px-6 py-3">fichier</th>
-                                <th className="px-6 py-3">image</th>
-                                <th className="px-6 py-3">action</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200 text-sm">
-                            {articles.map((art, idx) => (
-                                <tr key={idx} className='hover:bg-[#dddddd]' onClick={() => { handleArticleClick(art) }}>
-                                    <td>{art.title}</td>
-                                    <td>{truncateContent(art.content)}</td>
-                                    {/* timestamp => replacing T by ' ' and deleting milisecond*/}
-                                    <td>{art.edited_at.replace('T', ' ').split('.')[0]}</td>
-                                    <td>{art.file ? art.file.split('_')[1] : ''}</td>
-                                    <td>{art.image ? art.image.split('_')[1] : ''}</td>
-                                    <td><button
-                                        className='text-rayonorange underline'
-                                        onClick={(e) => {
-                                            e.stopPropagation() // needed to not active the modal 
-                                            handleDelete(art)
-                                        }}
-                                    >Supprimer</button></td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    <h2 className="text-2xl font-bold">Ajouter un article</h2 >
-                    <form action="">
-                        <div className='flex lg:flex-row flex-col'>
-                            <div>
-                                <FormInput
-                                    labelClassName=""
-                                    className="border border-rayonblue rounded-lg p-1 md:w-[30em] mb-5"
-                                    inputText="Titre : "
-                                    name='title'
-                                    value={newArticle.title}
-                                    onChange={handleChange}
-                                    isStarred={true}
-                                />
-                                <FormTextArea
-                                    textAreaName={"Texte :"}
-                                    name="content"
-                                    value={newArticle.content}
-                                    onChange={handleChange}
-                                    className="h-64 border border-[#2E2EFF] rounded-md text-sm px-4 py-2 w-full"
-                                />
-                            </div>
-                            <div className='ml-6'>
-                                <p className='text-rayonblue'>Fichier associé : </p>
-                                <input
-                                    type='file'
-                                    accept='.pdf'
-                                    name='file'
-                                    onChange={(e) => {
-                                        if (e.target.files[0]) {
-                                            displayNotification("Fichier sélectionné :", e.target.files[0].name, "info")
-                                            handleFileChange(e, 'file');
-                                        }
-                                    }}
-                                    ref={fileInputRef}
-                                    className="mb-6 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#2E2EFF] file:text-white hover:file:bg-blue-700"
-                                />
-                                <p className='text-rayonblue'>Image : </p>
-                                <input
-                                    type='file'
-                                    accept='.png,.svg,.jpg,.jpeg'
-                                    name='file'
-                                    onChange={(e) => {
-                                        if (e.target.files[0]) {
-                                            displayNotification("Fichier sélectionné :", e.target.files[0].name, "info")
-                                            handleFileChange(e, 'image');
-                                        }
-                                    }}
-                                    ref={imageInputRef}
-                                    className="mb-6 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#2E2EFF] file:text-white hover:file:bg-blue-700"
-                                />
-                            </div>
-                        </div>
-                        <button
-                            onClick={handleSubmit}
-                            className='text-white bg-rayonorange ml-4 px-2 py-1 mt-5'
-                        >Ajouter un article</button>
-                    </form>
-                    <ArticleModal
-                        article={selectedArticle}
-                        isOpen={isModalOpen}
-                        onClose={handleCloseModal}
-                    />
-                </div >
+                <div className="p-6 bg-gray-50 min-h-screen">
+                    <div className="max-w-7xl mx-auto">
+                        <h1 className="text-3xl font-bold mb-6 text-rayonblue">Gestion des Articles</h1>
 
-            )
-            }
+                        {/* Bouton Ajouter un article */}
+                        <button
+                            onClick={() => setShowForm(!showForm)}
+                            className="bg-rayonorange w-full md:w-auto text-white px-8 py-3 rounded-lg mb-6 hover:opacity-90 transition font-semibold"
+                        >
+                            {showForm ? '✕ Annuler' : '➕ Ajouter un article'}
+                        </button>
+
+                        {/* Formulaire d'ajout */}
+                        {showForm && (
+                            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                                <h2 className="text-xl font-semibold mb-4 text-rayonblue">Nouvel article</h2>
+                                <form onSubmit={handleSubmit}>
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        {/* Colonne gauche */}
+                                        <div className="space-y-4">
+                                            <FormInput
+                                                className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
+                                                inputText="Titre"
+                                                name='title'
+                                                value={newArticle.title}
+                                                onChange={handleChange}
+                                                isStarred={true}
+                                            />
+                                            <div>
+                                                <label className="text-rayonblue mb-2 block font-medium">
+                                                    Contenu <span className="text-red-500">*</span>
+                                                </label>
+                                                <textarea
+                                                    name="content"
+                                                    value={newArticle.content}
+                                                    onChange={handleChange}
+                                                    className="w-full h-64 border-2 border-rayonblue rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rayonorange"
+                                                    placeholder="Écrivez le contenu de l'article..."
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Colonne droite */}
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="text-rayonblue mb-2 block font-medium">
+                                                    Fichier PDF (optionnel)
+                                                </label>
+                                                <input
+                                                    type='file'
+                                                    accept='.pdf'
+                                                    name='file'
+                                                    onChange={(e) => {
+                                                        if (e.target.files[0]) {
+                                                            displayNotification("Fichier sélectionné :", e.target.files[0].name, "info")
+                                                            handleFileChange(e, 'file');
+                                                        }
+                                                    }}
+                                                    ref={fileInputRef}
+                                                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-rayonblue file:text-white hover:file:opacity-90 file:cursor-pointer"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-rayonblue mb-2 block font-medium">
+                                                    Image (optionnel)
+                                                </label>
+                                                <input
+                                                    type='file'
+                                                    accept='.png,.svg,.jpg,.jpeg'
+                                                    name='image'
+                                                    onChange={(e) => {
+                                                        if (e.target.files[0]) {
+                                                            displayNotification("Image sélectionnée :", e.target.files[0].name, "info")
+                                                            handleFileChange(e, 'image');
+                                                        }
+                                                    }}
+                                                    ref={imageInputRef}
+                                                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-rayonblue file:text-white hover:file:opacity-90 file:cursor-pointer"
+                                                />
+                                            </div>
+
+                                            {/* Preview des fichiers sélectionnés */}
+                                            {(newArticle.file || newArticle.image) && (
+                                                <div className="bg-blue-50 border border-rayonblue rounded-lg p-4">
+                                                    <p className="text-sm font-medium text-rayonblue mb-2">Fichiers sélectionnés :</p>
+                                                    {newArticle.file && (
+                                                        <p className="text-sm text-gray-700">📄 {newArticle.file.name}</p>
+                                                    )}
+                                                    {newArticle.image && (
+                                                        <p className="text-sm text-gray-700">🖼️ {newArticle.image.name}</p>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        className="mt-6 w-full md:w-auto px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition"
+                                    >
+                                        ✓ Publier l'article
+                                    </button>
+                                </form>
+                            </div>
+                        )}
+
+                        {/* Liste des articles */}
+                        <div className="space-y-4 mb-6">
+                            {articles.length === 0 ? (
+                                <div className="text-center py-12 text-gray-500 bg-white rounded-lg">
+                                    <p className="text-lg">Aucun article publié</p>
+                                </div>
+                            ) : (
+                                articles.map((article) => (
+                                    <div key={article.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
+                                        {/* En-tête de l'article */}
+                                        <div className="p-4 bg-gradient-to-r from-blue-50 to-white border-b border-rayonblue">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex-1">
+                                                    <h3 className="text-lg font-semibold text-gray-800 mb-1">
+                                                        {article.title}
+                                                    </h3>
+                                                    <p className="text-sm text-gray-600 mb-2">
+                                                        {truncateContent(article.content)}
+                                                    </p>
+                                                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                                                        <span>{new Date(article.edited_at).toLocaleDateString('fr-FR')} à {new Date(article.edited_at).toLocaleTimeString('fr-FR')}</span>
+                                                        {article.file && <span>📎 PDF</span>}
+                                                        {article.image && <span>🖼️ Image</span>}
+                                                    </div>
+                                                </div>
+
+                                                {/* Boutons d'action */}
+                                                <div className="flex items-center gap-2 ml-4">
+                                                    <button
+                                                        onClick={() => handleArticleClick(article)}
+                                                        className="px-3 py-2 bg-rayonblue hover:opacity-90 text-white rounded-lg transition text-sm font-medium"
+                                                        title="Voir l'article"
+                                                    >
+                                                        👁️ Voir
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            handleDelete(article)
+                                                        }}
+                                                        className="w-10 h-10 bg-red hover:bg-red-600 text-white rounded-lg transition flex items-center justify-center text-xl"
+                                                        title="Supprimer"
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        <ArticleModal
+                            article={selectedArticle}
+                            isOpen={isModalOpen}
+                            onClose={handleCloseModal}
+                        />
+                    </div>
+                </div>
+            )}
         </>
     );
 }
