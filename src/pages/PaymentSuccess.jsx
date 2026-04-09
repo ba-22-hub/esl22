@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useCart } from "@context/CartContext.jsx";
 import { displayNotification } from '@lib/displayNotification.jsx';
 import { useAuthor } from '@context/AuthorContext.jsx'
+import sendMail from '@lib/sendMail.js';
 
 // Importing common components
 import Loading from "@common/Loading.jsx";
@@ -220,6 +221,43 @@ function PaymentSuccess() {
                                 }
                             })
                     }
+                    let name = ""
+                    // get user firstname 
+                    try {
+                        const { data: firstName, error: dberror } = await supabase
+                            .from('User')
+                            .select('firstName')
+                            .eq('id', user.id)
+                            .single();
+                        if(dberror){
+                            displayNotification("Erreur lors de la récupération des informations", "", "danger")
+                            return; 
+                        }
+                        name = firstName
+                    } catch (err){
+                        displayNotification("Erreur d'envoi de l'e-mail", err.message, "danger")
+                        return ; 
+                    }
+
+                    //  notify user 
+                    try {
+                        await sendMail({
+                            email: user.email,
+                            templateId: 2,
+                            params: {
+                                FIRSTNAME : name | "", 
+                                COMMAND_NUMBER : cartToInsert.orderReference, 
+                                PRICE : cartPrice, 
+                                // ADDRESS : ????
+                            },
+                        });
+
+                        displayNotification("E-mail envoyé avec succès", "", "success");
+                    } catch (error) {
+                        console.error("Erreur d'envoi :", error);
+                        displayNotification("Erreur d'envoi de l'e-mail", error.message, "danger")
+                    }
+
 
                     // Updating the counters
                     const { error: updateError } = await supabase
