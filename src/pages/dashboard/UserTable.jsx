@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@lib/supabaseClient.js';
 import { deleteUser } from '@lib/deleteUser';
 import { patchUser } from '@lib/patchUser';
-import sendNotification from '@lib/sendNotification.js';
 import { useAuthor } from '@context/AuthorContext';
 import { useNavigate } from 'react-router-dom';
 import { displayNotification } from '@lib/displayNotification.jsx';
@@ -12,6 +11,7 @@ import { displayNotification } from '@lib/displayNotification.jsx';
 // Importing common components
 import Loading from '@common/Loading.jsx';
 import AddUserModal from '../../common/AddUserModal';
+import sendMail from '../../lib/sendMail';
 
 
 const UserTable = () => {
@@ -55,10 +55,15 @@ const UserTable = () => {
 
 			for (const user of data) {
 				try {
-					await sendNotification({
+					console.log(user.email)
+					await sendMail({
 						email: user.email,
-						name: user.firstName,
-					});
+						templateId : 3, 
+						params: {
+							FIRSTNAME : user.firstName
+						}
+					}
+					);
 
 					const { error: updateError } = await supabase
 						.from('User')
