@@ -45,7 +45,6 @@ function PaymentSuccess() {
 
     useEffect(() => {
         if (hasRun.current || !user) return;
-        console.log(user)
         hasRun.current = true;
 
         // Creating the label
@@ -67,12 +66,10 @@ function PaymentSuccess() {
 
                     if (labelError) {
                         displayNotification("Échec de l'enregistrement des références de votre colis", labelError.message, "danger")
-                        console.error("Échec de l'enregistrement des références de votre colis", labelError.message)
                     }
                 }
             } catch (e) {
                 displayNotification("Erreur lors de la création de l'étiquette associée à votre colis", e.message, "danger")
-                console.error("Erreur lors de la création de l'étiquette:", e)
             }
         };
 
@@ -82,30 +79,23 @@ function PaymentSuccess() {
                 const session_id = urlParams.get("session_id");
 
                 if (!session_id) {
-                    console.error("❌ Aucun session_id dans l'URL");
                     displayNotification("Erreur", "Aucune session de paiement trouvée", "danger");
                     navigate("/cart");
                     return;
                 }
-
-                console.log("🔍 Vérification paiement pour session :", session_id);
 
                 // Invoke the Supabase edge function to retrieve the checkout session
                 const { data, error } = await supabase.functions.invoke("retrieve-checkout-session", {
                     body: { session_id }
                 });
 
-                console.log("📦 Données retournées par retrieve-checkout-session :", data);
-
                 if (error) {
-                    console.error("💥 Erreur récupération session Stripe :", error);
                     displayNotification("Erreur", "Impossible de récupérer les informations de paiement", "danger");
                     navigate("/cart");
                     return;
                 }
 
                 if (data?.payment_status === "paid" && data?.cartToValidate) {
-                    console.log("✅ Paiement validé, insertion dans la base...");
                     displayNotification("Paiement validé", "Votre commande est en cours de traitement", "success")
 
                     const cartMetadata = data.cartToValidate;
@@ -119,7 +109,6 @@ function PaymentSuccess() {
                         .in('id', productIds);
 
                     if (productsError) {
-                        console.error("❌ Erreur récupération produits:", productsError);
                         displayNotification("Erreur", "Impossible de récupérer les informations des produits", "danger");
                         setIsProcessing(false);
                         return;
@@ -144,8 +133,6 @@ function PaymentSuccess() {
                         };
                     });
 
-                    console.log("🛒 Contenu complet reconstitué:", fullCartContent);
-
                     // Créer l'objet cart complet pour insertion
                     const cartToInsert = {
                         client_id: cartMetadata.client_id,
@@ -162,7 +149,6 @@ function PaymentSuccess() {
                         .single();
 
                     if (errorOldCounters) {
-                        console.error("Échec lors de la récupération des compteurs du compte", errorOldCounters.message)
                         displayNotification("Échec lors de la récupération des compteurs du compte", errorOldCounters.message, "danger")
                         setIsProcessing(false);
                         return;
@@ -189,8 +175,6 @@ function PaymentSuccess() {
                             .reduce((total, price) => total + price, 0)
                     )
 
-                    console.log("📊 Compteurs:", { cartWeight, cartOrder, cartPrice });
-
                     // Insert cart in database
                     const { data: dataInsertedCart, error: insertError } = await supabase
                         .from("cart")
@@ -199,12 +183,10 @@ function PaymentSuccess() {
                         .single();
 
                     if (insertError) {
-                        console.error("💥 Erreur insertion commande :", insertError);
                         displayNotification("Erreur", "Échec de l'enregistrement de la commande", "danger");
                         setIsProcessing(false);
                         return;
                     } else {
-                        console.log("🛒 Commande insérée avec succès ! ID:", dataInsertedCart.id);
                         // Updating stocks in database
                         fullCartContent
                             .map(async (product) => {
@@ -254,7 +236,6 @@ function PaymentSuccess() {
 
                         displayNotification("E-mail envoyé avec succès", "", "success");
                     } catch (error) {
-                        console.error("Erreur d'envoi :", error);
                         displayNotification("Erreur d'envoi de l'e-mail", error.message, "danger")
                     }
 
@@ -270,7 +251,6 @@ function PaymentSuccess() {
                         .eq('id', cartMetadata.client_id)
 
                     if (updateError) {
-                        console.error("Échec de mise à jour des compteurs liés au compte", updateError.message)
                         displayNotification("Échec de mise à jour des compteurs liés au compte", updateError.message, "danger")
                     }
 
@@ -279,7 +259,6 @@ function PaymentSuccess() {
 
                     // Empty the cart
                     setCart({ content: {} });
-                    console.log("🗑️ Panier vidé");
 
                     // Wait a bit before redirect to ensure user sees success message
                     setTimeout(() => {
@@ -288,13 +267,11 @@ function PaymentSuccess() {
                     }, 1500);
 
                 } else {
-                    console.warn("⚠️ Paiement non validé ou panier manquant.");
                     displayNotification("Attention", "Le paiement n'a pas pu être confirmé", "warning");
                     setIsProcessing(false);
                     navigate("/cart");
                 }
             } catch (err) {
-                console.error("💥 Erreur générale dans confirmPayment:", err);
                 displayNotification("Erreur", "Une erreur est survenue lors de la validation", "danger");
                 setIsProcessing(false);
                 navigate("/cart");

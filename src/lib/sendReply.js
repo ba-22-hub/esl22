@@ -17,7 +17,6 @@ function sendReply({ email, name, reply }) {
             return response;
         })
         .catch(error => {
-            console.error('Error sending reply:', error);
             displayNotification("Erreur lors de l'envoi de la réponse", error.message, "danger")
             throw error;
         });

@@ -16,7 +16,6 @@ async function getSignedPDFUrl(fileName, expiresInSeconds = 60) {
 
     // Check if there was an error creating the signed URL
     if (error) {
-        console.error('Erreur lors de la création de l’URL signée :', error)
         displayNotification("Erreur lors de la création de l’URL signée", error.message, "danger")
         throw error
     }

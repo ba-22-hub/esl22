@@ -156,7 +156,6 @@ function Home() {
                                     className="w-full h-auto max-w-lg xl:max-w-xl mx-auto drop-shadow-2xl"
                                     alt={hero.image.alt}
                                 />
-                                {console.log(orangeWoman)}
                             </div>
                         </div>
                     </div>

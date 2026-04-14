@@ -48,14 +48,12 @@ const UserTable = () => {
 				.eq('notified', false);
 
 			if (error) {
-				console.error('Erreur lors de la récupération des utilisateurs à notifier:', error);
 				displayNotification("Erreur lors de la récupération des utilisateurs à notifier", error.message, "danger")
 				return;
 			}
 
 			for (const user of data) {
 				try {
-					console.log(user.email)
 					await sendMail({
 						email: user.email,
 						templateId : 3, 
@@ -71,13 +69,11 @@ const UserTable = () => {
 						.eq('id', user.id);
 
 					if (updateError) {
-						console.error(`Erreur lors de la mise à jour de l'utilisateur ${user.id}:`, updateError);
 						displayNotification("Erreur lors de la mise à jour de l'utilisateur " + user.id, updateError.message, "danger")
 					} else {
 						displayNotification("Notification envoyée à " + user.email, "", "success")
 					}
 				} catch (err) {
-					console.error(`Erreur lors de l'envoi de la notification à ${user.email}:`, err);
 					displayNotification("Erreur inattendue lors de l'envoi de la notification à " + user.email, err.message, "danger")
 				}
 			}
@@ -87,7 +83,6 @@ const UserTable = () => {
 		const fetchUsers = async () => {
 			const { data, error } = await supabase.from('User').select('*');
 			if (error) {
-				console.error('Erreur de chargement des utilisateurs :', error)
 				displayNotification("Erreur de chargement des utilisateurs", error.message, "danger")
 			}
 			else
@@ -139,11 +134,9 @@ const UserTable = () => {
 	const handleDelete = (id) => {
 		if (!confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) return;
 
-		console.log('Suppression utilisateur :', id);
 		deleteUser(id)
 			.then(() => setUpdate(!update))
 			.catch((e) => {
-				console.error("Erreur inattendue : ", e);
 				displayNotification("Erreur inattendue", e.message, "danger")
 			})
 	};

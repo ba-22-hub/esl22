@@ -60,10 +60,8 @@ function MoreManagment() {
             .order('edited_at', { ascending: false });
 
         if (error) {
-            console.error('Erreur de chargement des articles:', error);
             displayNotification("Erreur de chargement des articles", error.message, "danger")
         } else {
-            console.log(data)
             setArticles(data);
         }
     }
@@ -154,7 +152,6 @@ function MoreManagment() {
             setShowForm(false);
 
         } catch (error) {
-            console.error('Erreur lors de la publication:', error);
             displayNotification("Erreur", error.message || "Une erreur est survenue", "error");
         } finally {
             setSubmitting(false);
@@ -223,10 +220,6 @@ function MoreManagment() {
                 const { error: imageError } = await supabase.storage
                     .from('articles')
                     .remove([imagePath]);
-
-                if (imageError) {
-                    console.error('Erreur lors de la suppression de l\'image:', imageError);
-                }
             }
 
             if (article.file) {
@@ -234,10 +227,6 @@ function MoreManagment() {
                 const { error: fileError } = await supabase.storage
                     .from('articles')
                     .remove([filePath]);
-
-                if (fileError) {
-                    console.error('Erreur lors de la suppression du fichier:', fileError);
-                }
             }
 
             const { error: deleteError } = await supabase
@@ -252,7 +241,6 @@ function MoreManagment() {
             fetchArticles();
 
         } catch (error) {
-            console.error('Erreur lors de la suppression:', error);
             displayNotification("Erreur", error.message || "Une erreur est survenue lors de la suppression", "error");
         } finally {
             setSubmitting(false);

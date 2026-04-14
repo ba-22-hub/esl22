@@ -27,7 +27,6 @@ function Login() {
   // function to hadle the form submit
   async function handleSubmit(e) {
     e.preventDefault();
-    console.log(formData);
 
     const { data, error } = await supabase.functions.invoke("retrieve-password", {
             body: {email: formData}

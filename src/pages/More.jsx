@@ -40,10 +40,8 @@ function More() {
             .order('edited_at', { ascending: false });
 
         if (error) {
-            console.error('Erreur de chargement des articles:', error);
             displayNotification("Erreur de chargement des articles", error.message, "danger")
         } else {
-            console.log(data)
             setArticles(data);
         }
     }

@@ -49,7 +49,6 @@ function MessagesDashboard() {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Erreur de chargement des messages:', error);
       displayNotification("Erreur de chargement des messages", error.message, "danger")
     } else {
       setMessages(data);
@@ -73,7 +72,7 @@ function MessagesDashboard() {
 
     if (!email) {
       displayNotification("Aucun e-mail trouvé", "", "danger")
-      return console.error("Aucun email trouvé.");
+      return; 
     }
 
     try {
@@ -88,7 +87,6 @@ function MessagesDashboard() {
 
       displayNotification("E-mail envoyé avec succès", "", "success");
     } catch (error) {
-      console.error("Erreur d'envoi :", error);
       displayNotification("Erreur d'envoi de l'e-mail", error.message, "danger")
     }
     handleDelete(id);
@@ -104,7 +102,6 @@ function MessagesDashboard() {
       .delete()
       .eq('id', id);
     if (error) {
-      console.error('Erreur de suppression:', error);
       displayNotification("Erreur de suppression", error.message, "danger")
     } else {
       displayNotification("Suppression effectuée avec succès", "", "success")

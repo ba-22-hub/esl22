@@ -46,7 +46,6 @@ function AddUserModal({ isOpen, onClose }) {
     }
 
     function handleSubmit() {
-        console.log(formData)
         createUser(formData)
         onClose()
     }

@@ -6,7 +6,6 @@ async function deletePDF(fileName) {
     await supabase.storage.from('documents').remove([fileName])
 
   if (error) {
-    console.error('Erreur lors de la supression :', error);
     displayNotification('Erreur lors de la suppression de ' + fileName, error.message, 'danger')
     return null;
   }

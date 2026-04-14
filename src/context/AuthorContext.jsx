@@ -107,7 +107,6 @@ function AuthorProvider({ children }) {
             setIsAdmin(true);
             return true;
         } catch (err) {
-            console.error("Erreur lors du check admin :", err.message);
             setIsAdmin(false);
             return false;
         }
@@ -128,7 +127,6 @@ function AuthorProvider({ children }) {
             setHasRights(data.has_right);
             return data.has_right;
         } catch (err) {
-            console.error("Erreur lors du check des droits :", err.message);
             setHasRights(false);
             return false;
         }
