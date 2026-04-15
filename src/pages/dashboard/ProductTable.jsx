@@ -36,6 +36,8 @@ function ProductTable() {
     stockIncertainThreshold: '',
     shippingCost: '',
     max_order: '',
+    minCartWeight: '',
+    maxCartWeight: '',
   })
 
   const [formData, setFormData] = useState({
@@ -370,6 +372,36 @@ function ProductTable() {
       console.error("Erreur lors du téléchargement de l'ancienne valeur de la participation solidaire aux frais de livraison", shippingCostError)
       displayNotification("Erreur lors du téléchargement de l'ancienne valeur de la participation solidaire aux frais de livraison", shippingCostError.message, "danger")
     }
+
+    const { data: minCartWeightData, error: minCartWeightError } = await supabase
+      .from('constants')
+      .select('value')
+      .eq("name", "minCartWeight")
+      .maybeSingle();
+    if (!minCartWeightError) {
+      setSettings(prevData => ({
+        ...prevData,
+        minCartWeight: minCartWeightData.value
+      }))
+    } else {
+      console.error("Erreur lors du téléchargement de l'ancienne valeur du poids minimal du panier", minCartWeightError)
+      displayNotification("Erreur lors du téléchargement de l'ancienne valeur du poids minimal du panier", minCartWeightError.message, "danger")
+    }
+
+    const { data: maxCartWeightData, error: maxCartWeightError } = await supabase
+      .from('constants')
+      .select('value')
+      .eq("name", "maxCartWeight")
+      .maybeSingle();
+    if (!maxCartWeightError) {
+      setSettings(prevData => ({
+        ...prevData,
+        maxCartWeight: maxCartWeightData.value
+      }))
+    } else {
+      console.error("Erreur lors du téléchargement de l'ancienne valeur du poids maximal du panier", maxCartWeightError)
+      displayNotification("Erreur lors du téléchargement de l'ancienne valeur du poids maximal du panier", maxCartWeightError.message, "danger")
+    }
   }
 
   const handleChangeInSettings = (e) => {
@@ -551,6 +583,24 @@ function ProductTable() {
                       step="0.01"
                       value={settings.shippingCost ?? 0}
                       inputText="Participation solidaire aux frais de livraison (€)"
+                      className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
+                      onChange={handleChangeInSettings}
+                    />
+                    <FormInput
+                      name="minCartWeight"
+                      type="number"
+                      step="1"
+                      value={settings.minCartWeight ?? 0}
+                      inputText="Poids minimal du panier (g)"
+                      className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
+                      onChange={handleChangeInSettings}
+                    />
+                    <FormInput
+                      name="maxCartWeight"
+                      type="number"
+                      step="1"
+                      value={settings.maxCartWeight ?? 0}
+                      inputText="Poids maximal du panier (g)"
                       className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
                       onChange={handleChangeInSettings}
                     />
