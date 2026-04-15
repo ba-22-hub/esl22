@@ -58,10 +58,6 @@ function ProductCarousel({ data }) {
   const [stockIncertainThreshold, setStockIncertainThreshold] = useState(3);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
-  // 🧪 Log utile pour debug reload
-  useEffect(() => {
-    console.log("🔄 Rechargement des produits du cart :", cart);
-  }, [cart]);
 
   // Charger le threshold
   useEffect(() => {
@@ -101,8 +97,6 @@ function ProductCarousel({ data }) {
     const productInCart = cart?.content?.[productId] || 0;
 
     const AddToCart = () => {
-      console.log("➕ Ajout :", product.name);
-      console.log("📦 Cart avant :", cart);
 
       if (product.stock >= productInCart + 1) {
         if (productInCart < product.max_order) {
@@ -130,9 +124,6 @@ function ProductCarousel({ data }) {
     };
 
     const RemoveFromCart = () => {
-      console.log("➖ Retrait :", product.name);
-      console.log("📦 Cart avant :", cart);
-
       if (!cart?.content?.[productId]) return;
 
       if (productInCart <= 1) {

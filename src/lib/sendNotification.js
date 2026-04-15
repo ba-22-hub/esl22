@@ -16,7 +16,6 @@ function sendNotification({ email, name }) {
             return response;
         })
         .catch(error => {
-            console.error('Error sending notification:', error);
             displayNotification("Erreur lors de l'envoi de la notification", error.message, "danger")
             throw error;
         });

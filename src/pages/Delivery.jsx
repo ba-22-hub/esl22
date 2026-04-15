@@ -41,11 +41,9 @@ function Delivery() {
                 .order('created_at', { ascending: false });
 
             if (error) {
-                console.error('Erreur de chargement des livraisons en cours :', error)
                 displayNotification("Erreur de chargement des livraisons en cours", error.message, "danger")
             } else {
                 setOngoingDeliveries(data);
-                console.log("ongoingDeliveries", data)
             }
             setLoading(false);
         };

@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@lib/supabaseClient.js';
 import { deleteUser } from '@lib/deleteUser';
 import { patchUser } from '@lib/patchUser';
-import sendNotification from '@lib/sendNotification.js';
 import { useAuthor } from '@context/AuthorContext';
 import { useNavigate } from 'react-router-dom';
 import { displayNotification } from '@lib/displayNotification.jsx';
@@ -12,6 +11,7 @@ import { displayNotification } from '@lib/displayNotification.jsx';
 // Importing common components
 import Loading from '@common/Loading.jsx';
 import AddUserModal from '../../common/AddUserModal';
+import sendMail from '../../lib/sendMail';
 
 
 const UserTable = () => {
@@ -48,17 +48,20 @@ const UserTable = () => {
 				.eq('notified', false);
 
 			if (error) {
-				console.error('Erreur lors de la récupération des utilisateurs à notifier:', error);
 				displayNotification("Erreur lors de la récupération des utilisateurs à notifier", error.message, "danger")
 				return;
 			}
 
 			for (const user of data) {
 				try {
-					await sendNotification({
+					await sendMail({
 						email: user.email,
-						name: user.firstName,
-					});
+						templateId : 3, 
+						params: {
+							FIRSTNAME : user.firstName
+						}
+					}
+					);
 
 					const { error: updateError } = await supabase
 						.from('User')
@@ -66,13 +69,11 @@ const UserTable = () => {
 						.eq('id', user.id);
 
 					if (updateError) {
-						console.error(`Erreur lors de la mise à jour de l'utilisateur ${user.id}:`, updateError);
 						displayNotification("Erreur lors de la mise à jour de l'utilisateur " + user.id, updateError.message, "danger")
 					} else {
 						displayNotification("Notification envoyée à " + user.email, "", "success")
 					}
 				} catch (err) {
-					console.error(`Erreur lors de l'envoi de la notification à ${user.email}:`, err);
 					displayNotification("Erreur inattendue lors de l'envoi de la notification à " + user.email, err.message, "danger")
 				}
 			}
@@ -82,7 +83,6 @@ const UserTable = () => {
 		const fetchUsers = async () => {
 			const { data, error } = await supabase.from('User').select('*');
 			if (error) {
-				console.error('Erreur de chargement des utilisateurs :', error)
 				displayNotification("Erreur de chargement des utilisateurs", error.message, "danger")
 			}
 			else
@@ -111,11 +111,19 @@ const UserTable = () => {
 
 	const handleChange = (e) => {
 		const { name, value } = e.target;
-		if(name == "status"){
+		if (name == "status") {
 			setEditedUser(prev => ({ ...prev, ["has_right"]: value == "Actif" }));
+		} else if (name == "end_right") {
+            const endDate = new Date(value);
+            const now = new Date();
+
+            if (!isNaN(endDate) && endDate < now) {
+                updatedUser.status = "Résilié";
+                updatedUser.has_right = false; 
+            }
 		}
 		setEditedUser(prev => ({ ...prev, [name]: value }));
-	};
+	}
 
 	const handleValidate = () => {
 		patchUser(editMode, editedUser)
@@ -126,11 +134,9 @@ const UserTable = () => {
 	const handleDelete = (id) => {
 		if (!confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) return;
 
-		console.log('Suppression utilisateur :', id);
 		deleteUser(id)
 			.then(() => setUpdate(!update))
 			.catch((e) => {
-				console.error("Erreur inattendue : ", e);
 				displayNotification("Erreur inattendue", e.message, "danger")
 			})
 	};
@@ -470,12 +476,12 @@ const UserTable = () => {
 			</div>
 			{/* modal to add a new user */}
 			<AddUserModal
-                isOpen={modalOpen}
-                onClose={() => {
-					setModalOpen(false); 
+				isOpen={modalOpen}
+				onClose={() => {
+					setModalOpen(false);
 					setUpdate(!update)
 				}}
-            />
+			/>
 		</div>
 	);
 };

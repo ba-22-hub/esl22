@@ -52,7 +52,6 @@ function OrderTable() {
             .order("created_at", { ascending: false });
 
         if (error) {
-            console.error("Erreur chargement commandes:", error);
             displayNotification("Erreur de chargement", error.message, "danger")
         } else {
             setOrders(data);
@@ -66,7 +65,6 @@ function OrderTable() {
         const { error } = await supabase.from("cart").update({ delivered: true }).eq("id", id);
 
         if (error) {
-            console.error("Erreur livraison:", error);
             displayNotification("Erreur de confirmation", error.message, "danger")
         } else {
             displayNotification("Livraison confirmée", `Commande ${id.slice(0, 8)} marquée comme livrée ✅`, "success")

@@ -409,7 +409,7 @@ function Cart() {
                                             Découvrez nos produits et ajoutez-les à votre panier
                                         </p>
                                         <a
-                                            href="/catalog"
+                                            onClick={() => navigate("/catalog")}
                                             className="inline-block bg-[#3435FF] hover:bg-[#5253ff] text-white px-8 py-3 rounded-lg font-semibold transition-all shadow-lg hover:shadow-xl"
                                         >
                                             Voir les produits

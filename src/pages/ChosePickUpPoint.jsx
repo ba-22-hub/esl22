@@ -118,7 +118,6 @@ function ChosePickUpPoint() {
     }, [user]);
 
     function selectPoint(point) {
-        console.log("Point selectionné : ", point)
         setCurrPoint(point)
     }
 
@@ -238,13 +237,6 @@ function ChosePickUpPoint() {
                 quantity: parseInt(cart.content[p.id])
             }));
 
-            console.log("Données envoyées à Stripe:", {
-                cart: cartItems,
-                pickupPointId: currPoint.id, // UNE SEULE FOIS ici
-                shippingCost: parseFloat(shippingCost),
-                userId: user.id
-            });
-
             // Invoquer la fonction edge pour créer la session Stripe
             const { data, error } = await supabase.functions.invoke("create-checkout-session", {
                 body: {
@@ -258,7 +250,6 @@ function ChosePickUpPoint() {
             });
 
             if (error) {
-                console.error("Erreur fonction edge Stripe :", error);
                 displayNotification("Erreur de paiement", error.message || "Une erreur est survenue", "danger");
                 return;
             }
@@ -266,12 +257,10 @@ function ChosePickUpPoint() {
             if (data?.url) {
                 window.location.href = data.url;
             } else {
-                console.error("Aucune URL Stripe renvoyée par la fonction edge.");
                 displayNotification("Erreur de paiement", "Aucune URL de paiement reçue", "danger");
             }
 
         } catch (err) {
-            console.error("Erreur Stripe :", err);
             displayNotification("Erreur de paiement", err.message || "Une erreur est survenue", "danger");
         }
     }

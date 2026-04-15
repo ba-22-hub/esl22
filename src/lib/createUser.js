@@ -10,7 +10,6 @@ async function createUser(user) {
     };
 
     try {
-        console.log("trying to inster user : ", newUser)
         const { data, error } = await supabase.functions.invoke("create-user", {
             body: { newUser }
         })
@@ -32,14 +31,12 @@ async function createUser(user) {
             )
             return null
         }
-        console.log(data)
 
         displayNotification("Utilisateur créé", "success")
         return true
 
     } catch (err) {
         displayNotification("Erreur inattendue", err.message, "danger")
-        console.error("Erreur inattendue :", err)
         return null
     }
 

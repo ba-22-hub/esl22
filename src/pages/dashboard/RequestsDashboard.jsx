@@ -21,7 +21,6 @@ function RequestsDashboard() {
     const navigate = useNavigate()
 
     useEffect(() => {
-        console.log(loading, isAdmin)
         if (loading) return;
         if (!isAdmin) {
             navigate('/admin')
@@ -47,7 +46,6 @@ function RequestsDashboard() {
             .order('created_at', { ascending: false });
 
         if (error) {
-            console.error('Erreur de chargement des demandes:', error);
             displayNotification("Erreur de chargment des demandes", error.message, "danger")
         } else {
             setRequests(data);
@@ -66,7 +64,6 @@ function RequestsDashboard() {
             .eq('id', id);
 
         if (error) {
-            console.error('Erreur de suppression:', error);
             displayNotification("Erreur de suppression de la demande " + id + " avec le fichier " + fileName, error.message, "danger")
         } else {
             displayNotification("Suppression de la demande " + id + " avec le fichier " + fileName + " effectuée avec succès", "", "success")
@@ -96,14 +93,12 @@ function RequestsDashboard() {
                 .select();
 
             if (error) {
-                console.error("Erreur lors de la mise à jour des droits :", error);
                 displayNotification("Erreur lors de la mise à jour des droits", error.message, "danger")
             } else {
                 displayNotification("Droits mis à jour avec succès", "", "success")
                 handleDelete(id);
             }
         } catch (err) {
-            console.error("Erreur inattendue :", err);
             displayNotification("Erreur inattendue", err.message, "danger")
         }
     }
