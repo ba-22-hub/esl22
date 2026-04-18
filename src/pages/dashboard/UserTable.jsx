@@ -9,8 +9,8 @@ import { displayNotification } from '@lib/displayNotification.jsx';
 
 // Importing common components
 import Loading from '@common/Loading.jsx';
-import AddUserModal from '../../common/AddUserModal';
-import sendMail from '../../lib/sendMail';
+import AddUserModal from '@common/AddUserModal';
+import sendMail from '@lib/sendMail';
 
 
 const UserTable = () => {
