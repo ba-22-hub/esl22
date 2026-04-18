@@ -7,11 +7,10 @@ import { useAuthor } from '@context/AuthorContext';
 import { useNavigate } from 'react-router-dom';
 import { displayNotification } from '@lib/displayNotification.jsx';
 
-
 // Importing common components
 import Loading from '@common/Loading.jsx';
-import AddUserModal from '../../common/AddUserModal';
-import sendMail from '../../lib/sendMail';
+import AddUserModal from '@common/AddUserModal';
+import sendMail from '@lib/sendMail';
 
 
 const UserTable = () => {
@@ -30,6 +29,16 @@ const UserTable = () => {
 	const selectStatus = ["Enregistré", "Validé", "Actif", "Suspendu", "Résilié", "En attente", "Inactif"]
 
 	let isNotifying = false;
+
+	const fetchUsers = async () => {
+		const { data, error } = await supabase.from('User').select('*');
+		if (error) {
+			displayNotification("Erreur de chargement des utilisateurs", error.message, "danger")
+		} else {
+			setUsers(data);
+		}
+		setIsLoading(false);
+	};
 
 	useEffect(() => {
 		if (loading) return;
@@ -56,12 +65,11 @@ const UserTable = () => {
 				try {
 					await sendMail({
 						email: user.email,
-						templateId : 3, 
+						templateId: 3,
 						params: {
-							FIRSTNAME : user.firstName
+							FIRSTNAME: user.firstName
 						}
-					}
-					);
+					});
 
 					const { error: updateError } = await supabase
 						.from('User')
@@ -79,17 +87,7 @@ const UserTable = () => {
 			}
 		};
 		notifyUsers();
-
-		const fetchUsers = async () => {
-			const { data, error } = await supabase.from('User').select('*');
-			if (error) {
-				displayNotification("Erreur de chargement des utilisateurs", error.message, "danger")
-			}
-			else
-				setUsers(data);
-			setIsLoading(false);
-		};
-		fetchUsers()
+		fetchUsers();
 	}, [update, loading]);
 
 	const filteredUsers = users.filter(user =>
@@ -106,7 +104,7 @@ const UserTable = () => {
 	const handleEdit = (user) => {
 		setEditMode(user.id);
 		setEditedUser(user);
-		setExpanded(user.id); // Déplier automatiquement
+		setExpanded(user.id);
 	};
 
 	const handleChange = (e) => {
@@ -114,13 +112,13 @@ const UserTable = () => {
 		if (name == "status") {
 			setEditedUser(prev => ({ ...prev, ["has_right"]: value == "Actif" }));
 		} else if (name == "end_right") {
-            const endDate = new Date(value);
-            const now = new Date();
+			const endDate = new Date(value);
+			const now = new Date();
 
-            if (!isNaN(endDate) && endDate < now) {
-                updatedUser.status = "Résilié";
-                updatedUser.has_right = false; 
-            }
+			if (!isNaN(endDate) && endDate < now) {
+				updatedUser.status = "Résilié";
+				updatedUser.has_right = false;
+			}
 		}
 		setEditedUser(prev => ({ ...prev, [name]: value }));
 	}
@@ -156,7 +154,7 @@ const UserTable = () => {
 			<div className="max-w-7xl mx-auto">
 				<h1 className="text-3xl font-bold mb-6 text-rayonblue">Gestion des Utilisateurs</h1>
 				<button
-					className='text-white bg-rayonorange ml-[77%] mb-3 w-[23%] 	rounded-lg p-2'
+					className='text-white bg-rayonorange ml-[77%] mb-3 w-[23%] rounded-lg p-2'
 					onClick={() => setModalOpen(true)}
 				>Inscrire un utilisateur</button>
 				<input
@@ -167,15 +165,12 @@ const UserTable = () => {
 					onChange={(e) => setSearch(e.target.value)}
 				/>
 
-				{/* Liste des utilisateurs en cartes */}
 				<div className="space-y-4 mb-6">
 					{filteredUsers.map(user => (
 						<div key={user.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
-							{/* En-tête de la carte */}
 							<div className="p-4 bg-gradient-to-r from-blue-50 to-white border-b border-rayonblue">
 								<div className="flex items-center justify-between">
 									<div className="flex-1 grid grid-cols-12 gap-3 items-center">
-										{/* Prénom */}
 										<div className="col-span-2 min-w-0">
 											<p className="text-xs text-gray-500 mb-1">Prénom</p>
 											{editMode === user.id ? (
@@ -190,7 +185,6 @@ const UserTable = () => {
 											)}
 										</div>
 
-										{/* Nom */}
 										<div className="col-span-2 min-w-0">
 											<p className="text-xs text-gray-500 mb-1">Nom</p>
 											{editMode === user.id ? (
@@ -205,7 +199,6 @@ const UserTable = () => {
 											)}
 										</div>
 
-										{/* Email */}
 										<div className="col-span-5 min-w-0">
 											<p className="text-xs text-gray-500 mb-1">Email</p>
 											{editMode === user.id ? (
@@ -220,7 +213,6 @@ const UserTable = () => {
 											)}
 										</div>
 
-										{/* Téléphone */}
 										<div className="col-span-3 min-w-0">
 											<p className="text-xs text-gray-500 mb-1">Téléphone</p>
 											{editMode === user.id ? (
@@ -236,7 +228,6 @@ const UserTable = () => {
 										</div>
 									</div>
 
-									{/* Boutons d'action */}
 									<div className="flex items-center gap-2 ml-4">
 										<button
 											onClick={() => toggleExpand(user.id)}
@@ -252,16 +243,12 @@ const UserTable = () => {
 													onClick={handleValidate}
 													className="w-10 h-10 bg-green-500 hover:bg-green-600 text-white rounded-lg transition flex items-center justify-center text-xl"
 													title="Valider"
-												>
-													✓
-												</button>
+												>✓</button>
 												<button
 													onClick={() => setEditMode(null)}
 													className="w-10 h-10 bg-red hover:bg-red-600 text-white rounded-lg transition flex items-center justify-center text-xl"
 													title="Annuler"
-												>
-													✕
-												</button>
+												>✕</button>
 											</div>
 										) : (
 											<div className="flex gap-2">
@@ -269,27 +256,21 @@ const UserTable = () => {
 													onClick={() => handleEdit(user)}
 													className="w-10 h-10 bg-rayonblue hover:opacity-90 text-white rounded-lg transition flex items-center justify-center text-lg"
 													title="Modifier"
-												>
-													✎
-												</button>
+												>✎</button>
 												<button
 													onClick={() => handleDelete(user.id)}
 													className="w-10 h-10 bg-red hover:bg-red-600 text-white rounded-lg transition flex items-center justify-center text-xl"
 													title="Supprimer"
-												>
-													✕
-												</button>
+												>✕</button>
 											</div>
 										)}
 									</div>
 								</div>
 							</div>
 
-							{/* Détails étendus */}
 							{expanded === user.id && (
 								<div className="p-4 bg-gray-50 border-t">
 									<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-										{/* Informations personnelles */}
 										{[
 											['gender', 'Sexe'],
 											['birthday', 'Date de naissance'],
@@ -303,9 +284,7 @@ const UserTable = () => {
 											['otherWage', 'Autres revenus'],
 										].map(([field, label]) => (
 											<div key={field} className="bg-white p-3 rounded-lg border border-gray-200">
-												<label className="text-xs font-medium text-rayonblue block mb-1">
-													{label}
-												</label>
+												<label className="text-xs font-medium text-rayonblue block mb-1">{label}</label>
 												{editMode === user.id ? (
 													<input
 														name={field}
@@ -319,128 +298,67 @@ const UserTable = () => {
 											</div>
 										))}
 
-										{/* Limites */}
 										<div className="bg-white p-3 rounded-lg border border-gray-200">
-											<label className="text-xs font-medium text-rayonblue block mb-1">
-												Limite de poids maximal
-											</label>
+											<label className="text-xs font-medium text-rayonblue block mb-1">Limite de poids maximal</label>
 											{editMode === user.id ? (
-												<input
-													name="weight_limit"
-													type="number"
-													value={editedUser.weight_limit ?? ''}
-													onChange={handleChange}
-													className="w-full border-2 border-rayonblue rounded px-2 py-1"
-												/>
+												<input name="weight_limit" type="number" value={editedUser.weight_limit ?? ''} onChange={handleChange} className="w-full border-2 border-rayonblue rounded px-2 py-1" />
 											) : (
-												<p className="text-gray-800">
-													{user.current_weight} / {user.weight_limit}
-												</p>
+												<p className="text-gray-800">{user.current_weight} / {user.weight_limit}</p>
 											)}
 										</div>
 
 										<div className="bg-white p-3 rounded-lg border border-gray-200">
-											<label className="text-xs font-medium text-rayonblue block mb-1">
-												Limite de poids minimal
-											</label>
+											<label className="text-xs font-medium text-rayonblue block mb-1">Limite de poids minimal</label>
 											{editMode === user.id ? (
-												<input
-													name="weight_min_limit"
-													type="number"
-													value={editedUser.weight_min_limit ?? ''}
-													onChange={handleChange}
-													className="w-full border-2 border-rayonblue rounded px-2 py-1"
-												/>
+												<input name="weight_min_limit" type="number" value={editedUser.weight_min_limit ?? ''} onChange={handleChange} className="w-full border-2 border-rayonblue rounded px-2 py-1" />
 											) : (
-												<p className="text-gray-800">
-													{user.current_weight} / {user.weight_min_limit}
-												</p>
+												<p className="text-gray-800">{user.current_weight} / {user.weight_min_limit}</p>
 											)}
 										</div>
 
 										<div className="bg-white p-3 rounded-lg border border-gray-200">
-											<label className="text-xs font-medium text-rayonblue block mb-1">
-												Limite de prix
-											</label>
+											<label className="text-xs font-medium text-rayonblue block mb-1">Limite de prix</label>
 											{editMode === user.id ? (
-												<input
-													name="price_limit"
-													type="number"
-													step="0.01"
-													value={editedUser.price_limit ?? ''}
-													onChange={handleChange}
-													className="w-full border-2 border-rayonblue rounded px-2 py-1"
-												/>
+												<input name="price_limit" type="number" step="0.01" value={editedUser.price_limit ?? ''} onChange={handleChange} className="w-full border-2 border-rayonblue rounded px-2 py-1" />
 											) : (
-												<p className="text-gray-800">
-													{user.current_price}€ / {user.price_limit}€
-												</p>
+												<p className="text-gray-800">{user.current_price}€ / {user.price_limit}€</p>
 											)}
 										</div>
 
 										<div className="bg-white p-3 rounded-lg border border-gray-200">
-											<label className="text-xs font-medium text-rayonblue block mb-1">
-												Limite de commandes
-											</label>
+											<label className="text-xs font-medium text-rayonblue block mb-1">Limite de commandes</label>
 											{editMode === user.id ? (
-												<input
-													name="order_limit"
-													type="number"
-													value={editedUser.order_limit ?? ''}
-													onChange={handleChange}
-													className="w-full border-2 border-rayonblue rounded px-2 py-1"
-												/>
+												<input name="order_limit" type="number" value={editedUser.order_limit ?? ''} onChange={handleChange} className="w-full border-2 border-rayonblue rounded px-2 py-1" />
 											) : (
-												<p className="text-gray-800">
-													{user.current_order} / {user.order_limit}
-												</p>
+												<p className="text-gray-800">{user.current_order} / {user.order_limit}</p>
 											)}
 										</div>
 
-										{/* ########## Date des droits ############## */}
-
-										{/* padding to end line*/}
 										<div className="bg-white p-3 rounded-lg border border-gray-200">
 											<label className="text-xs font-medium text-rayonblue block mb-1"></label>
 											<p className="text-gray-800"></p>
 										</div>
 
 										<div className="bg-white p-3 rounded-lg border border-gray-200">
-											<label className="text-xs font-medium text-rayonblue block mb-1">
-												Début des droits
-											</label>
+											<label className="text-xs font-medium text-rayonblue block mb-1">Début des droits</label>
 											{editMode === user.id ? (
-												<input
-													type="date"
-													name="start_right"
-													value={editedUser["start_right"] || ''}
-													onChange={handleChange}
-													className="w-full border-2 border-rayonblue rounded px-2 py-1"
-												/>
+												<input type="date" name="start_right" value={editedUser["start_right"] || ''} onChange={handleChange} className="w-full border-2 border-rayonblue rounded px-2 py-1" />
 											) : (
 												<p className="text-gray-800">{formatDate(user["start_right"]) || '—'}</p>
 											)}
 										</div>
+
 										<div className="bg-white p-3 rounded-lg border border-gray-200">
-											<label className="text-xs font-medium text-rayonblue block mb-1">
-												Fin des droits
-											</label>
+											<label className="text-xs font-medium text-rayonblue block mb-1">Fin des droits</label>
 											{editMode === user.id ? (
-												<input
-													type="date"
-													name="end_right"
-													value={editedUser["end_right"] || ''}
-													onChange={handleChange}
-													className="w-full border-2 border-rayonblue rounded px-2 py-1"
-												/>
+												<input type="date" name="end_right" value={editedUser["end_right"] || ''} onChange={handleChange} className="w-full border-2 border-rayonblue rounded px-2 py-1" />
 											) : (
 												<p className="text-gray-800">{formatDate(user["end_right"]) || '—'}</p>
 											)}
 										</div>
+
 										<div className="bg-white p-3 rounded-lg border border-gray-200">
-											<label className="text-xs font-medium text-rayonblue block mb-1">
-												Statut du compte
-											</label>
+											<label className="text-xs font-medium text-rayonblue block mb-1">Statut du compte</label>
 											{editMode === user.id ? (
 												<select
 													className="w-full px-3 py-2 border border-gray-200 rounded-md text-rayonblue bg-white focus:outline-none focus:ring-2 focus:ring-rayonblue"
@@ -450,17 +368,13 @@ const UserTable = () => {
 												>
 													<option value="">Sélectionner...</option>
 													{selectStatus.map((option) => (
-														<option key={option} value={option}>
-															{option}
-														</option>
+														<option key={option} value={option}>{option}</option>
 													))}
 												</select>
 											) : (
 												<p className="text-gray-800">{user["status"] || '—'}</p>
 											)}
 										</div>
-
-
 									</div>
 								</div>
 							)}
@@ -474,12 +388,12 @@ const UserTable = () => {
 					)}
 				</div>
 			</div>
-			{/* modal to add a new user */}
+
 			<AddUserModal
 				isOpen={modalOpen}
 				onClose={() => {
 					setModalOpen(false);
-					setUpdate(!update)
+					fetchUsers();
 				}}
 			/>
 		</div>

@@ -45,9 +45,9 @@ function AddUserModal({ isOpen, onClose }) {
 
     }
 
-    function handleSubmit() {
-        createUser(formData)
-        onClose()
+    async function handleSubmit() {
+        await createUser(formData);
+        onClose();
     }
 
     return (
