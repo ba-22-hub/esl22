@@ -156,7 +156,6 @@ function Home() {
                                     className="w-full h-auto max-w-lg xl:max-w-xl mx-auto drop-shadow-2xl"
                                     alt={hero.image.alt}
                                 />
-                                {console.log(orangeWoman)}
                             </div>
                         </div>
                     </div>
@@ -175,13 +174,13 @@ function Home() {
                         <div className="hidden md:block absolute top-16 left-1/4 right-1/4 h-1 bg-gradient-to-r from-[#3435FF] via-[#FF8200] to-[#3435FF] opacity-20"></div>
 
                         {howToOrder.steps.map((step, index) => (
-                            <div 
+                            <div
                                 key={index}
                                 className={`relative bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border-t-4 group`}
                                 style={{ borderColor: step.color }}
                             >
                                 <div className="absolute -top-6 left-1/2 transform -translate-x-1/2">
-                                    <div 
+                                    <div
                                         className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg group-hover:scale-110 transition-transform"
                                         style={{ backgroundColor: step.color }}
                                     >
@@ -189,19 +188,19 @@ function Home() {
                                     </div>
                                 </div>
                                 <div className="mt-8 text-center">
-                                    <h3 
+                                    <h3
                                         className="text-2xl font-bold mb-6"
                                         style={{ color: step.color }}
                                     >
                                         {step.title}
                                     </h3>
-                                    <div 
+                                    <div
                                         className={`flex justify-center my-6 rounded-full p-6 w-32 h-32 mx-auto`}
                                         style={{ backgroundColor: step.color === '#FF8200' ? '#fff7ed' : '#eff6ff' }}
                                     >
-                                        <img 
-                                            src={iconMap[step.icon]} 
-                                            alt={step.title} 
+                                        <img
+                                            src={iconMap[step.icon]}
+                                            alt={step.title}
                                             className={`w-16 h-16 object-contain ${step.icon === 'cart' ? 'translate-y-2' : ''}`}
                                         />
                                     </div>
@@ -211,11 +210,11 @@ function Home() {
                                 </div>
                             </div>
                         ))}
-                    </div>                    
+                    </div>
                 </div>
             </div>
-            
-             {/* Instagram et Partenaires avec cartes modernes */}
+
+            {/* Instagram et Partenaires avec cartes modernes */}
             <div className="grid md:grid-cols-2 gap-0 -mt-8 max-w-6xl mx-auto px-6 lg:px-12 relative z-20">
                 {/* Instagram Card */}
                 <div className="bg-white p-8 rounded-l-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-2 border-[#3435FF]">
@@ -245,25 +244,25 @@ function Home() {
                         <div className="flex justify-around items-center gap-4">
                             {partners.logos.map((logo, index) => (
                                 logo.url ? (
-                                    <a 
+                                    <a
                                         key={index}
                                         href={logo.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="inline-block"
                                     >
-                                        <img 
-                                            src={logoMap[logo.name]} 
-                                            alt={logo.alt} 
-                                            className="h-16 object-contain hover:scale-110 transition-transform duration-300 grayscale hover:grayscale-0" 
+                                        <img
+                                            src={logoMap[logo.name]}
+                                            alt={logo.alt}
+                                            className="h-16 object-contain hover:scale-110 transition-transform duration-300 grayscale hover:grayscale-0"
                                         />
                                     </a>
                                 ) : (
-                                    <img 
+                                    <img
                                         key={index}
-                                        src={logoMap[logo.name]} 
-                                        alt={logo.alt} 
-                                        className="h-16 object-contain hover:scale-110 transition-transform duration-300 grayscale hover:grayscale-0" 
+                                        src={logoMap[logo.name]}
+                                        alt={logo.alt}
+                                        className="h-16 object-contain hover:scale-110 transition-transform duration-300 grayscale hover:grayscale-0"
                                     />
                                 )
                             ))}

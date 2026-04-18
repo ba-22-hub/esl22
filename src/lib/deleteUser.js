@@ -30,7 +30,6 @@ async function deleteUser(userId) {
 
   } catch (err) {
     displayNotification("Erreur inattendue", err.message, "danger")
-    console.error("Erreur inattendue :", err)
     return null
   }
 }

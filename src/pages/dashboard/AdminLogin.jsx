@@ -42,7 +42,6 @@ function AdminLogin() {
         });
 
         if (loginError) {
-            console.error("Erreur login:", loginError);
             displayNotification("Erreur lors de la connexion", loginError.message, "danger")
             setIsLoading(false);
             return;

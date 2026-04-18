@@ -10,13 +10,11 @@ async function patchUser(userId, newUser) {
             .select(); // Renvoie les données mises à jour
 
         if (error) {
-            console.error("Erreur lors de la mise à jour de l'utilisateur " + userId + " :", error);
             displayNotification("Erreur lors de la mise à jour de l'utilisateur " + userId, error.message, "danger")
             return null;
         }
 
         if (!data || data.length === 0) {
-            console.warn("Aucun utilisateur trouvé avec cet ID :", userId);
             displayNotification("Aucun utilisateur trouvé avec l'ID :", userId, "warning")
             return null;
         }
@@ -24,7 +22,6 @@ async function patchUser(userId, newUser) {
         displayNotification("Utilisateur mis à jour", `${data[0].firstName} ${data[0].lastName}`, "success")
         return data[0];
     } catch (err) {
-        console.error("Erreur inattendue :", err);
         displayNotification("Erreur inattendue", err.message, "danger")
         return null;
     }

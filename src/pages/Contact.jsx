@@ -7,6 +7,11 @@ import { displayNotification } from '@lib/displayNotification.jsx';
 
 // Importing common components
 import Loading from '@common/Loading';
+import LoremIpsum from "../common/LoremIpsum"
+import FormInput from "../common/FormInput"
+import FormTextArea from "../common/FormTextArea"
+
+// Styles converted to Tailwind classes
 
 // Importing assets
 import roundLogo from "@assets/logos/roundLogo.png"

@@ -311,7 +311,7 @@ function Cart() {
             return;
         }
 
-        if (productsPriceTotal < 0.5) {
+        if (productsPriceTotal < 0.1) {
             displayNotification("Échec de validation du panier", "Le total produits doit être d'au moins 0.5€ pour pouvoir procéder au payement en ligne", "danger")
             return;
         }
@@ -327,10 +327,35 @@ function Cart() {
             return;
         }
 
-        const limits = userData;
+        const userLimits = userData;
 
-        if (limits.weight_limit && (limits.current_weight + productsWeightTotal) > limits.weight_limit) {
-            displayNotification("Échec de validation du panier", "Condition de poids non respectée", "danger", 0)
+        if (userLimits.weight_limit && (userLimits.current_weight + productsWeightTotal) > userLimits.weight_limit) {
+            displayNotification("Échec de validation du panier", "Conditions de poids liées à votre compte non respectées", "danger", 0)
+            return;
+        }
+
+        const { data: generalMaxWeightData, error: generalMaxWeightError } = await supabase
+            .from('constants')
+            .select('value, unit')
+            .eq("name", "maxCartWeight")
+            .maybeSingle();
+
+        const { data: generalMinWeightData, error: generalMinWeightError } = await supabase
+            .from('constants')
+            .select('value, unit')
+            .eq("name", "minCartWeight")
+            .maybeSingle();
+
+        if (generalMaxWeightError || generalMinWeightError) {
+            displayNotification("Échec de validation du panier", "Erreur lors du chargement des limites générales de poids : " + userError.message, "danger")
+            return;
+        }
+
+        const generalMaxWeightLimit = generalMaxWeightData;
+        const generalMinWeightLimit = generalMinWeightData;
+
+        if (generalMaxWeightLimit.value && generalMinWeightLimit.value && ((generalMinWeightLimit.value > productsWeightTotal) || (productsWeightTotal > generalMaxWeightLimit.value))) {
+            displayNotification("Échec de validation du panier", "Le poids du panier doit être compris entre " + generalMinWeightLimit.value + " " + generalMinWeightLimit.unit + " et " + generalMaxWeightLimit.value + " " + generalMaxWeightLimit.unit, "danger", 0)
             return;
         }
 
@@ -384,7 +409,7 @@ function Cart() {
                                             Découvrez nos produits et ajoutez-les à votre panier
                                         </p>
                                         <a
-                                            href="/catalog"
+                                            onClick={() => navigate("/catalog")}
                                             className="inline-block bg-[#3435FF] hover:bg-[#5253ff] text-white px-8 py-3 rounded-lg font-semibold transition-all shadow-lg hover:shadow-xl"
                                         >
                                             Voir les produits

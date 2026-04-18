@@ -12,7 +12,6 @@ export default async function sendMail({ email, templateId, params }) {
 
         return data;
     } catch (err) {
-        console.error("Erreur sendMail:", err);
         throw err;
     }
 }

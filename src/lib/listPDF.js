@@ -13,7 +13,6 @@ async function listPDF() {
         console.error('Erreur lors de la lecture du bucket :', error)
         displayNotification("Erreur lors de la lecture du bucket", error.message, "danger")
     } else {
-        console.log('Fichiers dans le bucket :', data)
         displayNotification("Fichiers dans le bucket :", data, "info")
     }
 }

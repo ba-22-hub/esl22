@@ -36,6 +36,8 @@ function ProductTable() {
     stockIncertainThreshold: '',
     shippingCost: '',
     max_order: '',
+    minCartWeight: '',
+    maxCartWeight: '',
   })
 
   const [formData, setFormData] = useState({
@@ -62,7 +64,6 @@ function ProductTable() {
   const fetchProducts = async () => {
     const { data, error } = await supabase.from("products").select("*");
     if (error) {
-      console.error("Erreur chargement produits :", error)
       displayNotification("Erreur lors du chargment des produits", error.message, "danger")
     }
     else {
@@ -123,7 +124,6 @@ function ProductTable() {
       .from('images')
       .remove([product.image_name])
     if (error) {
-      console.error("Erreur suppression image :", error)
       displayNotification("Erreur lors de la suppression de l'image " + product.image_name, error.message, "danger")
     }
 
@@ -132,7 +132,6 @@ function ProductTable() {
       .delete()
       .eq('id', product.id)
     if (errorDelete) {
-      console.error("Erreur lors de la suppression du produit " + product.name + errorDelete)
       displayNotification("Erreur lors de la suppression du produit " + product.name, errorDelete.message, "danger")
     } else {
       displayNotification("Produit " + product.name + " supprimé avec succès", response, "success")
@@ -155,7 +154,6 @@ function ProductTable() {
         .from('images')
         .remove([oldImageName])
       if (error) {
-        console.error("Erreur suppression ancienne image :", error)
         displayNotification("Erreur lors de la suppression de l'ancienne image " + oldImageName + " de la base de données", error.message, "danger")
       }
     }
@@ -174,7 +172,6 @@ function ProductTable() {
       .update(editedValues)
       .eq("id", editingProductId);
     if (error) {
-      console.error("Erreur update :", error)
       displayNotification("Erreur lors de la mise à jour du produit", error.message, "danger")
     } else {
       setProducts((prev) =>
@@ -203,7 +200,6 @@ function ProductTable() {
       .insert(dataToSubmit)
 
     if (error) {
-      console.error("Erreur lors de l'ajout du nouveau produit", error);
       displayNotification("Erreur lors de l'ajout du nouveau produit", error.message, "danger")
       return;
     }
@@ -284,7 +280,6 @@ function ProductTable() {
           .maybeSingle();
 
         if (error && Object.keys(error.message).length > 0) {
-          console.error("Erreur lors du téléchargement du nom de de l'image : ", error.message);
           displayNotification("Erreur lors du téléchargement du nom de de l'image", error.message, "danger")
           return;
         }
@@ -337,7 +332,6 @@ function ProductTable() {
         stockIncertainThreshold: stockIncertainThresholdData.value
       }))
     } else {
-      console.error("Erreur lors du téléchargement de l'ancienne valeur seuil", stockIncertainThresholdError)
       displayNotification("Erreur lors du téléchargement de l'ancienne valeur seuil", stockIncertainThresholdError.message, "danger")
     }
 
@@ -352,7 +346,6 @@ function ProductTable() {
         max_order: max_orderData.value
       }))
     } else {
-      console.error("Erreur lors du téléchargement de l'ancienne valeur de la quantité maximale par panier", max_orderError)
       displayNotification("Erreur lors du téléchargement de l'ancienne valeur de la quantité maximale par panier", max_orderError.message, "danger")
     }
 
@@ -367,8 +360,37 @@ function ProductTable() {
         shippingCost: shippingCostData.value
       }))
     } else {
-      console.error("Erreur lors du téléchargement de l'ancienne valeur de la participation solidaire aux frais de livraison", shippingCostError)
       displayNotification("Erreur lors du téléchargement de l'ancienne valeur de la participation solidaire aux frais de livraison", shippingCostError.message, "danger")
+    }
+
+    const { data: minCartWeightData, error: minCartWeightError } = await supabase
+      .from('constants')
+      .select('value')
+      .eq("name", "minCartWeight")
+      .maybeSingle();
+    if (!minCartWeightError) {
+      setSettings(prevData => ({
+        ...prevData,
+        minCartWeight: minCartWeightData.value
+      }))
+    } else {
+      console.error("Erreur lors du téléchargement de l'ancienne valeur du poids minimal du panier", minCartWeightError)
+      displayNotification("Erreur lors du téléchargement de l'ancienne valeur du poids minimal du panier", minCartWeightError.message, "danger")
+    }
+
+    const { data: maxCartWeightData, error: maxCartWeightError } = await supabase
+      .from('constants')
+      .select('value')
+      .eq("name", "maxCartWeight")
+      .maybeSingle();
+    if (!maxCartWeightError) {
+      setSettings(prevData => ({
+        ...prevData,
+        maxCartWeight: maxCartWeightData.value
+      }))
+    } else {
+      console.error("Erreur lors du téléchargement de l'ancienne valeur du poids maximal du panier", maxCartWeightError)
+      displayNotification("Erreur lors du téléchargement de l'ancienne valeur du poids maximal du panier", maxCartWeightError.message, "danger")
     }
   }
 
@@ -551,6 +573,24 @@ function ProductTable() {
                       step="0.01"
                       value={settings.shippingCost ?? 0}
                       inputText="Participation solidaire aux frais de livraison (€)"
+                      className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
+                      onChange={handleChangeInSettings}
+                    />
+                    <FormInput
+                      name="minCartWeight"
+                      type="number"
+                      step="1"
+                      value={settings.minCartWeight ?? 0}
+                      inputText="Poids minimal du panier (g)"
+                      className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
+                      onChange={handleChangeInSettings}
+                    />
+                    <FormInput
+                      name="maxCartWeight"
+                      type="number"
+                      step="1"
+                      value={settings.maxCartWeight ?? 0}
+                      inputText="Poids maximal du panier (g)"
                       className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
                       onChange={handleChangeInSettings}
                     />

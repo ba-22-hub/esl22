@@ -9,7 +9,6 @@ import { displayNotification } from '@lib/displayNotification.jsx'
  * @returns {Promise<{ success: boolean, data?: object, error?: object }>} - A promise that resolves to an object indicating success or failure of the upload operation.
  */
 async function uploadPDF(file, fileName, folder) {
-    console.log('Uploading file:', fileName, { upsert: false });
 
     const fullPath = `${folder}/${fileName}`;
 
@@ -22,7 +21,6 @@ async function uploadPDF(file, fileName, folder) {
         });
 
     if (uploadError) {
-        console.error('Erreur lors de l’upload :', uploadError);
         displayNotification("Erreur lors de l'envoi de l'upload du fichier " + fileName, uploadError.message, "danger")
         return { success: false, error: uploadError };;
     }

@@ -11,16 +11,12 @@ async function uploadImage(image, imageName, bucket = 'images') {
   // Uploads the image to Supabase public bucket
   if (imageName) {
     const normalizedName = normalizeFileName(imageName);
-    console.log('Nom normalisé:', normalizedName);
 
     const { data: uploadData, error: uploadError } =
       await supabase.storage.from(bucket).upload(
         normalizedName, image, { upsert: true });
 
     if (uploadError) {
-      console.error(
-        'Erreur lors de l\'upload de l\'image ' + normalizedName + ' :',
-        uploadError.message);
       displayNotification('Erreur lors de l\'upload de l\'image ' + normalizedName, uploadError.message, 'danger')
       return { success: false, error: uploadError };
     }
