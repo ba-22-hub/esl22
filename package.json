@@ -27,6 +27,7 @@
     "react-router-dom": "^7.5.2",
     "react-slick": "^0.30.3",
     "slick-carousel": "^1.8.1",
+    "string-convert": "^0.2.1",
     "styled-components": "^6.1.17",
     "supabase": "^2.31.8",
     "vanilla-cookieconsent": "^3.1.0"
