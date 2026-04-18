@@ -305,12 +305,12 @@ function ChosePickUpPoint() {
                                             value={chosenPostalCode}
                                             onChange={(e) => setChosenPostalCode(e.target.value)}
                                             onKeyDown={(e) => e.key === "Enter" && chosenPostalCode.trim() && fetchPickupPoints(chosenPostalCode)}
-                                            className="flex-1 px-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#3435FF]"
+                                            className="flex-1 px-4 py-2 text-base border border-gray-200 rounded-lg focus:outline-none focus:border-[#3435FF]"
                                         />
                                         <button
                                             onClick={() => chosenPostalCode.trim() && fetchPickupPoints(chosenPostalCode)}
                                             disabled={loadingPickup || !chosenPostalCode.trim()}
-                                            className="px-5 py-2 text-sm font-semibold bg-[#3435FF] hover:bg-[#5253ff] text-white rounded-lg shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                                            className="px-5 py-2 text-base font-semibold bg-[#3435FF] hover:bg-[#5253ff] text-white rounded-lg shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                                         >
                                             {loadingPickup ? "..." : "Rechercher"}
                                         </button>
@@ -327,7 +327,7 @@ function ChosePickUpPoint() {
                                             if (code) await fetchPickupPoints(code);
                                         }}
                                         disabled={loadingPickup}
-                                        className="w-full py-2 text-sm font-semibold border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-700 flex items-center justify-center gap-2 transition-all disabled:opacity-40"
+                                        className="w-full py-2 text-base font-semibold border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-700 flex items-center justify-center gap-2 transition-all disabled:opacity-40"
                                     >
                                         <svg className="w-4 h-4 text-[#FF8200]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -337,7 +337,7 @@ function ChosePickUpPoint() {
                                     </button>
 
                                     {errorPickup && (
-                                        <p className="text-sm text-red-500 mt-3">{errorPickup}</p>
+                                        <p className="text-base text-red-500 mt-3">{errorPickup}</p>
                                     )}
                                 </div>
 
@@ -354,7 +354,7 @@ function ChosePickUpPoint() {
                                     {pickupPoints.length === 0 ? (
                                         <div className="text-center py-8">
                                             <div className="text-4xl mb-3">📍</div>
-                                            <p className="text-gray-500 text-sm">Entrez un code postal pour voir les points proches</p>
+                                            <p className="text-gray-500 text-base">Entrez un code postal pour voir les points proches</p>
                                         </div>
                                     ) : (
                                         <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
@@ -363,25 +363,25 @@ function ChosePickUpPoint() {
                                                     <div
                                                         onClick={() => selectPoint(p)}
                                                         className={`rounded-xl border p-4 cursor-pointer transition-all ${currPoint.id === p.id
-                                                                ? "border-[#3435FF] bg-blue-50 shadow-sm"
-                                                                : "border-gray-100 hover:shadow-md hover:border-gray-200 shadow-sm"
+                                                            ? "border-[#3435FF] bg-blue-50 shadow-sm"
+                                                            : "border-gray-100 hover:shadow-md hover:border-gray-200 shadow-sm"
                                                             }`}
                                                     >
                                                         <div className="flex items-start justify-between gap-2">
                                                             <div className="flex-1">
                                                                 <div className="flex items-center gap-2 mb-1">
-                                                                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${currPoint.id === p.id
-                                                                            ? "bg-[#3435FF] text-white"
-                                                                            : "bg-gray-100 text-gray-500"
+                                                                    <span className={`px-2 py-0.5 rounded-full text-sm font-semibold ${currPoint.id === p.id
+                                                                        ? "bg-[#3435FF] text-white"
+                                                                        : "bg-gray-100 text-gray-500"
                                                                         }`}>
                                                                         {currPoint.id === p.id ? "Sélectionné" : "Disponible"}
                                                                     </span>
                                                                     {p.distance && (
-                                                                        <span className="text-xs text-gray-400">{p.distance} km</span>
+                                                                        <span className="text-sm text-gray-400">{p.distance} km</span>
                                                                     )}
                                                                 </div>
-                                                                <p className="font-bold text-gray-800 text-sm">{p.name}</p>
-                                                                <p className="text-gray-500 text-xs mt-0.5">
+                                                                <p className="font-bold text-gray-800 text-base">{p.name}</p>
+                                                                <p className="text-gray-500 text-sm mt-0.5">
                                                                     {p.address1.toLowerCase()}, {p.zipCode} {p.city}
                                                                 </p>
                                                             </div>
@@ -397,14 +397,14 @@ function ChosePickUpPoint() {
                                                     {/* Horaires dépliés */}
                                                     {currPoint.id === p.id && (
                                                         <div className="rounded-xl border border-[#3435FF]/20 bg-gradient-to-b from-blue-50 to-white p-4 -mt-1">
-                                                            <h5 className="text-xs font-semibold text-[#3435FF] uppercase tracking-wider mb-3">
+                                                            <h5 className="text-sm font-semibold text-[#3435FF] uppercase tracking-wider mb-3">
                                                                 Horaires d'ouverture
                                                             </h5>
                                                             <div className="grid grid-cols-2 gap-x-6 gap-y-1">
                                                                 {[1, 2, 3, 4, 5, 6, 7].map((dayNb) => {
                                                                     const slots = p.openingHours?.filter(d => Number(d.dayId) === dayNb) || [];
                                                                     return (
-                                                                        <div key={dayNb} className="flex justify-between text-xs py-0.5 border-b border-gray-100 last:border-0">
+                                                                        <div key={dayNb} className="flex justify-between text-sm py-0.5 border-b border-gray-100 last:border-0">
                                                                             <span className="text-gray-500">{daysMap[dayNb]}</span>
                                                                             <span className={slots.length ? "text-gray-800 font-medium" : "text-gray-300 italic"}>
                                                                                 {slots.length
@@ -426,14 +426,14 @@ function ChosePickUpPoint() {
                                 {/* Barre de validation */}
                                 <div className="px-6 pb-6">
                                     <div className={`rounded-xl p-4 mb-3 border ${currPoint.id !== 0
-                                            ? "bg-green-50 border-green-200"
-                                            : "bg-gray-50 border-gray-100"
+                                        ? "bg-green-50 border-green-200"
+                                        : "bg-gray-50 border-gray-100"
                                         }`}>
-                                        <p className="text-sm">
+                                        <p className="text-base">
                                             {currPoint.id !== 0 ? (
                                                 <>
                                                     <span className="font-semibold text-green-800">✓ {currPoint.name}</span>
-                                                    <span className="text-green-700 text-xs block mt-0.5">
+                                                    <span className="text-green-700 text-sm block mt-0.5">
                                                         {currPoint.address1?.toLowerCase()}, {currPoint.zipCode} {currPoint.city}
                                                     </span>
                                                 </>
@@ -445,7 +445,7 @@ function ChosePickUpPoint() {
                                     <button
                                         onClick={handleValidate}
                                         disabled={currPoint.id === 0}
-                                        className="w-full py-3 font-semibold rounded-lg text-sm transition-all shadow-md flex items-center justify-center gap-2
+                                        className="w-full py-3 font-semibold rounded-lg text-base transition-all shadow-md flex items-center justify-center gap-2
                     bg-[#FF8200] hover:bg-[#ff9800] text-white
                     disabled:bg-gray-100 disabled:text-gray-300 disabled:shadow-none disabled:cursor-not-allowed"
                                     >
