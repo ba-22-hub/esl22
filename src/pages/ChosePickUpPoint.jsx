@@ -267,172 +267,250 @@ function ChosePickUpPoint() {
 
     return (
         <>
-            <h1 className="text-[#2E2EFF] text-5xl lg:text-7xl font-extrabold leading-tight ml-5 mt-5">
-                Choix du point de livraison
-            </h1>
+            {loading ? (
+                <Loading />
+            ) : (
+                <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
 
-            {loading ? <Loading /> : (
-                <>
-                    {/* Relay points nearby */}
-                    <div key="RelayPointsNearby" className='flex lg:flex-row flex-col'>
-                        <div style={{ padding: "2rem", fontFamily: "sans-serif" }} className="lg:w-1/2">
-                            <div className="flex items-start">
-                                <p className="ml-5 text-[#3435FF] text-3xl lg:text-4xl mb-2 mt-10 font-extrabold text-left">
-                                    Points relais proches de moi
-                                </p>
-                            </div>
-                            <h2 className="mb-4">Dans quelle ville souhaitez-vous récupérer votre colis ?</h2>
+                    {/* Header — identique à Delivery */}
+                    <div className="bg-gradient-to-br from-[#3435FF] via-[#2526B7] to-[#1F2099] relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-96 h-96 bg-[#FF8200] opacity-10 rounded-full blur-3xl"></div>
+                        <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12 relative z-10">
+                            <h1 className="text-4xl lg:text-6xl font-bold text-white mb-2">Point de livraison</h1>
+                            <p className="text-blue-100 text-lg">
+                                Choisissez un point relais pour récupérer votre commande
+                            </p>
+                        </div>
+                    </div>
 
-                            <div className="mb-4">
-                                <input
-                                    type="text"
-                                    placeholder="Code postal"
-                                    value={chosenPostalCode}
-                                    onChange={(e) => setChosenPostalCode(e.target.value)}
-                                    className="border rounded p-2 w-full max-w-xs"
-                                />
-                            </div>
+                    <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12">
+                        <div className="flex flex-col lg:flex-row gap-6">
 
-                            <FunctionButton
-                                buttonText={loadingPickup ? "Chargement..." : "Rechercher"}
-                                fun={async () => {
-                                    if (chosenPostalCode.trim()) {
-                                        await fetchPickupPoints(chosenPostalCode);
-                                    }
-                                }}
-                                disabled={loadingPickup || !chosenPostalCode.trim()}
-                                className="bg-rayonorange mt-3 w-80 h-10"
-                            />
+                            {/* Panneau gauche */}
+                            <div className="lg:w-1/2 bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
 
-                            <FunctionButton
-                                buttonText={loadingPickup ? "Chargement..." : "Me localiser"}
-                                fun={async () => {
-                                    if (!currentLatitude || !currentLongitude) {
-                                        displayNotification("Géolocalisation non disponible", "Veuillez autoriser l'accès à votre position", "warning");
-                                        return;
-                                    }
-                                    setChosenCoords({});
-                                    const code = await reverseGeocode(currentLatitude, currentLongitude);
-                                    if (code) {
-                                        await fetchPickupPoints(code);
-                                    }
-                                }}
-                                className="bg-rayonorange mt-3 w-80 h-10"
-                            />
+                                {/* Recherche */}
+                                <div className="p-6 border-b border-gray-100">
+                                    <h4 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <svg className="w-5 h-5 text-[#3435FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                        </svg>
+                                        Rechercher un point relais
+                                    </h4>
 
-                            <FunctionButton
-                                buttonText="Valider le point relais"
-                                fun={handleValidate}
-                                className={`mt-3 w-80 h-10 ${currPoint.id != 0
-                                    ? 'bg-[#FF8200] text-white hover:bg-[#ff9800]'
-                                    : 'bg-[#878787] text-white'
-                                    }`}
-                            />
+                                    <div className="flex gap-2 mb-3">
+                                        <input
+                                            type="text"
+                                            placeholder="Code postal (ex. 75001)"
+                                            value={chosenPostalCode}
+                                            onChange={(e) => setChosenPostalCode(e.target.value)}
+                                            onKeyDown={(e) => e.key === "Enter" && chosenPostalCode.trim() && fetchPickupPoints(chosenPostalCode)}
+                                            className="flex-1 px-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#3435FF]"
+                                        />
+                                        <button
+                                            onClick={() => chosenPostalCode.trim() && fetchPickupPoints(chosenPostalCode)}
+                                            disabled={loadingPickup || !chosenPostalCode.trim()}
+                                            className="px-5 py-2 text-sm font-semibold bg-[#3435FF] hover:bg-[#5253ff] text-white rounded-lg shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                                        >
+                                            {loadingPickup ? "..." : "Rechercher"}
+                                        </button>
+                                    </div>
 
-                            {errorPickup && <p style={{ color: "red" }} className="mt-4">{errorPickup}</p>}
+                                    <button
+                                        onClick={async () => {
+                                            if (!currentLatitude || !currentLongitude) {
+                                                displayNotification("Géolocalisation non disponible", "Veuillez autoriser l'accès à votre position", "warning");
+                                                return;
+                                            }
+                                            setChosenCoords({});
+                                            const code = await reverseGeocode(currentLatitude, currentLongitude);
+                                            if (code) await fetchPickupPoints(code);
+                                        }}
+                                        disabled={loadingPickup}
+                                        className="w-full py-2 text-sm font-semibold border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-700 flex items-center justify-center gap-2 transition-all disabled:opacity-40"
+                                    >
+                                        <svg className="w-4 h-4 text-[#FF8200]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                        Me localiser
+                                    </button>
 
-                            {pickupPoints.length > 0 && (
-                                <div className="mt-6">
-                                    <h3 className="font-bold mb-3">Points relais disponibles :</h3>
-                                    <ul className="space-y-2">
-                                        {pickupPoints.map((p) => (
-                                            <React.Fragment key={p.id}>
-                                                <li className={p.id == currPoint.id ? "border p-1 rounded hover:bg-gray-50 bg-[#8FF29F] hover:bg-[#00C921]" : "border p-1 rounded hover:bg-gray-50 hover:bg-[#cccccc]"} onClick={() => selectPoint(p)} >
-                                                    <strong>{p.name}</strong> - {p.address1.toLowerCase()}, {p.zipCode} {p.city}
-                                                </li>
-                                                {currPoint.id == p.id && (
-                                                    <div>
-                                                        {currPoint.openingHours && currPoint.openingHours.length > 0 ? (
-                                                            <div>
-                                                                <strong>Horaires d'ouverture :</strong>
+                                    {errorPickup && (
+                                        <p className="text-sm text-red-500 mt-3">{errorPickup}</p>
+                                    )}
+                                </div>
 
+                                {/* Liste des points */}
+                                <div className="p-6">
+                                    <h4 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <svg className="w-5 h-5 text-[#FF8200]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                        Points disponibles
+                                    </h4>
+
+                                    {pickupPoints.length === 0 ? (
+                                        <div className="text-center py-8">
+                                            <div className="text-4xl mb-3">📍</div>
+                                            <p className="text-gray-500 text-sm">Entrez un code postal pour voir les points proches</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+                                            {pickupPoints.map((p) => (
+                                                <React.Fragment key={p.id}>
+                                                    <div
+                                                        onClick={() => selectPoint(p)}
+                                                        className={`rounded-xl border p-4 cursor-pointer transition-all ${currPoint.id === p.id
+                                                                ? "border-[#3435FF] bg-blue-50 shadow-sm"
+                                                                : "border-gray-100 hover:shadow-md hover:border-gray-200 shadow-sm"
+                                                            }`}
+                                                    >
+                                                        <div className="flex items-start justify-between gap-2">
+                                                            <div className="flex-1">
+                                                                <div className="flex items-center gap-2 mb-1">
+                                                                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${currPoint.id === p.id
+                                                                            ? "bg-[#3435FF] text-white"
+                                                                            : "bg-gray-100 text-gray-500"
+                                                                        }`}>
+                                                                        {currPoint.id === p.id ? "Sélectionné" : "Disponible"}
+                                                                    </span>
+                                                                    {p.distance && (
+                                                                        <span className="text-xs text-gray-400">{p.distance} km</span>
+                                                                    )}
+                                                                </div>
+                                                                <p className="font-bold text-gray-800 text-sm">{p.name}</p>
+                                                                <p className="text-gray-500 text-xs mt-0.5">
+                                                                    {p.address1.toLowerCase()}, {p.zipCode} {p.city}
+                                                                </p>
+                                                            </div>
+                                                            <svg
+                                                                className={`w-5 h-5 mt-1 flex-shrink-0 transition-transform ${currPoint.id === p.id ? "rotate-180 text-[#3435FF]" : "text-gray-300"}`}
+                                                                fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                                            >
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                            </svg>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Horaires dépliés */}
+                                                    {currPoint.id === p.id && (
+                                                        <div className="rounded-xl border border-[#3435FF]/20 bg-gradient-to-b from-blue-50 to-white p-4 -mt-1">
+                                                            <h5 className="text-xs font-semibold text-[#3435FF] uppercase tracking-wider mb-3">
+                                                                Horaires d'ouverture
+                                                            </h5>
+                                                            <div className="grid grid-cols-2 gap-x-6 gap-y-1">
                                                                 {[1, 2, 3, 4, 5, 6, 7].map((dayNb) => {
-                                                                    const slots = p.openingHours.filter(
-                                                                        (d) => Number(d.dayId) === dayNb
-                                                                    );
-
+                                                                    const slots = p.openingHours?.filter(d => Number(d.dayId) === dayNb) || [];
                                                                     return (
-                                                                        <div key={dayNb}>
-                                                                            {daysMap[dayNb]} :{" "}
-                                                                            {slots.length > 0 ? (
-                                                                                slots
-                                                                                    .map((s) => `${s.startTime} - ${s.endTime}`)
-                                                                                    .join(" | ")
-                                                                            ) : (
-                                                                                "Fermé"
-                                                                            )}
+                                                                        <div key={dayNb} className="flex justify-between text-xs py-0.5 border-b border-gray-100 last:border-0">
+                                                                            <span className="text-gray-500">{daysMap[dayNb]}</span>
+                                                                            <span className={slots.length ? "text-gray-800 font-medium" : "text-gray-300 italic"}>
+                                                                                {slots.length
+                                                                                    ? slots.map(s => `${s.startTime}–${s.endTime}`).join(" | ")
+                                                                                    : "Fermé"}
+                                                                            </span>
                                                                         </div>
                                                                     );
                                                                 })}
                                                             </div>
-                                                        ) : (
-                                                            <div>Non renseignées</div>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </React.Fragment>
-                                        ))}
-                                    </ul>
+                                                        </div>
+                                                    )}
+                                                </React.Fragment>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
 
-                        <div className="lg:w-1/2 flex items-start justify-center p-4 mt-10">
-                            <div className="bg-white rounded-lg shadow-lg overflow-hidden w-full max-w-2xl">
-                                <div id="map" className="h-[80vh] w-full">
+                                {/* Barre de validation */}
+                                <div className="px-6 pb-6">
+                                    <div className={`rounded-xl p-4 mb-3 border ${currPoint.id !== 0
+                                            ? "bg-green-50 border-green-200"
+                                            : "bg-gray-50 border-gray-100"
+                                        }`}>
+                                        <p className="text-sm">
+                                            {currPoint.id !== 0 ? (
+                                                <>
+                                                    <span className="font-semibold text-green-800">✓ {currPoint.name}</span>
+                                                    <span className="text-green-700 text-xs block mt-0.5">
+                                                        {currPoint.address1?.toLowerCase()}, {currPoint.zipCode} {currPoint.city}
+                                                    </span>
+                                                </>
+                                            ) : (
+                                                <span className="text-gray-400">Aucun point sélectionné</span>
+                                            )}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={handleValidate}
+                                        disabled={currPoint.id === 0}
+                                        className="w-full py-3 font-semibold rounded-lg text-sm transition-all shadow-md flex items-center justify-center gap-2
+                    bg-[#FF8200] hover:bg-[#ff9800] text-white
+                    disabled:bg-gray-100 disabled:text-gray-300 disabled:shadow-none disabled:cursor-not-allowed"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        Valider ce point relais
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Panneau carte */}
+                            <div className="lg:w-1/2 bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+                                <div className="p-6 border-b border-gray-100">
+                                    <h4 className="font-bold text-gray-800 flex items-center gap-2">
+                                        <svg className="w-5 h-5 text-[#3435FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                                        </svg>
+                                        Carte des points relais
+                                    </h4>
+                                </div>
+                                <div style={{ height: "calc(100% - 73px)" }}>
                                     <MapContainer
                                         className="h-full w-full"
+                                        style={{ minHeight: "520px" }}
                                         center={getMapCenter()}
                                         zoom={13}
                                         scrollWheelZoom={true}
                                         key={`${chosenCoords.latitude}-${chosenCoords.longitude}-${pickupPoints.length}`}
                                     >
                                         <TileLayer
-                                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                                         />
-
                                         {currentLatitude && currentLongitude && (
-                                            <Marker
-                                                position={[currentLatitude, currentLongitude]}
-                                                icon={redIcon}
-                                            >
+                                            <Marker position={[currentLatitude, currentLongitude]} icon={redIcon}>
                                                 <Popup>Vous êtes ici 📍</Popup>
                                             </Marker>
                                         )}
-
-                                        {pickupPoints.length > 0 &&
-                                            pickupPoints.map((pickupPoint, index) => (
-                                                <Marker
-                                                    key={pickupPoint.id || index}
-                                                    position={[
-                                                        parseFloat(pickupPoint.latitude.replace(",", ".")),
-                                                        parseFloat(pickupPoint.longitude.replace(",", ".")),
-                                                    ]}
-                                                    icon={orangeIcon}
-                                                    eventHandlers={{
-                                                        click: () => {
-                                                            setCurrPoint(pickupPoint)
-                                                        },
-                                                    }}
-                                                >
-                                                    <Popup>
-                                                        <strong>{pickupPoint.name}</strong> 📬<br />
-                                                        {pickupPoint.address}<br />
-                                                        {pickupPoint.postalCode} {pickupPoint.city}
-                                                    </Popup>
-                                                </Marker>
-                                            ))
-                                        }
+                                        {pickupPoints.map((p, i) => (
+                                            <Marker
+                                                key={p.id || i}
+                                                position={[
+                                                    parseFloat(p.latitude.replace(",", ".")),
+                                                    parseFloat(p.longitude.replace(",", ".")),
+                                                ]}
+                                                icon={currPoint.id === p.id ? redIcon : orangeIcon}
+                                                eventHandlers={{ click: () => setCurrPoint(p) }}
+                                            >
+                                                <Popup>
+                                                    <strong>{p.name}</strong><br />
+                                                    {p.address1}, {p.zipCode} {p.city}
+                                                </Popup>
+                                            </Marker>
+                                        ))}
                                     </MapContainer>
                                 </div>
                             </div>
+
                         </div>
                     </div>
-                </>
+                </div>
             )}
         </>
-    )
+    );
 }
 
 export default ChosePickUpPoint
