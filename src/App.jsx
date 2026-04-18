@@ -29,7 +29,6 @@ import HowItWorks from '@pages/HowItWorks.jsx'
 import Login from '@pages/Login.jsx'
 import More from '@pages/More.jsx'
 import News from '@pages/News.jsx'
-import Register from '@pages/Register.jsx'
 import Sponsor from '@pages/Sponsor.jsx'
 import Account from "@pages/Account.jsx";
 import PaymentSuccess from "@pages/PaymentSuccess.jsx";
@@ -72,7 +71,6 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/more" element={<More />} />
         <Route path="/news" element={<News />} />
-        {/* <Route path="/register" element={<Register />} /> */}
         <Route path="/sponsor" element={<Sponsor />} />
         <Route path="/account" element={<Account />} />
         <Route path="/reset-password" element={<ResetPassword />} />
