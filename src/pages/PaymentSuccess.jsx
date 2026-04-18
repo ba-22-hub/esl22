@@ -6,6 +6,7 @@ import { useCart } from "@context/CartContext.jsx";
 import { displayNotification } from '@lib/displayNotification.jsx';
 import { useAuthor } from '@context/AuthorContext.jsx'
 import sendMail from '@lib/sendMail.js';
+import { getPickupPoint } from '@lib/pudo_helper.js';
 
 // Importing common components
 import Loading from "@common/Loading.jsx";
@@ -68,6 +69,7 @@ function PaymentSuccess() {
                         displayNotification("Échec de l'enregistrement des références de votre colis", labelError.message, "danger")
                     }
                 }
+                return data;
             } catch (e) {
                 displayNotification("Erreur lors de la création de l'étiquette associée à votre colis", e.message, "danger")
             }
@@ -203,6 +205,7 @@ function PaymentSuccess() {
                                 }
                             })
                     }
+
                     let name = ""
                     // get user firstname 
                     try {
@@ -211,34 +214,17 @@ function PaymentSuccess() {
                             .select('firstName')
                             .eq('id', user.id)
                             .single();
-                        if(dberror){
+                        if (dberror) {
                             displayNotification("Erreur lors de la récupération des informations", "", "danger")
-                            return; 
+                            return;
                         }
-                        name = firstName
-                    } catch (err){
+                        name = firstName.firstName
+                    } catch (err) {
                         displayNotification("Erreur d'envoi de l'e-mail", err.message, "danger")
-                        return ; 
+                        return;
                     }
 
-                    //  notify user 
-                    try {
-                        await sendMail({
-                            email: user.email,
-                            templateId: 2,
-                            params: {
-                                FIRSTNAME : name | "", 
-                                COMMAND_NUMBER : cartToInsert.orderReference, 
-                                PRICE : cartPrice, 
-                                // ADDRESS : ????
-                            },
-                        });
-
-                        displayNotification("E-mail envoyé avec succès", "", "success");
-                    } catch (error) {
-                        displayNotification("Erreur d'envoi de l'e-mail", error.message, "danger")
-                    }
-
+                    const pickupPoint = await getPickupPoint(cartMetadata.pickup_point)
 
                     // Updating the counters
                     const { error: updateError } = await supabase
@@ -255,7 +241,27 @@ function PaymentSuccess() {
                     }
 
                     // Create shipping label
-                    await createAndInsertLabel(dataInsertedCart.id)
+                    const label = await createAndInsertLabel(dataInsertedCart.id)
+
+                    //  notify user 
+                    try {
+                        await sendMail({
+                            email: user.email,
+                            templateId: 2,
+                            params: {
+                                FIRSTNAME: name || "Error404_User_FirstName_Not_Found",
+                                COMMAND_NUMBER: label?.orderReference || "Error404_Command_Number_Not_Found",
+                                CONTENT: fullCartContent.map(item => `- ${item.name} x ${item.quantity}<br>`).join(""),
+                                PRICE: cartPrice.toFixed(2).replace('.', ','),
+                                PICKUP_POINT_NAME: pickupPoint.name,
+                                PICKUP_POINT_ADDRESS: `${pickupPoint.address1} ${pickupPoint.address2}, ${pickupPoint.zipCode} ${pickupPoint.city}`
+                            },
+                        });
+
+                        displayNotification("E-mail envoyé avec succès", "", "success");
+                    } catch (error) {
+                        displayNotification("Erreur d'envoi de l'e-mail", error.message, "danger")
+                    }
 
                     // Empty the cart
                     setCart({ content: {} });
