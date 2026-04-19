@@ -27,24 +27,33 @@ function AddUserModal({ isOpen, onClose }) {
     })
 
     function handleChange(e) {
-        const { name, value } = e.target;
+        const { name, value, type } = e.target;
+
+        let newValue = value;
+        if (type === "number") {
+            const parsed = Number(value);
+            newValue = isNaN(parsed) ? "" : Math.max(0, parsed);
+        }
 
         if (name == "length") {
-            setLength(parseInt(value));
+            const lengthValue = Number(newValue);
+
+            setLength(lengthValue);
+
             setFormData({
                 ...formData,
-                end_right: new Date(new Date(formData.start_right).getTime() + (parseInt(value) * 86400000)).toISOString().slice(0, 10),
-            })
-            setLength(value)
+                end_right: new Date(
+                    new Date(formData.start_right).getTime() + (lengthValue * 86400000)
+                ).toISOString().slice(0, 10),
+            });
+
         } else {
             setFormData(prevData => ({
                 ...prevData,
-                [name]: value
+                [name]: newValue
             }));
         }
-
     }
-
     async function handleSubmit() {
         await createUser(formData);
         onClose();
@@ -100,14 +109,14 @@ function AddUserModal({ isOpen, onClose }) {
                     {/* Post code */}
                     <FormInput labelClassName="ml-[8%]" className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Code postal :" name="postalCode" value={formData.postalCode} onChange={handleChange} isStarred={true} type='number' />
                     {/* length */}
-                    <FormInput labelClassName="ml-[8%]" className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Durée de validité (jours)" name="length" value={length} onChange={handleChange} isStarred={true} type='number' />
+                    <FormInput labelClassName="ml-[8%]" className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Durée de validité (jours)" name="length" value={length} onChange={handleChange} isStarred={true} type='number' min="0" />
 
                     <h2 className="ml-[4%] text-xl text-rayonorange font-bold my-2">Quotas : </h2>
                     <div className="grid md:grid-cols-2 gap-4 mx-[8%]">
-                        <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Min poids (g)" name="weight_min_limit" value={formData.weight_min_limit} onChange={handleChange} isStarred={true} type='number' />
-                        <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Max poids (g)" name="weight_limit" value={formData.weight_limit} onChange={handleChange} isStarred={true} type='number' />
-                        <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Limite de commandes" name="order_limit" value={formData.order_limit} onChange={handleChange} isStarred={true} type='number' />
-                        <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Limite de prix (€)" name="price_limit" value={formData.price_limit} onChange={handleChange} isStarred={true} type='number' />
+                        <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Min poids (g)" name="weight_min_limit" value={formData.weight_min_limit} onChange={handleChange} isStarred={true} type='number' min="0" />
+                        <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Max poids (g)" name="weight_limit" value={formData.weight_limit} onChange={handleChange} isStarred={true} type='number' min="0" />
+                        <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Limite de commandes" name="order_limit" value={formData.order_limit} onChange={handleChange} isStarred={true} type='number' min="0" />
+                        <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Limite de prix (€)" name="price_limit" value={formData.price_limit} onChange={handleChange} isStarred={true} type='number' min="0" step="0.01" />
 
                     </div>
 
