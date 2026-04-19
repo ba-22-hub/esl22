@@ -31,7 +31,7 @@ FROM nginx:alpine AS production
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Créer un script d'entrypoint pour injecter les variables au runtime
-COPY docker-entrypoint.sh /docker-entrypoint.sh
+COPY docker/entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
 # Créer la configuration Nginx pour les applications React SPA
