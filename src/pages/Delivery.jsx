@@ -19,7 +19,6 @@ function Delivery() {
     const { user, loading: authorLoading, checkHasRights } = useAuthor()
     const navigate = useNavigate()
 
-    // only accessible to users (this page needs user info)
     useEffect(() => {
         if (!user && !loading) {
             displayNotification("Vous devez vous connecter pour utiliser cette fonctionnalité !", "Connexion requise", "warning")
@@ -37,7 +36,6 @@ function Delivery() {
                 .from('cart')
                 .select('*')
                 .eq('client_id', user.id)
-                .eq('delivered', false)
                 .order('created_at', { ascending: false });
 
             if (error) {
@@ -73,9 +71,6 @@ function Delivery() {
         displayNotification(message, "warn")
     }
 
-
-
-
     const toggleExpand = (id) => {
         setExpanded(prev => (prev === id ? null : id));
     };
@@ -101,7 +96,6 @@ function Delivery() {
                 <Loading />
             ) : (
                 <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-                    {/* Header Section */}
                     <div className="bg-gradient-to-br from-[#3435FF] via-[#2526B7] to-[#1F2099] relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-96 h-96 bg-[#FF8200] opacity-10 rounded-full blur-3xl"></div>
                         <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12 relative z-10">
@@ -136,13 +130,15 @@ function Delivery() {
                                         key={delivery.id}
                                         className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all border border-gray-100 overflow-hidden"
                                     >
-                                        {/* Delivery Header */}
                                         <div className="p-6">
                                             <div className="flex items-center justify-between">
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-3 mb-2">
-                                                        <span className="bg-[#FF8200] text-white px-3 py-1 rounded-full text-sm font-semibold">
-                                                            En cours
+                                                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${delivery.delivered
+                                                            ? "bg-[#FF8200] text-white"
+                                                            : "bg-blue-100 text-blue-800"
+                                                            }`}>
+                                                            {delivery.delivered ? "Expédié" : "En cours de validation"}
                                                         </span>
                                                         <span className="text-gray-500 text-sm">
                                                             Commande du {formatDate(delivery.created_at)}
@@ -193,7 +189,6 @@ function Delivery() {
                                             </div>
                                         </div>
 
-                                        {/* Expanded Details */}
                                         {expanded === delivery.id && (
                                             <div className="border-t border-gray-100 bg-gradient-to-b from-gray-50 to-white p-6">
                                                 <h3 className="text-2xl font-bold text-[#3435FF] mb-6">
@@ -201,7 +196,6 @@ function Delivery() {
                                                 </h3>
 
                                                 <div className="grid md:grid-cols-2 gap-6 mb-6">
-                                                    {/* Order Info Card */}
                                                     <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-100">
                                                         <h4 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
                                                             <svg className="w-5 h-5 text-[#3435FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -237,7 +231,6 @@ function Delivery() {
                                                         </div>
                                                     </div>
 
-                                                    {/* Tracking Card */}
                                                     <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-100">
                                                         <h4 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
                                                             <svg className="w-5 h-5 text-[#FF8200]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -247,7 +240,7 @@ function Delivery() {
                                                             Suivi du colis
                                                         </h4>
                                                         <div className="space-y-4">
-                                                            {delivery.trackingUrl ? (
+                                                            {delivery.delivered ? (
                                                                 <>
                                                                     <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                                                                         <p className="text-green-800 text-sm font-medium">
@@ -269,10 +262,10 @@ function Delivery() {
                                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                                     </svg>
                                                                     <p className="text-blue-800 text-sm font-medium">
-                                                                        Étiquette en cours de création
+                                                                        Colis en cours de validation par la banque alimentaire
                                                                     </p>
                                                                     <p className="text-blue-600 text-xs mt-1">
-                                                                        Vous recevrez un lien de suivi sous peu
+                                                                        Vous recevrez un lien de suivi une fois votre commande validée
                                                                     </p>
                                                                 </div>
                                                             )}
@@ -280,7 +273,6 @@ function Delivery() {
                                                     </div>
                                                 </div>
 
-                                                {/* Products Table */}
                                                 <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
                                                     <div className="bg-gradient-to-r from-[#3435FF] to-[#5253ff] px-5 py-3">
                                                         <h4 className="font-bold text-white flex items-center gap-2">
@@ -327,9 +319,10 @@ function Delivery() {
                                 ))}
                             </div>
                         )}
-                    </div>
-                </div>
-            )}
+                    </div >
+                </div >
+            )
+            }
         </>
     )
 }

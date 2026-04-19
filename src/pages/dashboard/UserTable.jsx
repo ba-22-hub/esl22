@@ -140,9 +140,9 @@ const UserTable = () => {
 	};
 
 	function formatDate(datestr) {
-		return new Intl.DateTimeFormat('fr-FR', {
-			dateStyle: 'short',
-		}).format(new Date(datestr));
+		if (!datestr) return '—';
+		const date = new Date(datestr.includes('T') ? datestr : datestr + 'T00:00:00');
+		return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short' }).format(date);
 	}
 
 	if (isLoading || loading) {
@@ -301,7 +301,7 @@ const UserTable = () => {
 										<div className="bg-white p-3 rounded-lg border border-gray-200">
 											<label className="text-xs font-medium text-rayonblue block mb-1">Limite de poids maximal</label>
 											{editMode === user.id ? (
-												<input name="weight_limit" type="number" value={editedUser.weight_limit ?? ''} onChange={handleChange} className="w-full border-2 border-rayonblue rounded px-2 py-1" />
+												<input name="weight_limit" type="number" min="0" value={editedUser.weight_limit ?? ''} onChange={handleChange} className="w-full border-2 border-rayonblue rounded px-2 py-1" />
 											) : (
 												<p className="text-gray-800">{user.current_weight} / {user.weight_limit}</p>
 											)}
@@ -310,7 +310,7 @@ const UserTable = () => {
 										<div className="bg-white p-3 rounded-lg border border-gray-200">
 											<label className="text-xs font-medium text-rayonblue block mb-1">Limite de poids minimal</label>
 											{editMode === user.id ? (
-												<input name="weight_min_limit" type="number" value={editedUser.weight_min_limit ?? ''} onChange={handleChange} className="w-full border-2 border-rayonblue rounded px-2 py-1" />
+												<input name="weight_min_limit" type="number" min="0" value={editedUser.weight_min_limit ?? ''} onChange={handleChange} className="w-full border-2 border-rayonblue rounded px-2 py-1" />
 											) : (
 												<p className="text-gray-800">{user.current_weight} / {user.weight_min_limit}</p>
 											)}
@@ -319,7 +319,7 @@ const UserTable = () => {
 										<div className="bg-white p-3 rounded-lg border border-gray-200">
 											<label className="text-xs font-medium text-rayonblue block mb-1">Limite de prix</label>
 											{editMode === user.id ? (
-												<input name="price_limit" type="number" step="0.01" value={editedUser.price_limit ?? ''} onChange={handleChange} className="w-full border-2 border-rayonblue rounded px-2 py-1" />
+												<input name="price_limit" type="number" min="0" step="0.01" value={editedUser.price_limit ?? ''} onChange={handleChange} className="w-full border-2 border-rayonblue rounded px-2 py-1" />
 											) : (
 												<p className="text-gray-800">{user.current_price}€ / {user.price_limit}€</p>
 											)}
@@ -328,7 +328,7 @@ const UserTable = () => {
 										<div className="bg-white p-3 rounded-lg border border-gray-200">
 											<label className="text-xs font-medium text-rayonblue block mb-1">Limite de commandes</label>
 											{editMode === user.id ? (
-												<input name="order_limit" type="number" value={editedUser.order_limit ?? ''} onChange={handleChange} className="w-full border-2 border-rayonblue rounded px-2 py-1" />
+												<input name="order_limit" type="number" min="0" value={editedUser.order_limit ?? ''} onChange={handleChange} className="w-full border-2 border-rayonblue rounded px-2 py-1" />
 											) : (
 												<p className="text-gray-800">{user.current_order} / {user.order_limit}</p>
 											)}
@@ -342,18 +342,31 @@ const UserTable = () => {
 										<div className="bg-white p-3 rounded-lg border border-gray-200">
 											<label className="text-xs font-medium text-rayonblue block mb-1">Début des droits</label>
 											{editMode === user.id ? (
-												<input type="date" name="start_right" value={editedUser["start_right"] || ''} onChange={handleChange} className="w-full border-2 border-rayonblue rounded px-2 py-1" />
+												<input
+													type="date"
+													name="start_right"
+													value={editedUser["start_right"]?.slice(0, 10) || ''}
+													onChange={handleChange}
+													className="w-full border-2 border-rayonblue rounded px-2 py-1"
+												/>
 											) : (
-												<p className="text-gray-800">{formatDate(user["start_right"]) || '—'}</p>
+												<p className="text-gray-800">{formatDate(user["start_right"])}</p>
 											)}
 										</div>
 
 										<div className="bg-white p-3 rounded-lg border border-gray-200">
 											<label className="text-xs font-medium text-rayonblue block mb-1">Fin des droits</label>
 											{editMode === user.id ? (
-												<input type="date" name="end_right" value={editedUser["end_right"] || ''} onChange={handleChange} className="w-full border-2 border-rayonblue rounded px-2 py-1" />
+												<input
+													type="date"
+													name="end_right"
+													value={editedUser["end_right"]?.slice(0, 10) || ''}
+													min={editedUser["start_right"]?.slice(0, 10) || ''}
+													onChange={handleChange}
+													className="w-full border-2 border-rayonblue rounded px-2 py-1"
+												/>
 											) : (
-												<p className="text-gray-800">{formatDate(user["end_right"]) || '—'}</p>
+												<p className="text-gray-800">{formatDate(user["end_right"])}</p>
 											)}
 										</div>
 
