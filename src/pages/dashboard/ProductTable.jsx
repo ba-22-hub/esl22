@@ -553,7 +553,7 @@ function ProductTable() {
                 </form>
               )}
 
-              
+
 
               {/* Formulaire paramètres */}
               {expandedSettings && (
@@ -661,7 +661,7 @@ function ProductTable() {
                             </button>
                             <button
                               onClick={() => setEditingProductId(null)}
-                              className="w-10 h-10 bg-red hover:bg-red-600 text-white rounded-lg transition flex items-center justify-center text-xl"
+                              className="w-10 h-10 bg-red-400 hover:bg-red-600 text-white rounded-lg transition flex items-center justify-center text-xl"
                               title="Annuler"
                             >
                               ✕
@@ -678,7 +678,7 @@ function ProductTable() {
                             </button>
                             <button
                               onClick={() => removeProd(p)}
-                              className="w-10 h-10 bg-red hover:bg-red-600 text-white rounded-lg transition flex items-center justify-center text-xl"
+                              className="w-10 h-10 bg-red-400 hover:bg-red-600 text-white rounded-lg transition flex items-center justify-center text-xl"
                               title="Supprimer"
                             >
                               ✕

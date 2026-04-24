@@ -45,7 +45,7 @@ function Account() {
                     displayNotification("Erreur lors de la vérification de l'utilisateur", dberror.message, "danger")
                     return;
                 }
-                
+
                 setClientEdit(userdata);
                 setClient(userdata);
             } catch (error) {
@@ -198,7 +198,7 @@ function Account() {
                             </button>
 
                             <button
-                                className="text-white bg-red w-full md:w-1/3 mb-3 mt-2 h-10"
+                                className="text-white bg-red-500 hover:bg-red-600 w-full md:w-1/3 mb-3 mt-2 h-10"
                                 onClick={handleDeconnection}
                             >
                                 Se déconnecter
