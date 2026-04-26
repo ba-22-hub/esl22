@@ -212,7 +212,7 @@ function Account() {
                         </h1>
                         <button
                             onClick={handleDeconnection}
-                            className="text-white bg-red rounded-lg w-full md:w-40 mt-4 ml-auto block"
+                            className="text-white bg-red-400 hover:bg-red-500 rounded-lg w-full md:w-40 mt-4 ml-auto block"
                         >
                             ⏼ Déconnexion
                         </button>
