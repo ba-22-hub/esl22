@@ -240,7 +240,7 @@ function Account() {
                             <h2 className="text-rayonblue text-xl font-semibold mb-4">Déclarations</h2>
                             {renderSelect("Situation", "situation", situationOptions)}
                             {renderField("Quotient familial (CAF)", "quotient")}
-                            {renderSelect("Type de salaire", "wageType", wageOptions)}
+                            {renderSelect("Type de revenu", "wageType", wageOptions)}
                         </div>
 
                         {/* rights */}
