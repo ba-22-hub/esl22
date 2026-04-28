@@ -5,7 +5,7 @@ on:
       - release
 env:
   REGISTRY: rg.fr-par.scw.cloud
-  IMAGE: rg.fr-par.scw.cloud/rayon22-namespace/rayon22-app
+  IMAGE: rg.fr-par.scw.cloud/funcscwrayon22namespaceipzcor69/esl22-app
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -37,9 +37,9 @@ jobs:
         run: |
           echo "Pushed: ${{ env.IMAGE }}:v${{ github.run_number }} and ${{ env.IMAGE }}:latest"
 
-      - name: Deploy to Scaleway Container
-        run: |
-          curl -s -X POST \
-            "https://api.scaleway.com/containers/v1beta1/regions/fr-par/containers/${{ secrets.SCW_CONTAINER_ID }}/deploy" \
-            -H "X-Auth-Token: ${{ secrets.SCW_API_TOKEN }}" \
-            -H "Content-Type: application/json"
+    #  - name: Deploy to Scaleway Container
+    #    run: |
+    #      curl -s -X POST \
+    #        "https://api.scaleway.com/containers/v1beta1/regions/fr-par/containers/${{ secrets.SCW_CONTAINER_ID }}/deploy" \
+    #        -H "X-Auth-Token: ${{ secrets.SCW_API_TOKEN }}" \
+    #        -H "Content-Type: application/json"
