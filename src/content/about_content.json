@@ -10,12 +10,12 @@
     },
     "paragraphs": [
       {
-        "boldText": "Le Rayon 22 ",
-        "text": "est une initiative lancée par les Banques Alimentaires afin de fédérer leurs dispositifs de distribution directe d’aide alimentaire où les besoins ne sont pas couverts. Le réseau le RAYON regroupe différents dispositifs tels que des épiceries sociales, des dispositifs dédiés aux jeunes et aux étudiants et des camions itinérants, qui permettent d’aller vers des publics vulnérables et éloignés d’une aide alimentaire."
+        "boldText": "L’épicerie sociale en ligne ",
+        "text": "est une initiative lancée par la Banque Alimentaire des Côtes d’Armor afin de proposer un nouveau moyen de distribution directe d’aide alimentaire où les besoins ne sont pas couverts."
       },
       {
-        "boldText": "La Banque Alimentaire des Côtes d’Armor ",
-        "textAfter": "met en place une Epicerie Sociale en Ligne pour permettre d’avoir accès quand on veut et ou on veut à l’aide alimentaire. Son fonctionnement s’apparente à un Drive avec Livraison de proximité."
+        "boldText": "L’Epicerie Sociale en Ligne ",
+        "textAfter": "permet d’avoir accès quand on veut et où on veut à l’aide alimentaire. Son fonctionnement s’apparente à un Drive avec Livraison de proximité."
       }
     ]
   },
@@ -29,8 +29,8 @@
           "textAfter": ", elle est une des toutes premières en France !"
         },
         {
-          "text": "Avec le",
-          "highlight": "RAYON 22 - épicerie en ligne -",
+          "text": "Avec ",
+          "highlight": "ESL22 - épicerie en ligne -",
           "textAfter": ", la Banque Alimentaire des Côtes d'Armor innove dans le domaine de la distribution alimentaire."
         },
         {

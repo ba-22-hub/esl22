@@ -80,7 +80,7 @@ function AdminLogin() {
                             Administration
                         </h1>
                         <p className="text-blue-100 text-sm">
-                            Rayon22 - Espace Admin
+                            ESL22 - Espace Admin
                         </p>
                     </div>
 
@@ -144,7 +144,7 @@ function AdminLogin() {
                                 href="/"
                                 className="text-sm text-gray-600 hover:text-rayonblue transition"
                             >
-                                ← Retour au site Rayon22
+                                ← Retour au site ESL22
                             </a>
                         </div>
                     </div>
@@ -152,7 +152,7 @@ function AdminLogin() {
 
                 {/* Footer */}
                 <div className="text-center mt-6 text-sm text-gray-600">
-                    <p>© 2024 Rayon22 - Tous droits réservés</p>
+                    <p>© 2026 ESL22 - Tous droits réservés</p>
                 </div>
             </div>
         </div>

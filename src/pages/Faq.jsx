@@ -35,7 +35,10 @@ function Faq() {
                 { id: 'q12', offset: 2950 },
                 { id: 'q13', offset: 3200 },
                 { id: 'q14', offset: 3450 },
-                { id: 'q15', offset: 3700 }
+                { id: 'q15', offset: 3700 },
+                { id: 'q16', offset: 3950 },
+                { id: 'q17', offset: 4200 },
+                { id: 'q18', offset: 4450 }
             ];
 
             const scrollPosition = window.scrollY + 150;
@@ -138,7 +141,7 @@ function Faq() {
             <main className="lg:mx-[30px] my-8 px-4 mb-4">
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-6 items-start">
-                    <FaqItem id="q1" question="1 Comment m'inscrire sur lerayon22.org ?">
+                    <FaqItem id="q1" question="1 Comment m'inscrire sur l'épicerie en ligne des Côtes d'Armor (ESL22) ?">
                         <p className="mb-4">L'inscription se fait en 3 étapes :</p>
                         <ol className="list-decimal pl-6 mb-4 space-y-2">
                             <li>Contactez les services sociaux de votre commune pour vérifier votre éligibilité et leur demander de transmettre votre dossier à notre équipe.</li>
@@ -206,12 +209,27 @@ function Faq() {
                     </FaqItem>
 
                     <FaqItem id="q14" question="14 Comment contacter les services sociaux pour mon inscription ?">
-                        <p>Adressez-vous directement à votre mairie ou CCAS (Centre Communal d'Action Sociale). Ils transmettent votre dossier à notre équipe.</p>
+                        <p>Adressez-vous directement à votre mairie ou CCAS (Centre Communal d'Action Sociale) ou la Maison du Département de votre secteur (5 sur le 22). Ils transmettront votre dossier à notre équipe.</p>
                     </FaqItem>
 
                     <FaqItem id="q15" question="15 Mon inscription est arrivée à échéance, comment la réactiver ?">
                         <p>Prenez rendez-vous avec le service social qui suit votre situation pour mettre à jour votre dossier. Votre accès sera rétabli après validation.</p>
                     </FaqItem>
+
+                    <FaqItem id="q16" question="16 Quel poids puis-je commander dans chaque colis ?">
+                        <p>Le poids minimum est de 4 kg et le maximum de 19 kg (le poids de la commande est affiché sur votre panier)</p>
+                    </FaqItem>
+
+
+                    <FaqItem id="q17" question="17 Quelle quantité puis-je commander chaque mois ?">
+                        <p>Le poids total commandable par mois est visible sur à la rubrique mon compte, vos droits, Poids maximum mensuel. Ce poids maximum est défini par le nombre de personnes du foyer. Le poids restant commandable dans le mois figure également (Poids restant ce mois-ci). </p>
+                    </FaqItem>
+
+
+                    <FaqItem id="q18" question="18 Pourquoi il est préférable de faire des grosses commandes plutôt que des petits colis ?">
+                        <p>Votre intérêt est de minimiser le nombre de colis pas mois pour payer le minimum de participation aux frais de livraison. Un colis de 15 kg vaut mieux que trois de 5kg, vous économiserez 2,70€ sur le mois.</p>
+                    </FaqItem>
+
                 </div>
 
                 {/* Section contact */}

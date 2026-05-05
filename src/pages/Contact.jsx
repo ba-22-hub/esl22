@@ -14,7 +14,7 @@ import FormTextArea from "../common/FormTextArea"
 // Styles converted to Tailwind classes
 
 // Importing assets
-import roundLogo from "@assets/logos/roundLogo.png"
+import roundLogo from "@assets/esl22/round_Logo_ESL22_circle_orange.png"
 
 function Contact() {
 	const { user, loading } = useAuthor()

@@ -6,7 +6,7 @@ import Slider from "react-slick";
 import { supabase } from "../lib/supabaseClient";
 import { useAuthor } from "../context/AuthorContext";
 
-import roundLogo from "../assets/logos/roundLogo.png";
+import roundLogo from "../assets/esl22/logo_couleur_epi.png";
 import { displayNotification } from "../lib/displayNotification.jsx";
 
 function SampleNextArrow(props) {

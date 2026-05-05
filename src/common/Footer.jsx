@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-import rayonLogo from "../assets/logos/logo.png";
+import esl22Logo from "../assets/esl22/round_Logo_ESL22_circle_bleu.png";
 import banqueLogo from "../assets/logos/banquesAlimentaires.png";
 
 const Footer = () => {
@@ -18,9 +18,9 @@ const Footer = () => {
                         <div className="flex items-center gap-8">
                             <Link to="/" className="flex items-center">
                                 <img
-                                    src={rayonLogo}
-                                    alt="Rayon22 logo"
-                                    className="h-12 w-auto object-contain"
+                                    src={esl22Logo}
+                                    alt="ESL22 logo"
+                                    className="h-28 w-auto object-contain"
                                 />
                             </Link>
 
@@ -33,13 +33,13 @@ const Footer = () => {
                                 <img
                                     src={banqueLogo}
                                     alt="Banques Alimentaires"
-                                    className="h-11 w-auto object-contain"
+                                    className="h-16 w-auto object-contain"
                                 />
                             </a>
                         </div>
 
                         <p className="text-sm text-blue-100 leading-relaxed max-w-xs">
-                            Le <span className="font-semibold text-white">RAYON</span> est une initiative des Banques Alimentaires.
+                            L' <span className="font-semibold text-white">Epicerie en Ligne </span> est une initiative des Banques Alimentaires.
                         </p>
                     </div>
 
@@ -133,7 +133,7 @@ const Footer = () => {
                 {/* Barre basse */}
                 <div className="border-t border-blue-400/30 mt-14 pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
                     <p className="text-sm text-blue-200">
-                        © {new Date().getFullYear()} Rayon22 — Tous droits réservés
+                        © {new Date().getFullYear()} ESL22 — Tous droits réservés
                     </p>
 
                     <div className="flex items-center gap-3">

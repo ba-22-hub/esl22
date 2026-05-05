@@ -4,7 +4,7 @@ import ShapeNumber from "@common/ShapeNumber"
 
 // Importing assets
 import mosaique from "@assets/Photos/mosaique.png"
-import bigRoundLogo from "@assets/logos/bigRoundLogo.png"
+import bigRoundLogo from "@assets/esl22/round_Logo_ESL22_circle_orange.png"
 import holdingApple from "@assets/Photos/holdingApple.jpg"
 import beams from "@assets/Assets/Rayons-traits bleus.png"
 
@@ -24,13 +24,13 @@ function HowItWorks() {
                 <div className="max-w-7xl mx-auto px-6 lg:px-12 py-16 lg:py-24 relative z-10">
                     <div className="flex flex-col lg:flex-row items-center gap-12">
                         <div className="flex-1">
-                            <h1 className="text-4xl lg:text-6xl font-bold text-white mb-8 leading-tight">
+                            <h1 className="text-3xl lg:text-4xl font-bold text-white mb-8 leading-tight">
                                 Faites vos <span className="text-[#FF8200]">courses</span> à petit prix en ligne et recevez-les près de <span className="text-[#FF8200]">chez vous !</span>
                             </h1>
 
                             <div className="space-y-6 text-white text-lg leading-relaxed">
                                 <p>
-                                    <strong>Je commande</strong> par internet quand je veux à mon épicerie solidaire et je me fais livrer où je veux en <strong>point relais</strong> près de chez moi ou de mon lieu d'étude.
+                                    <strong>Je commande</strong> par internet quand je veux à mon épicerie solidaire et je me fais livrer où je veux en <strong>point relais</strong> près de chez moi ou de mon lieu de travail.
                                 </p>
 
                                 <div className="bg-white bg-opacity-10 backdrop-blur-sm p-6 rounded-xl border border-white border-opacity-20">
@@ -43,25 +43,46 @@ function HowItWorks() {
                                 </div>
 
                                 <p>
-                                    Les prix sont encadrés entre <strong className="text-[#FF8200]">10% et 30%</strong> de leur valeur en magasin. J'ai le choix de produits variés en alimentaire (produits secs) ou d'hygiène et d'entretien avec toutefois une <strong>limitation mensuelle</strong>.
-                                </p>
-
-                                <p>
-                                    Une contribution aux frais d'envoi de <strong className="text-[#FF8200]">1,35€</strong> soit le prix d'un timbre.
+                                Les prix sont de <strong className="text-[#FF8200]">70% et 90%</strong> inférieurs à ceux constatés dans le commerce. J'ai le choix de produits variés en alimentaire (produits secs) ou d'hygiène et d'entretien avec toutefois une limitation mensuelle. Une contribution aux frais d’envoi de <strong className="text-[#FF8200]">1,35 € </strong>(soit le prix d’un timbre) est demandée à chaque commande.
                                 </p>
 
                                 <p className="font-semibold bg-[#FF8200] bg-opacity-20 p-4 rounded-lg border-l-4 border-[#FF8200]">
-                                    L'inscription est indispensable car l'accès à l'épicerie en ligne est sous conditions de ressources.
+                                    La constitution d’un dossier par les services sociaux est indispensable car l'accès à l'épicerie en ligne est sous conditions de ressources.
                                 </p>
-                            </div>
-
-                            <div className="mt-8">
-                                <button
-                                    onClick={() => window.location.href = '/login'}
-                                    className="bg-[#FF8200] hover:bg-[#ff9800] text-white px-8 py-4 rounded-lg text-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
-                                >
-                                    Se Connecter
-                                </button>
+                                {/* Carte Comment s'inscrire */}
+                                <div className="mt-8 bg-white bg-opacity-10 border border-white border-opacity-30 rounded-xl p-6">
+                                    <h3 className="text-[#FF8200] font-bold text-2xl mb-4">
+                                        📋 Comment s'inscrire
+                                    </h3>
+                                    <p className="text-white leading-relaxed mb-4">
+                                        Pour que la demande puisse être étudiée, un justificatif délivré par un service social confirmant l'éligibilité à l'aide alimentaire doit nous parvenir. Ce justificatif doit être obtenu à votre demande, auprès de l'un des services suivants :
+                                    </p>
+                                    <ul className="space-y-2 mb-6">
+                                        {[
+                                            "Les Maisons Du Département",
+                                            "Le CCAS (Centre Communal d'Action Social) en mairie",
+                                            "Une association caritative ou partenaire habilité",
+                                            "Un centre médico-social",
+                                            "Tout autre service social reconnu"
+                                        ].map((item, index) => (
+                                            <li key={index} className="flex items-start gap-3 text-white">
+                                                <span className="text-[#FF8200] font-bold flex-shrink-0">→</span>
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    <div className="space-y-3 text-blue-100 text-sm leading-relaxed border-t border-white border-opacity-20 pt-4">
+                                        <p>
+                                            Lorsque nous recevrons ce justificatif, l'inscription sera validée et un mail sera envoyé avec un <span className="font-semibold text-white">mot de passe provisoire</span> à changer dès la première connexion.
+                                        </p>
+                                        <p>
+                                            La Banque Alimentaire ne réalise pas l'évaluation sociale. Elle vérifie uniquement que l'évaluation a été faite par un organisme compétent. Toutes les informations transmises sont <span className="font-semibold text-white">strictement confidentielles</span>.
+                                        </p>
+                                        <p className="font-semibold text-[#FF8200]">
+                                            ⚠️ Vous ne pourrez pas commander de marchandises tant que votre dossier ne sera pas complet et validé.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -206,29 +227,6 @@ function HowItWorks() {
                                     </button>
                                 </div>
                             </div>
-
-                            {/* Et beaucoup plus */}
-                            <div className="bg-gradient-to-br from-orange-50 to-white p-8 rounded-2xl shadow-xl border-t-4 border-[#FF8200] relative overflow-hidden">
-                                {/* Image décorative en arrière-plan */}
-                                <div className="hidden lg:block absolute top-0 right-0 opacity-10">
-                                    <img src={beams} className="w-40 h-40 object-contain" alt="Background beams" />
-                                </div>
-
-                                <div className="lg:relative lg:z-10">
-                                    <h2 className="text-[#3435FF] text-3xl lg:text-4xl font-bold mb-6">Et beaucoup plus...</h2>
-
-                                    <p className="text-gray-700 text-lg leading-relaxed mb-8">
-                                        Nous mettons à votre disposition des recettes de cuisine, des informations pratiques, des promos, des animations...
-                                    </p>
-
-                                    <button
-                                        onClick={() => window.location.href = '/more'}
-                                        className="bg-[#3435FF] hover:bg-[#5253ff] text-white px-8 py-3 rounded-lg text-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
-                                    >
-                                        Toujours plus
-                                    </button>
-                                </div>
-                            </div>
                         </div>
 
                         {/* Colonne droite - Logo */}
@@ -237,8 +235,8 @@ function HowItWorks() {
                                 <div className="absolute inset-0 bg-gradient-to-br from-[#3435FF] to-[#FF8200] blur-3xl opacity-20 rounded-full"></div>
                                 <img
                                     src={bigRoundLogo}
-                                    className="relative z-10 w-full max-w-lg h-auto object-contain transform hover:scale-105 transition-transform duration-500"
-                                    alt="RAYON 22 en ligne logo"
+                                    className="relative z-10 w-full max-w-xs h-auto object-contain transform hover:scale-105 transition-transform duration-500"
+                                    alt="ESL22 en ligne logo"
                                 />
                             </div>
                         </div>

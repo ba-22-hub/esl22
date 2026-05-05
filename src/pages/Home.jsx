@@ -18,6 +18,7 @@ import file from "@assets/Assets/file.png"
 import cart from "@assets/Assets/cart.png"
 import phoneApp from "@assets/Photos/phoneApp.png"
 import content from "../content/home_content.json"
+import cotesArmor from "@assets/esl22/Logo_Côtes d'Armor.jpeg"
 
 function Home() {
     const [products, setProducts] = useState([])
@@ -35,7 +36,8 @@ function Home() {
     const logoMap = {
         "DPD": dpd,
         "Mondial Relay": mondialRelay,
-        "Pickup": pickup
+        "Pickup": pickup,
+        "Département des Côtes d'Armor": cotesArmor
     };
 
     const { hero, howToOrder, instagram: instagramContent, partners } = content.home;
@@ -120,7 +122,7 @@ function Home() {
                 <div className="max-w-7xl mx-auto px-6 lg:px-12 py-16 lg:py-24 relative z-10">
                     <div className="flex flex-col lg:flex-row items-center gap-12">
                         <div className="flex-1">
-                            <h1 className="text-4xl lg:text-6xl font-bold text-white mb-6 leading-tight">
+                            <h1 className="text-3xl lg:text-4xl font-bold text-white mb-6 leading-tight whitespace-nowrap">
                                 {hero.title.main} <span className="text-[#FF8200]">{hero.title.highlight}</span> {hero.title.end}
                             </h1>
                             <div className="space-y-6 text-white text-lg leading-relaxed mb-8">
@@ -132,21 +134,19 @@ function Home() {
                                     </p>
                                 ))}
                             </div>
-                            <div className="flex flex-col sm:flex-row gap-4">
-                                <button
-                                    onClick={() => window.location.href = hero.buttons.primary.link}
-                                    className="bg-[#FF8200] hover:bg-[#ff9800] text-white px-8 py-4 rounded-lg text-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
-                                >
-                                    {hero.buttons.primary.text}
-                                </button>
-                                <a
-                                    href={hero.buttons.secondary.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-block text-center bg-white text-[#3435FF] px-8 py-4 rounded-lg text-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
-                                >
-                                    {hero.buttons.secondary.text}
-                                </a>
+                            <div className="flex flex-col gap-6">
+                                {/* Bouton Se Connecter */}
+                                <div className="flex flex-col items-center gap-3 max-w-md">
+                                    <p className="text-white font-semibold text-center">
+                                        Afin de pouvoir commander des produits, il faut vous connecter à un compte.
+                                    </p>
+                                    <button
+                                        onClick={() => window.location.href = hero.buttons.primary.link}
+                                        className="bg-[#FF8200] hover:bg-[#ff9800] text-white px-8 py-4 rounded-lg text-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
+                                    >
+                                        {hero.buttons.primary.text}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <div className="hidden lg:flex relative">
@@ -254,7 +254,8 @@ function Home() {
                                         <img
                                             src={logoMap[logo.name]}
                                             alt={logo.alt}
-                                            className="h-16 object-contain hover:scale-110 transition-transform duration-300 grayscale hover:grayscale-0"
+                                           className={`object-contain hover:scale-110 transition-transform duration-300 grayscale hover:grayscale-0 
+                                                        ${logo.name === "Département des Côtes d'Armor" ? "h-28" : "h-16"}`}
                                         />
                                     </a>
                                 ) : (

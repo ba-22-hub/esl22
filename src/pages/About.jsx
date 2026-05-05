@@ -48,93 +48,49 @@ function About() {
             alt={content.images.alt.womanShelf}
             className="w-full h-full object-cover object-center"
           />
-          {/* Ticket logo flottant */}
-          <img
-            src={ticketLogo}
-            alt={content.images.alt.ticketLogo}
-            className="absolute top-12 right-12 w-32 md:w-40 rotate-6 drop-shadow-2xl z-20 animate-float"
-          />
-        </div>
+         </div>
 
-        {/* Cartes d'information */}
+        {/* Cartes d'information - Banque Alimentaire des Côtes d'Armor */}
         <div className="relative z-30 max-w-7xl mx-auto px-6 lg:px-12 lg:-mt-64 pb-16">
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="flex justify-center">
             {/* Carte Banque Alimentaire */}
-            <div className="bg-white rounded-2xl shadow-2xl p-8 border-t-4 border-[#3435FF] hover:shadow-3xl transition-all duration-300 transform hover:-translate-y-2">
-              <div className="flex justify-center mb-6">
-                <div className="w-32 h-32 bg-blue-50 rounded-full flex items-center justify-center p-4">
-                  <img src={birdLogo} alt={content.images.alt.birdLogo} className="w-full h-full object-contain" />
+              <div className="bg-white rounded-2xl shadow-2xl p-8 border-t-4 border-[#3435FF] hover:shadow-3xl transition-all duration-300 transform hover:-translate-y-2">
+                <div className="flex justify-center mb-6">
+                  <div className="w-32 h-32 bg-blue-50 rounded-full flex items-center justify-center p-4">
+                    <img src={birdLogo} alt={content.images.alt.birdLogo} className="w-full h-full object-contain" />
+                  </div>
+                </div>
+
+                <h2 className="text-[#3435FF] font-bold text-2xl mb-6 text-center">
+                  {content.cards.banqueAlimentaire.title}
+                </h2>
+
+                <div className="space-y-4 text-gray-700 leading-relaxed mb-8">
+                  {content.cards.banqueAlimentaire.paragraphs.map((para, index) => (
+                    <p key={index} className="text-center">
+                      {para.text}
+                      {para.highlight && (
+                        <span className={`font-${para.highlight === "10 décembre 1984" ? "semibold" : "bold"} text-[#3435FF]`}>
+                          {` ${para.highlight}`}
+                        </span>
+                      )}
+                      {para.textAfter && para.textAfter}
+                    </p>
+                  ))}
+                </div>
+
+                <div className="flex justify-center">
+                  <a
+                    href={content.cards.banqueAlimentaire.button.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block bg-[#FF8200] hover:bg-[#ff9800] text-white px-8 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
+                  >
+                    {content.cards.banqueAlimentaire.button.text}
+                  </a>
                 </div>
               </div>
-
-              <h2 className="text-[#3435FF] font-bold text-2xl mb-6 text-center">
-                {content.cards.banqueAlimentaire.title}
-              </h2>
-
-              <div className="space-y-4 text-gray-700 leading-relaxed mb-8">
-                {content.cards.banqueAlimentaire.paragraphs.map((para, index) => (
-                  <p key={index} className="text-center">
-                    {para.text}
-                    {para.highlight && (
-                      <span className={`font-${para.highlight === "10 décembre 1984" ? "semibold" : "bold"} text-[#3435FF]`}>
-                        {` ${para.highlight}`}
-                      </span>
-                    )}
-                    {para.textAfter && para.textAfter}
-                  </p>
-                ))}
-              </div>
-
-              <div className="flex justify-center">
-                <a
-                  href={content.cards.banqueAlimentaire.button.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block bg-[#FF8200] hover:bg-[#ff9800] text-white px-8 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
-                >
-                  {content.cards.banqueAlimentaire.button.text}
-                </a>
-              </div>
             </div>
-
-            {/* Carte Le Rayon */}
-            <div className="bg-gradient-to-br from-blue-50 to-white rounded-2xl shadow-2xl p-8 border-t-4 border-[#FF8200] hover:shadow-3xl transition-all duration-300 transform hover:-translate-y-2">
-              <div className="flex justify-center mb-6">
-                <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center p-4 shadow-lg">
-                  <img src={logo} alt={content.images.alt.rayonLogo} className="w-full h-full object-contain" />
-                </div>
-              </div>
-
-              <h2 className="text-[#3435FF] font-bold text-2xl mb-6 text-center">
-                {content.cards.leRayon.title}
-              </h2>
-
-              <div className="space-y-4 text-gray-700 leading-relaxed mb-8">
-                {content.cards.leRayon.paragraphs.map((para, index) => (
-                  <p key={index} className="text-center">
-                    {para.text}
-                    {para.highlight && (
-                      <span className={`font-bold text-[${para.highlight === "Banques Alimentaires" ? "#3435FF" : "#FF8200"}]`}>
-                        {` ${para.highlight}`}
-                      </span>
-                    )}
-                    {para.textAfter && ` ${para.textAfter}`}
-                  </p>
-                ))}
-              </div>
-
-              <div className="flex justify-center">
-                <a
-                  href={content.cards.leRayon.button.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block bg-[#3435FF] hover:bg-[#5253ff] text-white px-8 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
-                >
-                  {content.cards.leRayon.button.text}
-                </a>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Section Mission & Valeurs */}

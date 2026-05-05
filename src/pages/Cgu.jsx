@@ -2,13 +2,13 @@ export default function Cgu() {
     return (
         <>
             <div className="bg-white lg:w-[60%] lg:ml-[20%] mb-[5%] text-justify">
-                <h1 className="text-center text-rayonblue text-5xl lg:text-7xl leading-tight pt-[2%] font-bold">Condition générales d'utilisation</h1>
+                <h1 className="text-center text-rayonblue text-5xl lg:text-7xl leading-tight pt-[2%] font-bold">Condition générales d'utilisation du site esl22</h1>
                 <div className="p-32 flex flex-col gap-2">
                     <h2 className="text-lg text-rayonorange font-semibold">1. Préambule</h2>
-                    <p>Les présentes conditions générales d’utilisation régissent l’ensemble des relations entre le site www.ba22.lerayon.org (ci-après « Site ») édité par la Banque Alimentaire des Côtes d’Armor (ci-après, la « BA22 ») dont l’identité et les coordonnées sont précisées dans la rubrique <a className="text-blue-400 underline font-semibold" href="https://lerayon.banquealimentaire.org/mentions-legales/">« Mentions légales »</a> et le Visiteur du Site.
-                    Tout Visiteur du Site est réputé avoir pris connaissance des présentes conditions générales d’utilisation. Lors de l’inscription sur le site, l’Visiteur accepte expressément les présentes CGU en cochant la case précédent le texte suivant « Je reconnais avoir lu et compris les CGU et les accepte »</p>
+                    <p>Les présentes conditions générales d’utilisation régissent l’ensemble des relations entre le site esl22.fr (ci-après « Site ») édité par la Banque Alimentaire des Côtes d’Armor (ci-après, la « BA22 ») dont l’identité et les coordonnées sont précisées dans la rubrique <a className="text-blue-400 underline font-semibold" href="https://rayon22namespaceipzcor69-container-stupefied-moser.functions.fnc.fr-par.scw.cloud/legal-mentions">« Mentions légales »</a> et le Visiteur du Site.
+                    Tout Visiteur du Site est réputé avoir pris connaissance des présentes conditions générales d’utilisation. Lors de l’inscription sur le site, le visiteur accepte expressément les présentes CGU en cochant la case précédent le texte suivant « Je reconnais avoir lu et compris les CGU et les accepte »</p>
                     <h2 className="text-lg text-rayonorange font-semibold">2.  Objet et description</h2>
-                    Les présentes ont pour objet de fixer les conditions d’utilisation du Site et de l’ensemble des pages du Site ba22.lerayon.org.
+                    Les présentes ont pour objet de fixer les conditions d’utilisation du Site et de l’ensemble des pages du Site <h4 className="text-lg font-semibold"> d'épicerie Sociale en Ligne (esl22.fr)</h4>.
                     Le Site permet à l’Utilisateur d’accéder à la fourniture d’aide alimentaire et la livraison en point relais pour des personnes sous condition de ressources.
                     <h2 className="text-lg text-rayonorange font-semibold">3.  Définitions</h2>
                     Les termes ci-dessous définis auront entre les parties la signification suivante :
@@ -26,7 +26,7 @@ export default function Cgu() {
                     En acceptant de s’inscrire aux services réservés, l’Utilisateur membre s’engage à fournir des informations sincères et exactes concernant son état civil et ses coordonnées, notamment son adresse email. <br className="mb-2"/>
                     Pour accéder aux services, l’Utilisateur doit ensuite s'identifier à l'aide de son identifiant et de son mot de passe qui lui seront communiqués après la validation de son inscription. <br className="mb-2"/>
                     Tout Utilisateur membre régulièrement inscrit pourra également solliciter sa désinscription en se rendant à la page de contact ou à l’adresse ba220.epicerie@banquealimentaire.org. Celle-ci sera effective dans un délai raisonnable. <br className="mb-2"/>
-                    Tout événement dû à un cas de force majeure ayant pour conséquence un dysfonctionnement du site ou serveur et sous réserve de toute interruption ou modification en cas de maintenance, n'engage pas la responsabilité du site ba22.lerayon.org. Dans ces cas, l’Utilisateur accepte ainsi ne pas tenir rigueur à l’éditeur de toute interruption ou suspension de service, même sans préavis. <br className="mb-2"/>
+                    Tout événement dû à un cas de force majeure ayant pour conséquence un dysfonctionnement du site ou serveur et sous réserve de toute interruption ou modification en cas de maintenance, n'engage pas la responsabilité du site. Dans ces cas, l’Utilisateur accepte ainsi ne pas tenir rigueur à l’éditeur de toute interruption ou suspension de service, même sans préavis. <br className="mb-2"/>
                     L'Utilisateur a la possibilité de contacter le site par messagerie électronique à l’adresse ba220.epicerie@banquealimentaire.org<br className="mb-2"/>
                     Le Site est accessible 24h/24 et 7j/7. <br className="mb-2"/>
                     La BA22 s’efforce de fournir un accès de qualité et de permettre au Visiteur d’utiliser les moyens de communication mis à sa disposition dans les meilleures conditions possibles. <br className="mb-2"/>

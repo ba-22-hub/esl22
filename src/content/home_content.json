@@ -1,6 +1,6 @@
 {
   "home": {
-    "brandName": "Le Rayon 22",
+    "brandName": "ESL22",
     "hero": {
       "title": {
         "main": "Pour",
@@ -9,18 +9,19 @@
       },
       "description": [
         {
-          "text": "Le",
-          "bold": "Rayon 22",
-          "textAfter": "est une épicerie sociale et solidaire dont l'objectif est d'accompagner les personnes pour qui une aide alimentaire représente un soutien non négligeable pour leurs quotidiens, en leur donnant accès à des produits alimentaires à petits prix, partout sur le territoire des Côtes-d'Armor."
+          "text": "L'",
+          "bold": "ESL22 (Epicerie Sociale en Ligne des Côtes d'Armor)",
+          "textAfter": "est une épicerie sociale et solidaire dont l'objectif est d'accompagner les personnes pour qui une aide alimentaire représente un soutien non négligeable pour leurs quotidiens, en leur donnant accès à des produits alimentaires à petits prix, partout sur le territoire des Côtes-d'Armor. Notre Épicerie Sociale et Solidaire distribue des denrées alimentaires dont l’achat est financé par l’État français."
         },
         {
-          "text": "Le",
-          "bold": "Rayon 22",
+          "text": "L'",
+          "bold": "ESL22",
           "textAfter": "permet aussi de donner accès à l'aide alimentaire aux personnes qui ne peuvent se rendre aux distributions de nos partenaires."
         },
         {
-          "text": "Afin de pouvoir commander des produits, il vous faut vous connecter à un compte.",
-          "isBold": true
+          "text": "Les",
+          "bold": "Banques Alimentaires",
+          "textAfter": "vous proposent également un programme au service de la santé des personnes qui s’appuie sur les objectifs du Programme National Nutrition Santé (PNNS)"
         }
       ],
       "buttons": {
@@ -74,10 +75,15 @@
       "rating": "★★★★★",
       "logos": [
         {
+          "name": "Département des Côtes d'Armor",
+          "url": "https://www.cotesdarmor.fr/",
+          "alt": "Département des Côtes d'Armor"
+        },
+        {
           "name": "DPD",
           "url": "https://www.dpd.com/fr/fr/",
           "alt": "DPD"
-        }
+        } 
       ]
     }
   }
