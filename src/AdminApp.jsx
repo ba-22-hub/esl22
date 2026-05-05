@@ -46,50 +46,28 @@ function AdminNavbar() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <nav className="bg-rayonblue shadow-lg">
-      <div className="max-w-7xl mx-auto px-6 py-4">
-        {/* Première ligne : Logo + Boutons actions */}
-        <div className="flex justify-between items-center mb-4">
+    <nav className="bg-rayonblue shadow-lg sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-6 py-2">
+        <div className="flex justify-between items-center">
           {/* Logo et titre */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-rayonblue font-bold text-xl">
+            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-rayonblue font-bold text-lg">
               R
             </div>
-            <h1 className="text-2xl font-bold text-white hidden md:block">
-              Administration Rayon22
+            <h1 className="text-lg font-bold text-white hidden md:block">
+              Administration du site ESL22
             </h1>
           </div>
 
-          {/* Boutons actions */}
-          <div className="flex items-center gap-3">
-            <Link
-              to="/"
-              className="px-4 py-2 bg-rayonorange hover:opacity-90 text-white rounded-lg font-semibold transition hidden sm:block"
-            >
-              🏠 Rayon22
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="w-10 h-10 bg-red bg-500 hover:bg-red-600 text-white rounded-lg font-bold transition flex items-center justify-center text-xl"
-              title="Déconnexion"
-            >
-              ⏻
-            </button>
-          </div>
-        </div>
-
-        {/* Deuxième ligne : Navigation */}
-        <div className="flex justify-center">
           {/* Liens de navigation - Desktop */}
-          <div className="hidden lg:flex items-center gap-2 flex-wrap justify-center">
+          <div className="hidden lg:flex items-center gap-2">
             {navLinks.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
-                className={`px-4 py-2 rounded-lg font-medium transition ${isActive(link.to)
-                    ? 'bg-white text-rayonblue'
-                    : 'text-white hover:bg-blue-700'
-                  }`}
+                className={`px-3 py-1.5 rounded-lg font-medium text-sm transition ${
+                  isActive(link.to) ? 'bg-white text-rayonblue' : 'text-white hover:bg-blue-700'
+                }`}
               >
                 {link.label}
               </Link>
@@ -97,11 +75,11 @@ function AdminNavbar() {
           </div>
 
           {/* Menu mobile */}
-          <div className="lg:hidden w-full">
+          <div className="lg:hidden">
             <select
               value={location.pathname}
               onChange={(e) => navigate(e.target.value)}
-              className="w-full px-4 py-2 border-2 border-white rounded-lg bg-white text-rayonblue font-medium focus:outline-none focus:ring-2 focus:ring-rayonorange"
+              className="px-3 py-1.5 border-2 border-white rounded-lg bg-white text-rayonblue font-medium focus:outline-none focus:ring-2 focus:ring-rayonorange text-sm"
             >
               {navLinks.map((link) => (
                 <option key={link.to} value={link.to}>
@@ -109,6 +87,23 @@ function AdminNavbar() {
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Boutons actions */}
+          <div className="flex items-center gap-2">
+            <Link
+              to="/"
+              className="px-3 py-1.5 bg-rayonorange hover:opacity-90 text-white rounded-lg font-semibold transition hidden sm:block text-sm"
+            >
+              🏠 ESL22
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold transition flex items-center justify-center"
+              title="Déconnexion"
+            >
+              ⏻
+            </button>
           </div>
         </div>
       </div>
