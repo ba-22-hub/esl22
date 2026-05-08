@@ -122,7 +122,7 @@ function Home() {
                 <div className="max-w-7xl mx-auto px-6 lg:px-12 py-16 lg:py-24 relative z-10">
                     <div className="flex flex-col lg:flex-row items-center gap-12">
                         <div className="flex-1">
-                            <h1 className="text-3xl lg:text-4xl font-bold text-white mb-6 leading-tight whitespace-nowrap">
+                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-6 leading-tight">
                                 {hero.title.main} <span className="text-[#FF8200]">{hero.title.highlight}</span> {hero.title.end}
                             </h1>
                             <div className="space-y-6 text-white text-lg leading-relaxed mb-8">
