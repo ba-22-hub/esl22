@@ -71,7 +71,7 @@ function HowItWorks() {
                                             </li>
                                         ))}
                                     </ul>
-                                    <div className="space-y-3 text-blue-100 text-sm leading-relaxed border-t border-white border-opacity-20 pt-4">
+                                    <div className="space-y-3 text-blue-100 text-base leading-relaxed border-t border-white border-opacity-20 pt-4">
                                         <p>
                                             Lorsque nous recevrons ce justificatif, l'inscription sera validée et un mail sera envoyé avec un <span className="font-semibold text-white">mot de passe provisoire</span> à changer dès la première connexion.
                                         </p>
@@ -194,36 +194,22 @@ function HowItWorks() {
                     <div className="grid lg:grid-cols-2 gap-16 items-start">
                         {/* Colonne gauche - Contenu */}
                         <div className="space-y-12">
-                            {/* Un contact si besoin */}
+                            {/* FAQ */}
                             <div className="bg-gradient-to-br from-blue-50 to-white p-8 rounded-2xl shadow-xl border-t-4 border-[#3435FF]">
-                                <h2 className="text-[#3435FF] text-3xl lg:text-4xl font-bold mb-6">Un contact si besoin</h2>
-
+                                <h2 className="text-[#3435FF] text-3xl lg:text-4xl font-bold mb-2">FAQ</h2>
+                                <p className="text-gray-500 italic mb-6">Foire Aux Questions</p>
                                 <div className="space-y-4 text-gray-700 leading-relaxed mb-8">
                                     <p className="flex items-start gap-3">
                                         <span className="text-[#FF8200] text-2xl font-bold flex-shrink-0">→</span>
-                                        <span>Lors de l'inscription, je serai rappelé pour formaliser mon dossier.</span>
-                                    </p>
-                                    <p className="flex items-start gap-3">
-                                        <span className="text-[#FF8200] text-2xl font-bold flex-shrink-0">→</span>
-                                        <span>Si nécessaire un rendez-vous avec une assistante sociale de proximité sera pris.</span>
-                                    </p>
-                                    <p className="flex items-start gap-3">
-                                        <span className="text-[#FF8200] text-2xl font-bold flex-shrink-0">→</span>
-                                        <span>À tout moment, je peux contacter la Banque Alimentaire par mail pour un problème de fonctionnement ou concernant ma situation personnelle.</span>
+                                        <span>Retrouvez les réponses aux questions les plus fréquemment posées sur le fonctionnement de l'épicerie solidaire.</span>
                                     </p>
                                 </div>
                                 <div className="flex-c lg:flex-l">
                                     <button
-                                        onClick={() => window.location.href = '/contact'}
+                                        onClick={() => window.location.href = '/Faq'}
                                         className="w-[225px] bg-[#FF8200] hover:bg-[#ff9800] text-white px-8 py-3 rounded-lg text-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
                                     >
-                                        Contactez-nous
-                                    </button>
-                                    <button
-                                        onClick={() => window.location.href = '/Faq'}
-                                        className="w-[225px] mt-2 lg:mt-0 bg-[#FF8200] hover:bg-[#ff9800] text-white lg:mx-4 py-3 rounded-lg text-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
-                                    >
-                                        FAQ
+                                        Consulter la FAQ
                                     </button>
                                 </div>
                             </div>

@@ -4,3 +4,6 @@ dist/
 .vite
 .env
 .vscode
+schema.sql
+supabase/.temp
+supabase/
