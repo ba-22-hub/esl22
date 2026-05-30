@@ -1,0 +1,4 @@
+>supabase link --project-ref vmmzutahmhmdbfjwokoj
+>pg_dump -h db.vmmzutahmhmdbfjwokoj.supabase.co -U postgres -d postgres -t Products -f backup_products.sql
+
+

@@ -1,0 +1,166 @@
+--
+-- PostgreSQL database dump
+--
+
+\restrict IWi12P9thHmEavZOJU6b9C42Q5jmcnbxZxy3vmmjRdnp6HLX6DddSxNgWCkGC2W
+
+-- Dumped from database version 17.6
+-- Dumped by pg_dump version 17.10 (Ubuntu 17.10-1.pgdg22.04+1)
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: products; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.products (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    name text NOT NULL,
+    price real NOT NULL,
+    "salePrice" real NOT NULL,
+    weight real NOT NULL,
+    category text NOT NULL,
+    image_name text,
+    stock integer DEFAULT 0 NOT NULL,
+    description text,
+    "productStockIncertainThreshold" smallint,
+    max_order smallint DEFAULT '9'::smallint NOT NULL
+);
+
+
+ALTER TABLE public.products OWNER TO postgres;
+
+--
+-- Data for Name: products; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.products (id, name, price, "salePrice", weight, category, image_name, stock, description, "productStockIncertainThreshold", max_order) FROM stdin;
+763bf884-37b1-4e50-899d-fd5f0b3b96bc	pêches au sirop	1.26	0.25	410	fruits	Fruits sirop peche 425gr.png	108	Nutri-score A.\npeut contenir des fragments de noyaux.\npoids net égoutté 230	5	9
+1595d46b-8c27-4e1d-9e33-2f84fca73835	abricots au sirop	1.46	0.3	410	fruits	Fruits sirop abricot 425gr.png	108	Nutriscore A\nPeut contenir des noyaux et fragments de noyaux \nPoids net égoutté 235	5	9
+16eedf77-a168-4aa1-9ae3-cf799d21b39b	Légumes couscous	1.49	0.3	800	conserves	Legumes couscous 800 gr.png	96	Nutriscore B\nTrace de gluten et de soja	5	9
+6e052728-fada-408d-931c-86f13be12b5c	Choucroute	2.82	0.56	800	conserves	boite choucroute 800 gr.png	96	Boite conserve de 800 gr . Nutriscore C. Contient du porc et du chou et de la farine de blé . contient du vin blanc	5	9
+1781c8d1-6358-420b-9c8e-1a12d45b333a	Flageolets verts	1.35	0.27	800	conserves	Use AI Image May 26, 2026, 10_28_10.png	72	Nutri-score A.\nPoids net égoutté : 530g	3	9
+b893c048-9868-4961-bb59-b9ba7a04adbb	Crème dessert saveur vanille	2.1	0.42	570	autre	Creme-dessert-125gr.png	108	Créme dessert saveur vanille.\nNutri-score C.\nContient du lait.\nTraces de : fruits à coque.\nEpaississants : carraghénanes (E407), alginate de sodium (E401)	5	9
+cdb6d090-8915-4f40-9a84-2f507f5ebfec	Pâtes torsades	0.65	0.13	500	féculents	Use AI Image May 26, 2026, 10_24_21.png	100	Torsades.\nNutri-score A.\nTraces de : moutarde et soja.	5	9
+085f5d3a-2dc5-4f75-ae08-0e8880ffa039	Shampoing enfant 	1.35	0.27	280	hygiène	Use AI Image May 26, 2026, 09_50_26.png	30	Shampoing poire et lait amande douce . 250 ml de produit	5	9
+fa8e83fd-33bb-4da3-b692-b20fc2f706e4	Paté Hénaff	2.15	0.43	156	conserves	Pate Henaff 150 gr.png	168	contient du porc	5	9
+819d9381-050c-44f0-bc37-b0870724db83	Thon au naturel	1.9	0.38	200	conserves	Thon-140gr.png	168	Nutriscore B\npoids net égoutté 140 g	5	9
+f7f7f309-73c0-417c-9e4f-141efde3c306	Café moulu	3.66	0.73	250	autre	Cafe-moulu-250gr.png	108	Café moulu pur Arabica.	5	2
+3698815f-abaa-4c11-bca6-bc3786c47e84	Brosses à dent 	0.99	0.2	100	hygiène	Lot de 4 brosses a dents.png	100	4 brosses à dents souples. Adaptées aux enfants de plus de 12 ans.	5	9
+728e7ef7-da37-47fc-a331-b806e971a013	Mousse à raser 	1.39	0.28	320	hygiène	b037ded8-057a-4595-b77f-5d0f7d9d70cf.png	20	Mousse à raser peaux sensibles.\n250 ml.	5	9
+c8924679-3f14-410b-a194-82dbc65ad8ec	Maquereaux au naturel	1.48	0.3	176	conserves	Maquereaux-95gr.png	96	poids net égoutté 95 g . Nutriscrore C . 	5	9
+82bc2005-c9b2-4e64-a0b7-b409c3f4f973	Dentifrice enfants	0.89	0.18	80	hygiène	Use AI Image May 26, 2026, 09_55_29.png	20	Dentifrice parfum fraise. Tube de 50 ml	5	9
+218bddf2-b0a8-4ae2-922d-be8993536ec4	Thon au naturel	5.7	1.14	399	conserves	Thon-125gr.png	24	Nustriscore B. Trois boites de 133 g net et 93 g et égoutté	5	1
+3e6ba1a3-6fa6-498c-b676-749379a3c360	Thé vert	0.79	0.2	32.5	autre	Use AI Image May 26, 2026, 09_52_15.png	100	thé vert aromatisé. 25 sachets.	4	9
+5b5e3d41-cdd5-4a30-b5b9-0bb8dde979c0	Protection féminine 	1	0.2	80	hygiène	574476ba08dfb23d87bce955db2895b7a7e401d0-1957447382.jpg	20	paquet de 16 protections "normal"	5	9
+99d21945-979a-4f01-a1c9-2fe0c3eb9179	Rillette thon	1.69	0.34	125	conserves	thon-vecteur-boite-conserve_1639-50089-299500069.jpg	156	contient Carraghenanes et farine de graines de caroube - nutriscore C	5	3
+94b3dbef-de69-490e-aa03-895f6bb5c415	Chocolat en poudre	3.4	0.68	490	autre	Use AI Image May 26, 2026, 09_49_24.png	108	Nutriscore B\nContient Lecithine de soja	5	9
+7cc80335-d35b-42ec-aa8c-b656ea36ba14	Tablette chocolat au lait	3.13	0.63	300	autre	Tablette chocolat 300 gr.png	100	Nustricore E\nContient poudre de lactoserum, pâte de noisettes, trace de gluten et autres fruites à coque	5	4
+163fae6a-9de3-4f2b-b476-460f7b76daac	Savon 	0.92	0.18	100	hygiène	Use AI Image May 26, 2026, 09_58_41.png	100	Savon douceur	5	9
+d113bc3b-49a7-4ef0-96de-1b1d82c29706	Cassoulet	1.15	0.23	420	conserves	Use AI Image May 26, 2026, 09_57_04.png	1156	Nutriscore A . Contient du porc . Stabilisant E451, gélifiant carraghenane, gélifiant E407, trace de gluten	4	9
+ca92079a-52b6-4c52-a98b-d3cf4524868a	Coquillettes	0.75	0.15	500	féculents	Coquillettes-500gr.png	96	Coquillettes.\nNutri-score A.\nTraces de : moutarde et soja	5	9
+bad888bd-0526-469c-aa62-fe017e073c84	Semoule coucous	0.17	0.84	500	féculents	semoule_couscous_sans_gluten-619725997.png	100	Nustriscore A\nTrace d'oeuf	4	9
+c6f2e668-2bb6-4981-9010-e32a75dd1b59	Dentifrice adulte 	0.15	0.76	100	hygiène	dentifrice.png	100	Dentifrice soin complet.\n75 ml.	4	9
+e6118f15-9ef2-4c1e-9446-246ad05d294a	Riz	1.47	0.29	500	féculents	Riz blanc.jpg	108	Nutriscore A\nTrace de gluten	5	9
+9b22661b-70c5-4393-afe9-fe1a6c8f4b59	Maïs tendre	0.95	0.19	285	conserves	Use AI Image May 26, 2026, 09_48_15.png	108	Nutriscore A	4	9
+d48fbfa9-e41d-416c-ba4f-c4bf4b4bd723	abricots au sirop	2.42	0.48	820	fruits	Fruits sirop abricot 800gr.png	99	Nutriscore A\nPeut contenir des noyaux ou fragments de noyaux\nPoids net égoutté 475 G	5	9
+b63db63b-f85c-42a8-8ead-80ba705ff62e	Saucisses Lentilles	1.39	0.28	420	conserves	Use AI Image May 26, 2026, 10_05_15.png	108	Nutriscore A .  Contient du porc.  Stabilisant E451, gélifiants, carraghénanes, gomme guar, gomme xanthane . Trace de gluten et de lait	5	9
+c712078f-f058-41e4-a04c-a6a0f283b5d1	Petit pois	1.35	0.27	800	conserves	petit pois.jpg	204	Nutri-score A	5	9
+d68e1b99-3b38-4d0b-af52-c4da895c1c47	Haricot vert 	1.3	0.26	800	conserves	Use AI Image May 26, 2026, 10_17_42.png	156	Nutriscore A\n	5	9
+413d11c9-30ee-4a47-9a8c-c4adc0f2f173	Brosse à dent enfant 	1.47	0.29	10	hygiène	Use AI Image May 26, 2026, 09_54_06.png	60	Lot de 3 brosses	5	9
+15260371-8700-4fa4-b85c-48725599a387	salade mexicaine au thon	1.89	0.38	250	conserves	Bol salade mexicaine thon de 250 grammes.png	156	Nutriscore A . contient épaissisant gomme de guar	5	9
+f50ee17c-21c6-4e5f-8158-cce0bfb822c9	Purée	1.85	0.37	500	féculents	Use AI Image May 28, 2026, 11_28_37.png	100	4 sachets de 125 grammes (1 sachet pour 4 personnes).\nNutri-score A.\nTraces de : lait	0	9
+7495fbe9-9a6c-4f6f-8204-de385db38959	Choucroute	1.72	0.34	420	conserves	boite choucroute 400 g.png	96	Choucroute garnie.\nNutri-score C.\nContient du blé, du porc, du vin blanc.	5	9
+757d62ca-c16a-4ca1-82c7-a3fd30ee44e3	Soupe instantanée aux légumes	1.38	0.28	80	légumes	Potage sachet 56 gr.png	99	4 sachets de 20 grammes.\nNutri-score B.\nContient lactose, lait, céleri-rave.\nTraces de : gluten, crustacés, fruits à coque, oeufs, poissons et soja.	5	9
+eb2a96d0-6a8b-4390-8a6e-ad284b2e6698	pêches au sirop	1.57	0.31	825	fruits	Fruits sirop peche 800gr.png	98	Nustriscore A\npoids net égoutté 465 g\npeut contenir des fragments de noyaux	4	9
+689c6221-a723-4765-bbcf-795b69c540df	Cassoulet	2.18	0.44	840	conserves	Cassoulet_800 grammes.png	107	Nutriscore A . Contient du porc . Stabilisant E451, gélifiant carraghenane, gélifiant E407, trace de gluten	5	9
+6211c1d2-a815-4378-95fd-250d70e6257e	Haricots rouges	0.84	0.17	420	conserves	Use AI Image May 26, 2026, 10_23_20.png	108	Nutri-score A.\nPoids net égoutté : 250g.	3	9
+485c1c9d-2c1b-4344-b50a-d241c37b28ec	Sardines au naturel	1.29	0.26	135	conserves	Boite-de-sardines-95 grammes.png	120	Nutriscore B . poids net égoutté 95 g	5	9
+4198f643-7da7-4ff4-88e5-82247a941a89	Ravioli bolognaise	2.89	0.58	800	conserves	Use AI Image May 26, 2026, 10_02_25.png	102	Nustriscore B. contient du porc. contient semoule de blé, traces de crustacés, de lait, d'oeuf, de poissons, et de soja. contient du vin blanc	5	9
+0874a08c-dc1d-4dd4-a780-a8e125428ab3	Shampoing extra doux adulte	0.22	1	560	hygiène	Use AI Image May 26, 2026, 10_00_53.png	50	shampoing tous types de cheveux. Poids 500 ml	5	9
+a85a4f82-4638-40f4-bfbc-ee9f722cda4d	Gel douche 	0.94	0.19	280	hygiène	fb1f9275-d309-4a0e-9608-807021776d15.png	50	Crème de douche surgras, à l'huile d'amande douce et beurre de karité.\nPour les peaux sèches à très sèches.\n250 ml.	5	9
+6e2a318c-05dc-4588-ab31-75f197a82e60	Saucisses lentilles	4.05	0.81	840	conserves	Use AI Image May 26, 2026, 10_11_33.png	108	Nutriscore A .  Contient du porc . Stabilisant E451, gélifiants, carraghénanes, gomme guar, gomme xanthane\n	5	9
+a44d603a-bcb1-45e5-91c1-a4cb8d34b8f9	Ravioli pur boeuf	1.35	0.27	400	conserves	raviolis-1000.jpeg	96	Ravioli pur boeuf à la sauce tomate et aux légumes.\nNutri-score C.\nContient du vin blanc.\nTraces de : céleri, crustacés, lait, moutarde, oeufs, poissons et soja.	5	9
+\.
+
+
+--
+-- Name: products products_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.products
+    ADD CONSTRAINT products_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: products Admins can read and write; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Admins can read and write" ON public.products USING ((auth.uid() IN ( SELECT "Admins".id
+   FROM public."Admins"))) WITH CHECK ((auth.uid() IN ( SELECT "Admins".id
+   FROM public."Admins")));
+
+
+--
+-- Name: products Authentificated users can update; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Authentificated users can update" ON public.products FOR UPDATE USING (true) WITH CHECK (true);
+
+
+--
+-- Name: products Enable insert for users based on user_id; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Enable insert for users based on user_id" ON public.products FOR INSERT WITH CHECK (true);
+
+
+--
+-- Name: products Enable read access for all users; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Enable read access for all users" ON public.products FOR SELECT USING (true);
+
+
+--
+-- Name: products Public read access; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Public read access" ON public.products FOR SELECT USING (true);
+
+
+--
+-- Name: products; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: TABLE products; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.products TO anon;
+GRANT ALL ON TABLE public.products TO authenticated;
+GRANT ALL ON TABLE public.products TO service_role;
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+\unrestrict IWi12P9thHmEavZOJU6b9C42Q5jmcnbxZxy3vmmjRdnp6HLX6DddSxNgWCkGC2W
+
