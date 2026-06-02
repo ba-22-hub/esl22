@@ -149,6 +149,15 @@ function Account() {
             </div>
         </div>
     );
+    // même élément mais en lecture seule
+    const renderReadOnly = (label, fieldName) => (
+        <div className="flex flex-row items-center text-rayonblue mb-2 text-sm lg:text-base">
+            <label className="font-semibold min-w-[180px] whitespace-nowrap lg:mr-4 mr-0">{label} :</label>
+            <div className="flex-1">
+                <p className="text-rayonblue">{clientEdit[fieldName]}</p>
+            </div>
+        </div>
+    );
 
 
     const renderSelect = (label, fieldName, options) => (
@@ -220,14 +229,14 @@ function Account() {
                         <div className="flex flex-col md:flex-row gap-4 mt-6">
                             <div className="border border-rayonblue rounded-lg p-4 flex-1 min-w-0">
                                 <h2 className="text-rayonblue text-xl font-semibold mb-4">État civil</h2>
-                                {renderField("Nom", "lastName")}
-                                {renderField("Prénom", "firstName")}
+                                {renderReadOnly("Nom", "lastName")}
+                                {renderReadOnly("Prénom", "firstName")}
                                 {renderSelect("Genre", "gender", genderOptions)}
                             </div>
 
                             <div className="border border-rayonblue rounded-lg p-4 flex-1 min-w-0">
                                 <h2 className="text-rayonblue text-xl font-semibold mb-4">Contact</h2>
-                                {renderField("E-mail", "email")}
+                                {renderReadOnly("E-mail", "email")}
                                 {renderField("Téléphone", "phone")}
                                 {renderField("Adresse", "address")}
                                 {renderField("Précisions", "addAddress")}
