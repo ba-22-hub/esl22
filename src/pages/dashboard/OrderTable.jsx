@@ -4,10 +4,13 @@ import { useAuthor } from "@context/AuthorContext";
 import { useNavigate } from "react-router-dom";
 import { displayNotification } from '@lib/displayNotification.jsx';
 import { supabase } from "@lib/supabaseClient";
+import { getPickupPoint } from '@lib/pudo_helper.js';
 
 // Importing common components
-import FunctionButton from "@common/FunctionButton.jsx";
 import Loading from "@common/Loading.jsx";
+
+// Importing content
+import content from "../../content/sender_content.json";
 
 /**
  * Component to display and manage orders in the admin dashboard.
@@ -18,7 +21,8 @@ function OrderTable() {
     const [orders, setOrders] = useState([]);
     const [loadingOrders, setLoadingOrders] = useState(true);
     const [expandedOrder, setExpandedOrder] = useState(null);
-    const [activeTab, setActiveTab] = useState('pending'); // 'pending' or 'delivered'
+    const [activeTab, setActiveTab] = useState('paid');
+    const [isGeneratingLabel, setIsGeneratingLabel] = useState(false);
 
     const { isAdmin, loading } = useAuthor();
     const navigate = useNavigate();
@@ -43,6 +47,10 @@ function OrderTable() {
                 price,
                 delivered,
                 created_at,
+                status,
+                referenceNumber,
+                shippingLabelFileName,
+                pickupPoint,
                 User: client_id (
                   firstName,
                   lastName,
@@ -59,25 +67,205 @@ function OrderTable() {
         setLoadingOrders(false);
     };
 
-    const confirmDelivery = async (id) => {
-        if (!confirm('Êtes-vous sûr de vouloir marquer cette commande comme livrée ?')) return;
+    const generateDPDLabel = async (order) => {
+        setIsGeneratingLabel(true);
+        try {
+            const totalWeightKg = order.content.reduce((acc, product) => {
+                return acc + (parseFloat(product.weight) * parseFloat(product.quantity)) / 1000;
+            }, 0);
 
-        const { error } = await supabase.from("cart").update({ delivered: true }).eq("id", id);
+            const shippingDate = new Date().toISOString().split("T")[0];
+            const referenceNumber = `CMD-${order.id}`;
+
+            const userData = await (async () => {
+                const { data: userData, error: userError } = await supabase
+                    .from("User")
+                    .select("firstName, lastName")
+                    .eq("id", order.client_id)
+                    .single();
+                if (userError) {
+                    displayNotification("Utilisateur introuvable", userError.message, "danger");
+                }
+                return userData;
+            })();
+
+            let pickupId = order.pickup_point || order.pickupPoint;
+
+            if (!pickupId) {
+                let contentArr = [];
+                try {
+                    contentArr = Array.isArray(order.content) ? order.content : JSON.parse(order.content || "[]");
+                } catch (e) {
+                    contentArr = [];
+                }
+                const itemWithPickup = contentArr.find(it => it && (it.pickupPointId || it.pickup_point));
+                pickupId = itemWithPickup?.pickupPointId || itemWithPickup?.pickup_point;
+            }
+
+            if (!pickupId) {
+                displayNotification("Erreur", "Aucun pickup point associé à cette commande", "danger");
+                throw new Error("pickupId not found for order " + order.id);
+            }
+
+            const pickupPoint = await getPickupPoint(pickupId);
+
+            const destinataire = {
+                nom: pickupPoint.name || userData.firstName || "Client",
+                pays: "FR",
+                cp: pickupPoint.zipCode,
+                ville: pickupPoint.city,
+                rue: `${pickupPoint.address1 || ""} ${pickupPoint.address2 || ""}`.trim(),
+            };
+
+            const expediteur = {
+                nom: content.adresse.nom,
+                pays: content.adresse.pays,
+                cp: content.adresse.cp,
+                ville: content.adresse.ville,
+                rue: content.adresse.rue,
+            };
+
+            const payload = {
+                poids: totalWeightKg,
+                shippingdate: shippingDate,
+                referencenumber: referenceNumber,
+                destinataire,
+                expediteur,
+            };
+
+            const { data: labelData, error: functionError } = await supabase.functions.invoke(
+                "create-dpd-label",
+                {
+                    body: payload,
+                }
+            );
+
+            if (functionError) {
+                throw new Error(`Erreur fonction Edge: ${functionError.message}`);
+            }
+
+            let pdfBlob;
+
+            if (labelData instanceof Blob) {
+                pdfBlob = labelData;
+            } else if (labelData instanceof ArrayBuffer) {
+                pdfBlob = new Blob([labelData], { type: "application/pdf" });
+            } else if (labelData instanceof Uint8Array) {
+                pdfBlob = new Blob([labelData], { type: "application/pdf" });
+            } else if (typeof labelData === 'string' && labelData.startsWith('%PDF')) {
+                const encoder = new TextEncoder();
+                const uint8Array = encoder.encode(labelData);
+                pdfBlob = new Blob([uint8Array], { type: "application/pdf" });
+            } else if (typeof labelData === 'string') {
+                try {
+                    const binaryString = atob(labelData);
+                    const bytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+                    pdfBlob = new Blob([bytes], { type: "application/pdf" });
+                } catch (e) {
+                    throw new Error("Impossible de décoder le PDF: " + e.message);
+                }
+            } else if (typeof labelData === 'object' && labelData !== null) {
+                if (labelData.pdf && typeof labelData.pdf === 'string') {
+                    const binaryString = atob(labelData.pdf);
+                    const bytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+                    pdfBlob = new Blob([bytes], { type: "application/pdf" });
+                } else {
+                    throw new Error(`Format d'objet inattendu`);
+                }
+            } else {
+                throw new Error(`Type inattendu: ${typeof labelData}`);
+            }
+
+            if (!pdfBlob || pdfBlob.size === 0) {
+                throw new Error("Le PDF généré est vide ou invalide");
+            }
+
+            const fileName = `label-${order.id}.pdf`;
+
+            const url = URL.createObjectURL(pdfBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `label_${order.id}.pdf`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            const { error: uploadError } = await supabase
+                .storage
+                .from("labels")
+                .upload(fileName, pdfBlob, {
+                    contentType: "application/pdf",
+                    upsert: true,
+                });
+
+            if (uploadError) {
+                throw new Error(`Erreur upload: ${uploadError.message}`);
+            }
+
+            const { error: updateError } = await supabase
+                .from("cart")
+                .update({
+                    referenceNumber: referenceNumber,
+                    shippingLabelFileName: fileName,
+                    status: "validated",
+                })
+                .eq("id", order.id);
+
+            if (updateError) {
+                throw new Error(`Erreur mise à jour: ${updateError.message}`);
+            }
+
+            displayNotification("Label généré", `Label DPD généré pour la commande ${order.id.slice(0, 8)}`, "success");
+            fetchOrders();
+        } catch (error) {
+            console.error("Erreur lors de la génération du label:", error);
+            displayNotification("Erreur", error.message, "danger");
+        } finally {
+            setIsGeneratingLabel(false);
+        }
+    };
+
+    const updateOrderStatus = async (id, newStatus, successMessage) => {
+        // if (!confirm(`Êtes-vous sûr de vouloir passer cette commande au statut "${newStatus}" ?`)) return;
+
+        const { error } = await supabase
+            .from("cart")
+            .update({ status: newStatus })
+            .eq("id", id);
 
         if (error) {
-            displayNotification("Erreur de confirmation", error.message, "danger")
+            displayNotification("Erreur de mise à jour", error.message, "danger");
         } else {
-            displayNotification("Livraison confirmée", `Commande ${id.slice(0, 8)} marquée comme livrée ✅`, "success")
+            displayNotification("Statut mis à jour", successMessage, "success");
             fetchOrders();
         }
     };
+
+    const prepareDPD = (id) => generateDPDLabel(orders.find(o => o.id === id), updateOrderStatus(id, 'validated', `Commande ${id.slice(0, 8)} marquée comme "En préparation DPD" ✅`));
+    const markAsShipped = (id) => updateOrderStatus(id, 'shipped', `Commande ${id.slice(0, 8)} marquée comme "Expédiée" ✅`);
+    const confirmDelivery = (id) => updateOrderStatus(id, 'delivered', `Commande ${id.slice(0, 8)} marquée comme "Livrée" ✅`);
+
 
     if (loading || loadingOrders) {
         return <Loading />;
     }
 
-    const deliveredOrders = orders.filter((o) => o.delivered);
-    const pendingOrders = orders.filter((o) => !o.delivered);
+    const paidOrders = orders.filter((o) => o.status === 'paid');
+    const validatedOrders = orders.filter((o) => o.status === 'validated');
+    const shippedOrders = orders.filter((o) => o.status === 'shipped');
+    const deliveredOrders = orders.filter((o) => o.status === 'delivered');
+
+    const displayOrders = {
+        paid: paidOrders,
+        validated: validatedOrders,
+        shipped: shippedOrders,
+        delivered: deliveredOrders,
+    }[activeTab] || [];
 
     // helper to display order content
     const renderContent = (content) => {
@@ -103,27 +291,50 @@ function OrderTable() {
         }
     };
 
-    const displayOrders = activeTab === 'pending' ? pendingOrders : deliveredOrders;
+    const statusConfig = {
+        paid: { label: "Payée", color: "text-blue-600", bgColor: "bg-blue-100" },
+        validated: { label: "En préparation DPD", color: "text-yellow-600", bgColor: "bg-yellow-100" },
+        shipped: { label: "Expédiée", color: "text-purple-600", bgColor: "bg-purple-100" },
+        delivered: { label: "Livrée", color: "text-green-600", bgColor: "bg-green-100" },
+    };
 
     return (
         <div className="p-6 bg-gray-50 min-h-screen">
             <div className="max-w-7xl mx-auto">
                 <h1 className="text-3xl font-bold mb-6 text-rayonblue">Gestion des Commandes</h1>
 
-                {/* Onglets */}
-                <div className="flex gap-2 mb-6">
+                {/* Onglets pour chaque statut */}
+                <div className="flex gap-2 mb-6 flex-wrap">
                     <button
-                        onClick={() => setActiveTab('pending')}
-                        className={`flex-1 px-6 py-3 rounded-lg font-semibold transition ${activeTab === 'pending'
+                        onClick={() => setActiveTab('paid')}
+                        className={`px-6 py-3 rounded-lg font-semibold transition ${activeTab === 'paid'
                             ? 'bg-rayonblue text-white'
                             : 'bg-white text-rayonblue border-2 border-rayonblue hover:bg-blue-50'
                             }`}
                     >
-                        📦 En attente ({pendingOrders.length})
+                        💳 Payées ({paidOrders.length})
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('validated')}
+                        className={`px-6 py-3 rounded-lg font-semibold transition ${activeTab === 'validated'
+                            ? 'bg-yellow-500 text-white'
+                            : 'bg-white text-yellow-600 border-2 border-yellow-500 hover:bg-yellow-50'
+                            }`}
+                    >
+                        📦 En préparation DPD ({validatedOrders.length})
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('shipped')}
+                        className={`px-6 py-3 rounded-lg font-semibold transition ${activeTab === 'shipped'
+                            ? 'bg-purple-500 text-white'
+                            : 'bg-white text-purple-600 border-2 border-purple-500 hover:bg-purple-50'
+                            }`}
+                    >
+                        🚚 Expédiées ({shippedOrders.length})
                     </button>
                     <button
                         onClick={() => setActiveTab('delivered')}
-                        className={`flex-1 px-6 py-3 rounded-lg font-semibold transition ${activeTab === 'delivered'
+                        className={`px-6 py-3 rounded-lg font-semibold transition ${activeTab === 'delivered'
                             ? 'bg-green-500 text-white'
                             : 'bg-white text-green-600 border-2 border-green-500 hover:bg-green-50'
                             }`}
@@ -137,9 +348,7 @@ function OrderTable() {
                     {displayOrders.length === 0 ? (
                         <div className="text-center py-12 text-gray-500 bg-white rounded-lg">
                             <p className="text-lg">
-                                {activeTab === 'pending'
-                                    ? 'Aucune commande en attente'
-                                    : 'Aucune commande livrée'}
+                                Aucune commande avec le statut "{statusConfig[activeTab]?.label}"
                             </p>
                         </div>
                     ) : (
@@ -169,9 +378,14 @@ function OrderTable() {
                                             <div className="flex items-center gap-4 text-xs text-gray-500">
                                                 <span>{new Date(order.created_at).toLocaleDateString('fr-FR')} à {new Date(order.created_at).toLocaleTimeString('fr-FR')}</span>
                                                 <span className="font-semibold text-rayonorange text-lg">
-                                                    {order.price.toFixed(2)} €
+                                                    {(order.price || 0).toFixed(2)} €
                                                 </span>
                                             </div>
+                                        </div>
+
+                                        {/* Statut de la commande */}
+                                        <div className={`px-3 py-1 rounded-full text-xs font-semibold ${statusConfig[order.status]?.bgColor} ${statusConfig[order.status]?.color} ml-4`}>
+                                            {statusConfig[order.status]?.label || order.status}
                                         </div>
 
                                         {/* Boutons d'action */}
@@ -184,20 +398,34 @@ function OrderTable() {
                                                 {expandedOrder === order.id ? "▲ Masquer" : "▼ Détails"}
                                             </button>
 
-                                            {!order.delivered && (
+                                            {/* Boutons de transition de statut */}
+                                            {order.status === 'paid' && (
                                                 <button
-                                                    onClick={() => confirmDelivery(order.id)}
-                                                    className="w-10 h-10 bg-green-500 hover:bg-green-600 text-white rounded-lg transition flex items-center justify-center text-xl"
-                                                    title="Marquer comme livrée"
+                                                    onClick={() => prepareDPD(order.id)}
+                                                    disabled={isGeneratingLabel}
+                                                    className="px-3 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition text-sm font-medium disabled:opacity-50"
+                                                    title="En préparation DPD"
                                                 >
-                                                    ✓
+                                                    {isGeneratingLabel ? "⏳ Génération..." : "Préparer DPD"}
                                                 </button>
                                             )}
-
-                                            {order.delivered && (
-                                                <div className="w-10 h-10 bg-green-100 text-green-600 rounded-lg flex items-center justify-center text-xl">
-                                                    ✓
-                                                </div>
+                                            {order.status === 'validated' && (
+                                                <button
+                                                    onClick={() => markAsShipped(order.id)}
+                                                    className="px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition text-sm font-medium"
+                                                    title="Marquer comme expédiée"
+                                                >
+                                                    Expédier
+                                                </button>
+                                            )}
+                                            {order.status === 'shipped' && (
+                                                <button
+                                                    onClick={() => confirmDelivery(order.id)}
+                                                    className="px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition text-sm font-medium"
+                                                    title="Confirmer la livraison"
+                                                >
+                                                    Livrer
+                                                </button>
                                             )}
                                         </div>
                                     </div>
@@ -216,7 +444,7 @@ function OrderTable() {
                                             <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
                                                 <span className="text-lg font-semibold text-gray-800">Total</span>
                                                 <span className="text-2xl font-bold text-rayonorange">
-                                                    {order.price.toFixed(2)} €
+                                                    {(order.price || 0).toFixed(2)} €
                                                 </span>
                                             </div>
                                         </div>
@@ -233,8 +461,8 @@ function OrderTable() {
                                                 </div>
                                                 <div>
                                                     <p className="text-gray-500 text-xs">Statut</p>
-                                                    <p className={`font-medium ${order.delivered ? 'text-green-600' : 'text-orange-600'}`}>
-                                                        {order.delivered ? '✓ Livrée' : '📦 En attente'}
+                                                    <p className={`font-medium ${statusConfig[order.status]?.color}`}>
+                                                        {statusConfig[order.status]?.label || order.status}
                                                     </p>
                                                 </div>
                                                 <div>
@@ -249,20 +477,56 @@ function OrderTable() {
                                                         <p className="text-gray-800 font-medium">{order.client_id.slice(0, 8)}...</p>
                                                     </div>
                                                 )}
+                                                {order.referenceNumber && (
+                                                    <div>
+                                                        <p className="text-gray-500 text-xs">Référence</p>
+                                                        <p className="text-gray-800 font-medium">{order.referenceNumber}</p>
+                                                    </div>
+                                                )}
+                                                {order.shippingLabelFileName && (
+                                                    <div>
+                                                        <p className="text-gray-500 text-xs">Étiquette</p>
+                                                        <a
+                                                            href={supabase.storage.from("labels").getPublicUrl(order.shippingLabelFileName).data.publicUrl}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-rayonblue hover:underline font-medium"
+                                                        >
+                                                            Télécharger l'étiquette
+                                                        </a>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
 
-                                        {/* Bouton de confirmation en bas */}
-                                        {!order.delivered && (
-                                            <div className="mt-4">
+                                        {/* Boutons de transition en bas */}
+                                        <div className="mt-4 flex gap-2">
+                                            {order.status === 'paid' && (
+                                                <button
+                                                    onClick={() => prepareDPD(order.id)}
+                                                    disabled={isGeneratingLabel}
+                                                    className="flex-1 px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-semibold transition disabled:opacity-50"
+                                                >
+                                                    {isGeneratingLabel ? "⏳ Génération en cours..." : "✅ En préparation DPD"}
+                                                </button>
+                                            )}
+                                            {order.status === 'validated' && (
+                                                <button
+                                                    onClick={() => markAsShipped(order.id)}
+                                                    className="flex-1 px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold transition"
+                                                >
+                                                    🚚 Marquer comme expédiée
+                                                </button>
+                                            )}
+                                            {order.status === 'shipped' && (
                                                 <button
                                                     onClick={() => confirmDelivery(order.id)}
-                                                    className="w-full px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition"
+                                                    className="flex-1 px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition"
                                                 >
-                                                    ✓ Confirmer la livraison
+                                                    ✅ Confirmer la livraison
                                                 </button>
-                                            </div>
-                                        )}
+                                            )}
+                                        </div>
                                     </div>
                                 )}
                             </div>

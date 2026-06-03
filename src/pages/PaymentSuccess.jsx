@@ -48,32 +48,102 @@ function PaymentSuccess() {
         if (hasRun.current || !user) return;
         hasRun.current = true;
 
-        // Creating the label
-        const createAndInsertLabel = async (cartId) => {
-            try {
-                const { data, error } = await supabase.functions.invoke('dpd_create_label', {
-                    body: JSON.stringify({
-                        cartId: cartId
-                    })
-                })
-                if (error) {
-                    throw new Error(error)
-                } else {
-                    // Inserting useful label datas associated to cart in database
-                    const { error: labelError } = await supabase
-                        .from("cart")
-                        .update({ orderReference: data.orderReference, trackingUrl: data.trackingUrl })
-                        .eq('id', cartId)
+        // const createAndInsertLabel = async ({
+        //     cartId,
+        //     fullCartContent,
+        //     pickupPoint,
+        //     userData
+        // }) => {
+        //     try {
+        //         const totalWeightKg = roundTwoDigits(
+        //             fullCartContent.reduce((acc, product) => {
+        //                 return acc + (
+        //                     (parseFloat(product.weight) * parseFloat(product.quantity)) / 1000
+        //                 );
+        //             }, 0)
+        //         );
 
-                    if (labelError) {
-                        displayNotification("Échec de l'enregistrement des références de votre colis", labelError.message, "danger")
-                    }
-                }
-                return data;
-            } catch (e) {
-                displayNotification("Erreur lors de la création de l'étiquette associée à votre colis", e.message, "danger")
-            }
-        };
+        //         const shippingDate = new Date().toISOString().split("T")[0];
+        //         const referenceNumber = `CMD-${cartId}`;
+
+        //         const destinataire = {
+        //             nom: pickupPoint.name || userData.firstName || "Client",
+        //             pays: "FR",
+        //             cp: pickupPoint.zipCode,
+        //             ville: pickupPoint.city,
+        //             rue: `${pickupPoint.address1 || ""} ${pickupPoint.address2 || ""}`.trim(),
+        //         };
+
+        //         const expediteur = {
+        //             nom: content.adresse.nom,
+        //             pays: content.adresse.pays,
+        //             cp: content.adresse.cp,
+        //             ville: content.adresse.ville,
+        //             rue: content.adresse.rue,
+        //         };
+
+        //         const payload = {
+        //             poids: totalWeightKg,
+        //             shippingdate: shippingDate,
+        //             referencenumber: referenceNumber,
+        //             destinataire: destinataire,
+        //             expediteur: expediteur,
+        //         };
+
+        //         console.log("Payload étiquette :", payload);
+
+        //         const { data: labelData, error: functionError } = await supabase.functions.invoke(
+        //             "create-dpd-label",
+        //             {
+        //                 body: payload,
+        //             }
+        //         );
+
+        //         if (functionError) {
+        //             displayNotification("Erreur fonction Edge", functionError.message, "danger");
+        //             throw new Error(`Erreur fonction Edge: ${functionError.message}`);
+        //         }
+
+        //         const blob = new Blob([labelData], { type: "application/pdf" });
+        //         console.log("blob", blob)
+
+        //         const fileName = `label-${cartId}.pdf`;
+
+        //         const { error: uploadError } = await supabase
+        //             .storage
+        //             .from("labels")
+        //             .upload(fileName, blob, {
+        //                 contentType: "application/pdf",
+        //                 upsert: true,
+        //             });
+
+        //         if (uploadError) {
+        //             displayNotification("Erreur lors de la sauvegarde de l'étiquette", labelError.message, "danger");
+        //         }
+
+        //         console.log("Réponse API :", labelData);
+
+        //         const { error: labelError } = await supabase
+        //             .from("cart")
+        //             .update({
+        //                 referenceNumber: referenceNumber,
+        //                 shippingLabelFileName: fileName,
+        //                 status: "paid"
+        //             })
+        //             .eq("id", cartId);
+
+        //         if (labelError) {
+        //             displayNotification("Erreur lors de la sauvegarde des données liées à la commande", labelError.message, "danger");
+        //         }
+
+        //         return labelData;
+
+        //     } catch (e) {
+        //         displayNotification("Erreur lors de la création de l'étiquette", e.message, "danger");
+
+        //         return null;
+        //     }
+        // };
 
         const confirmPayment = async () => {
             try {
@@ -140,7 +210,8 @@ function PaymentSuccess() {
                         client_id: cartMetadata.client_id,
                         content: fullCartContent,
                         price: cartMetadata.price + shippingCost,
-                        delivered: cartMetadata.delivered
+                        delivered: cartMetadata.delivered,
+                        pickupPoint: cartMetadata.pickup_point
                     };
 
                     // Fetching old counters
@@ -240,8 +311,20 @@ function PaymentSuccess() {
                         displayNotification("Échec de mise à jour des compteurs liés au compte", updateError.message, "danger")
                     }
 
-                    // Create shipping label
-                    const label = await createAndInsertLabel(dataInsertedCart.id)
+                    // // Create shipping label
+                    // const { data: currentUserData } = await supabase
+                    //     .from("User")
+                    //     .select("firstName, lastName")
+                    //     .eq("id", user.id)
+                    //     .single();
+
+                    // const label = await createAndInsertLabel({
+                    //     cartId: dataInsertedCart.id,
+                    //     cartMetadata,
+                    //     fullCartContent,
+                    //     pickupPoint,
+                    //     userData: currentUserData
+                    // });
 
                     //  notify user 
                     try {
@@ -249,10 +332,10 @@ function PaymentSuccess() {
                             email: user.email,
                             templateId: 2,
                             params: {
-                                FIRSTNAME: name || "Error404_User_FirstName_Not_Found",
-                                COMMAND_NUMBER: label?.orderReference || "Error404_Command_Number_Not_Found",
+                                FIRSTNAME: name || "Client",
+                                COMMAND_NUMBER: dataInsertedCart.id.slice(0, 8),
                                 CONTENT: fullCartContent.map(item => `- ${item.name} x ${item.quantity}<br>`).join(""),
-                                PRICE: cartPrice.toFixed(2).replace('.', ','),
+                                PRICE: (cartMetadata.price + shippingCost).toFixed(2).replace('.', ','),
                                 PICKUP_POINT_NAME: pickupPoint.name,
                                 PICKUP_POINT_ADDRESS: `${pickupPoint.address1} ${pickupPoint.address2}, ${pickupPoint.zipCode} ${pickupPoint.city}`
                             },
@@ -278,7 +361,8 @@ function PaymentSuccess() {
                     navigate("/cart");
                 }
             } catch (err) {
-                displayNotification("Erreur", "Une erreur est survenue lors de la validation", "danger");
+                console.error("Erreur lors de la validation", err.message);
+                displayNotification("Erreur", "Une erreur est survenue lors de la validation", err.message, "danger");
                 setIsProcessing(false);
                 navigate("/cart");
             }

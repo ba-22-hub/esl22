@@ -53,7 +53,7 @@ function SamplePrevArrow(props) {
 
 function ProductCarousel({ data }) {
   const { user } = useAuthor();
-  const { cart, setCart, isLoaded, clearCart } = useCart();
+  const { cart, setCart, isLoaded } = useCart();
 
   const [stockIncertainThreshold, setStockIncertainThreshold] = useState(3);
   const [selectedProduct, setSelectedProduct] = useState(null);
