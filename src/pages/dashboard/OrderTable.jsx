@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { displayNotification } from '@lib/displayNotification.jsx';
 import { supabase } from "@lib/supabaseClient";
 import { getPickupPoint } from '@lib/pudo_helper.js';
+import { jsPDF } from 'jspdf'
+import { autoTable } from 'jspdf-autotable'
 
 // Importing common components
 import Loading from "@common/Loading.jsx";
@@ -220,10 +222,9 @@ function OrderTable() {
                 throw new Error(`Erreur mise à jour: ${updateError.message}`);
             }
 
-            displayNotification("Label généré", `Label DPD généré pour la commande ${order.id.slice(0, 8)}`, "success");
+            displayNotification("Label généré", `Label DPD généré pour la commande ${order.id}`, "success");
             fetchOrders();
         } catch (error) {
-            console.error("Erreur lors de la génération du label:", error);
             displayNotification("Erreur", error.message, "danger");
         } finally {
             setIsGeneratingLabel(false);
@@ -246,9 +247,9 @@ function OrderTable() {
         }
     };
 
-    const prepareDPD = (id) => generateDPDLabel(orders.find(o => o.id === id), updateOrderStatus(id, 'validated', `Commande ${id.slice(0, 8)} marquée comme "En préparation DPD" ✅`));
-    const markAsShipped = (id) => updateOrderStatus(id, 'shipped', `Commande ${id.slice(0, 8)} marquée comme "Expédiée" ✅`);
-    const confirmDelivery = (id) => updateOrderStatus(id, 'delivered', `Commande ${id.slice(0, 8)} marquée comme "Livrée" ✅`);
+    const prepareDPD = (id) => generateDPDLabel(orders.find(o => o.id === id), updateOrderStatus(id, 'validated', `Commande ${id} marquée comme "En préparation DPD" ✅`));
+    const markAsShipped = (id) => updateOrderStatus(id, 'shipped', `Commande ${id} marquée comme "Expédiée" ✅`);
+    const confirmDelivery = (id) => updateOrderStatus(id, 'delivered', `Commande ${id} marquée comme "Livrée" ✅`);
 
 
     if (loading || loadingOrders) {
@@ -297,6 +298,117 @@ function OrderTable() {
         shipped: { label: "Expédiée", color: "text-purple-600", bgColor: "bg-purple-100" },
         delivered: { label: "Livrée", color: "text-green-600", bgColor: "bg-green-100" },
     };
+
+    async function downloadLabel(order) {
+        const { data: labelData, error: labelError } = await supabase
+            .storage
+            .from("labels")
+            .download(order.shippingLabelFileName);
+
+        if (labelError) {
+            displayNotification("Erreur lors du téléchargement de l'étiquette " + order.shippingLabelFileName, labelError.message, "danger")
+        } else {
+            const url = URL.createObjectURL(labelData);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `label_${order.id}.pdf`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    }
+
+    async function createAndDownloadBill(order) {
+        try {
+            const doc = new jsPDF();
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            let yPosition = 20;
+
+            doc.setFontSize(20);
+            doc.setTextColor(255,130,0);
+            doc.text("L'épicerie Sociale en Ligne des Côtes d'Armor", 20, yPosition);
+            yPosition += 10;
+
+            doc.setFontSize(14);
+            doc.setTextColor(0, 0, 0);
+            doc.text("FACTURE", 20, yPosition);
+            yPosition += 12;
+
+            doc.setFontSize(10);
+            doc.text(`Numéro de facture : ${order.referenceNumber || order.id}`, 20, yPosition);
+            yPosition += 6;
+            doc.text(`Date de la commande : ${new Date(order.created_at).toLocaleDateString('fr-FR')}`, 20, yPosition);
+            yPosition += 12;
+
+            doc.setFontSize(11);
+            doc.setFont(undefined, 'bold');
+            doc.text("Informations client :", 20, yPosition);
+            yPosition += 6;
+
+            doc.setFont(undefined, 'normal');
+            doc.setFontSize(10);
+            if (order.User) {
+                doc.text(`${order.User.firstName} ${order.User.lastName}`, 20, yPosition);
+                yPosition += 5;
+                doc.text(`Email: ${order.User.email}`, 20, yPosition);
+                yPosition += 5;
+            }
+            yPosition += 5;
+
+            const tableColumn = ["Quantité", "Produit", "Prix unitaire", "Montant"];
+            const tableRows = [];
+
+            const contentArray = Array.isArray(order.content)
+                ? order.content
+                : JSON.parse(order.content || "[]");
+
+            contentArray.forEach(item => {
+                tableRows.push([
+                    item.quantity.toString(),
+                    item.name,
+                    `${item.salePrice.toFixed(2)} €`,
+                    `${(item.salePrice * item.quantity).toFixed(2)} €`
+                ]);
+            });
+
+            autoTable(doc, {
+                head: [tableColumn],
+                body: tableRows,
+                startY: yPosition,
+                theme: 'grid',
+                headStyles: {
+                    fillColor: [0, 71, 171],
+                    textColor: 255,
+                    fontStyle: 'bold'
+                },
+                bodyStyles: {
+                    textColor: 0
+                }
+            })
+
+            yPosition = doc.lastAutoTable.finalY + 10;
+
+            doc.setFont(undefined, 'bold');
+            doc.setFontSize(12);
+            doc.text(`Total: ${(order.price || 0).toFixed(2)} €`, pageWidth - 40, yPosition, { align: 'right' });
+
+            doc.setFontSize(8);
+            doc.setTextColor(150);
+            doc.text(
+                "Merci de votre commande!",
+                pageWidth / 2,
+                pageHeight - 10,
+                { align: "center" }
+            );
+
+            doc.save(`facture_${order.id}.pdf`);
+
+            displayNotification("Facture générée", `Facture créée pour la commande ${order.id}`, "success");
+
+        } catch (error) {
+            displayNotification("Erreur", "Impossible de générer la facture : " + error.message, "danger");
+        }
+    }
 
     return (
         <div className="p-6 bg-gray-50 min-h-screen">
@@ -457,7 +569,7 @@ function OrderTable() {
                                             <div className="grid grid-cols-2 gap-3 text-sm">
                                                 <div>
                                                     <p className="text-gray-500 text-xs">ID de la commande</p>
-                                                    <p className="text-gray-800 font-medium">{order.id.slice(0, 8)}...</p>
+                                                    <p className="text-gray-800 font-medium">{order.id}</p>
                                                 </div>
                                                 <div>
                                                     <p className="text-gray-500 text-xs">Statut</p>
@@ -474,7 +586,7 @@ function OrderTable() {
                                                 {order.User && (
                                                     <div>
                                                         <p className="text-gray-500 text-xs">ID client</p>
-                                                        <p className="text-gray-800 font-medium">{order.client_id.slice(0, 8)}...</p>
+                                                        <p className="text-gray-800 font-medium">{order.client_id}</p>
                                                     </div>
                                                 )}
                                                 {order.referenceNumber && (
@@ -483,17 +595,22 @@ function OrderTable() {
                                                         <p className="text-gray-800 font-medium">{order.referenceNumber}</p>
                                                     </div>
                                                 )}
+                                                <div>
+                                                    <button
+                                                        onClick={() => createAndDownloadBill(order)}
+                                                        className="text-rayonblue hover:underline font-medium"
+                                                    >
+                                                        Générer la facture
+                                                    </button>
+                                                </div>
                                                 {order.shippingLabelFileName && (
                                                     <div>
-                                                        <p className="text-gray-500 text-xs">Étiquette</p>
-                                                        <a
-                                                            href={supabase.storage.from("labels").getPublicUrl(order.shippingLabelFileName).data.publicUrl}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
+                                                        <button
+                                                            onClick={() => downloadLabel(order)}
                                                             className="text-rayonblue hover:underline font-medium"
                                                         >
                                                             Télécharger l'étiquette
-                                                        </a>
+                                                        </button>
                                                     </div>
                                                 )}
                                             </div>
