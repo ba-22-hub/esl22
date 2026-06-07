@@ -355,6 +355,15 @@ function OrderTable() {
             }
             yPosition += 5;
 
+            // ── AJOUT : récupération shippingCost ──────────────────────────────
+            const { data: shippingData } = await supabase
+                .from('constants')
+                .select('value')
+                .eq('name', 'shippingCost')
+                .maybeSingle();
+            const shippingCost = shippingData?.value ?? 0;
+            // ──────────────────────────────────────────────────────────────────
+
             const tableColumn = ["Quantité", "Produit", "Prix unitaire", "Montant"];
             const tableRows = [];
 
@@ -370,6 +379,15 @@ function OrderTable() {
                     `${(item.salePrice * item.quantity).toFixed(2)} €`
                 ]);
             });
+
+            // ── AJOUT : ligne frais de port dans le tableau ────────────────────
+            tableRows.push([
+                "1",
+                "Frais de livraison",
+                `${shippingCost.toFixed(2)} €`,
+                `${shippingCost.toFixed(2)} €`
+            ]);
+            // ──────────────────────────────────────────────────────────────────
 
             autoTable(doc, {
                 head: [tableColumn],
@@ -387,6 +405,11 @@ function OrderTable() {
             })
 
             yPosition = doc.lastAutoTable.finalY + 10;
+
+            // ── MODIFIÉ : total décomposé ──────────────────────────────────────
+            const produitsTotal = contentArray.reduce(
+                (acc, item) => acc + item.salePrice * item.quantity, 0
+            );
 
             doc.setFont(undefined, 'bold');
             doc.setFontSize(12);
