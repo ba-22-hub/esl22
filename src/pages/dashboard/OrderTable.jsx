@@ -7,6 +7,8 @@
 // 2026-06-07    Louvel       Ajout shippingCost dans la facture
 // 2026-06-08    Louvel       Ajout packagingWeight pour le calcul du poids brut
 //                            du colis : poids des produits + poids de l'emballage
+// 2026-06-08    Louvel       Traitement du colis en mode "relais"
+// 2026-06-08    Louvel       Blindage complet du code pour le mode "relais" (validation des champs, gestion des erreurs)
 //
 // =============================================================================
 
@@ -104,16 +106,18 @@ function OrderTable() {
             const userData = await (async () => {
                 const { data: userData, error: userError } = await supabase
                     .from("User")
-                    .select("firstName, lastName")
+                    .select("phone, email, firstName, lastName, postalCode, city, address, addAddress")
                     .eq("id", order.client_id)
                     .single();
                 if (userError) {
                     displayNotification("Utilisateur introuvable", userError.message, "danger");
+                    throw new Error(`Impossible de récupérer les données de l'utilisateur: ${userError.message}`);
                 }
                 return userData;
             })();
 
-            let pickupId = order.pickup_point || order.pickupPoint;
+            // 2. Récupération du point relais
+            let pickupId = order.pickupPoint;
 
             if (!pickupId) {
                 let contentArr = [];
@@ -133,12 +137,29 @@ function OrderTable() {
 
             const pickupPoint = await getPickupPoint(pickupId);
 
+            // 3. Vérification que pickupPoint existe
+            if (!pickupPoint) {
+                throw new Error(`Point relais introuvable pour l'ID: ${pickupId}`);
+            }
+
+            // 4. Valeurs par défaut
+            const defaultPhone = "0651047772";
+            const defaultEmail = "ba220.epicerie@banquealimentaire.org";
+
+            // 5. Normalisation du téléphone (suppression du +33)
+            const normalizePhone = (phone) => phone?.replace(/^\+33/, '0');
+
+            // 6. Construction des objets destinataire et expéditeur
             const destinataire = {
-                nom: pickupPoint.name || userData.firstName || "Client",
+                nom: `${userData?.firstName || ''} ${userData?.lastName || ''}`.trim() || pickupPoint.name || "Client",
                 pays: "FR",
-                cp: pickupPoint.zipCode,
-                ville: pickupPoint.city,
-                rue: `${pickupPoint.address1 || ""} ${pickupPoint.address2 || ""}`.trim(),
+                cp: userData?.postalCode || pickupPoint.zipCode, // Code postal du destinataire ou du point relais
+                vville: userData?.city || pickupPoint.city, // Ville du destinataire ou du point relais
+                rue: userData?.address || `${pickupPoint.address1 || ""} ${pickupPoint.address2 || ""}`.trim(),
+                contact: {
+                    phone: normalizePhone(userData?.phone) || defaultPhone,
+                    email: userData?.email || defaultEmail,
+                },
             };
 
             const expediteur = {
@@ -147,16 +168,37 @@ function OrderTable() {
                 cp: content.adresse.cp,
                 ville: content.adresse.ville,
                 rue: content.adresse.rue,
+                contact: {
+                phone: normalizePhone(content.adresse.phone) || defaultPhone,
+                },
             };
 
+            // 7. Construction du payload pour le mode "relais"
             const payload = {
+                mode: "relais", // 👈 Mode relais
                 poids: totalWeightKg,
                 shippingdate: shippingDate,
                 referencenumber: referenceNumber,
+                relais: {
+                    shopid: pickupId, // 👈 ID DPD du point relais
+                    sms: normalizePhone(userData?.phone) || defaultPhone, // 👈 Téléphone du destinataire
+                    email: userData?.email || defaultEmail, // 👈 Email du destinataire
+                },
                 destinataire,
                 expediteur,
             };
 
+            // 8. Validation du payload
+            if (!payload.relais?.shopid) {
+                throw new Error("ID du point relais manquant dans le payload.");
+            }
+            if (!payload.destinataire?.contact?.phone) {
+                throw new Error("Téléphone du destinataire manquant.");
+            }
+
+            console.log("Payload DPD (mode relais) :", payload);
+
+            // 9. Appel à l'Edge Function
             const { data: labelData, error: functionError } = await supabase.functions.invoke(
                 "create-dpd-label",
                 {
