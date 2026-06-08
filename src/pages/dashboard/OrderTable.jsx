@@ -1,3 +1,13 @@
+// =============================================================================
+// HISTORIQUE DES MODIFICATIONS
+// =============================================================================
+//
+// Date          Auteur        Description
+// ----------    ----------    -------------------------------------------------
+// 2026-06-07    Louvel       Ajout shippingCost dans la facture
+//
+// =============================================================================
+
 // Importing dependencies
 import { useEffect, useState } from "react";
 import { useAuthor } from "@context/AuthorContext";
