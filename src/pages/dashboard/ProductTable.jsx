@@ -1,3 +1,14 @@
+// =============================================================================
+// HISTORIQUE DES MODIFICATIONS
+// =============================================================================
+//
+// Date          Auteur        Description
+// ----------    ----------    -------------------------------------------------
+// 2026-06-08    Louvel       Ajout packagingWeight pour le calcul du poids brut
+//                            du colis : poids des produits + poids de l'emballage
+//
+// =============================================================================
+
 // Importing dependencies
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@lib/supabaseClient";
@@ -38,6 +49,7 @@ function ProductTable() {
     max_order: '',
     minCartWeight: '',
     maxCartWeight: '',
+    packagingWeight: '',
   })
 
   const [formData, setFormData] = useState({
@@ -392,9 +404,25 @@ function ProductTable() {
       console.error("Erreur lors du téléchargement de l'ancienne valeur du poids maximal du panier", maxCartWeightError)
       displayNotification("Erreur lors du téléchargement de l'ancienne valeur du poids maximal du panier", maxCartWeightError.message, "danger")
     }
+
+     // ── AJOUT : récupération packagingWeight ──────────────────────────────
+    const { data: packagingWeightData, error: packagingWeightError } = await supabase
+      .from('constants')
+      .select('value')
+      .eq("name", "packagingWeight")
+      .maybeSingle();
+    if (!packagingWeightError) {
+        setSettings(prevData => ({
+            ...prevData,
+            packagingWeight: packagingWeightData.value
+        }))
+    } else {
+        displayNotification("Erreur lors du téléchargement du poids d'emballage", packagingWeightError.message, "danger")
+    }
+    // ──────────────────────────────────────────────────────────────────
   }
 
-  const handleChangeInSettings = (e) => {
+ const handleChangeInSettings = (e) => {
     setSettings(prevData => ({
       ...prevData,
       [e.target.name]: e.target.value
@@ -594,6 +622,24 @@ function ProductTable() {
                       className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
                       onChange={handleChangeInSettings}
                     />
+                    <div className="relative group">
+                        <FormInput
+                            name="packagingWeight"
+                            type="number"
+                            step="1"
+                            value={settings.packagingWeight ?? 0}
+                            inputText="Poids d'emballage (g) ℹ️"
+                            className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
+                            onChange={handleChangeInSettings}
+                        />
+                        <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-10
+                                        bg-gray-800 text-white text-xs rounded-lg px-3 py-2 w-72 shadow-lg pointer-events-none">
+                            💡 Cette constante représente le poids médian d'un colis
+                            (emballage + protection). Il s'ajoute au poids des produits
+                            pour calculer le poids brut transmis à DPD.
+                            <div className="absolute top-full left-4 border-4 border-transparent border-t-gray-800" />
+                        </div>
+                    </div>
                   </div>
                   <button
                     type="submit"

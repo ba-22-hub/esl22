@@ -5,6 +5,8 @@
 // Date          Auteur        Description
 // ----------    ----------    -------------------------------------------------
 // 2026-06-07    Louvel       Ajout shippingCost dans la facture
+// 2026-06-08    Louvel       Ajout packagingWeight pour le calcul du poids brut
+//                            du colis : poids des produits + poids de l'emballage
 //
 // =============================================================================
 
@@ -82,9 +84,19 @@ function OrderTable() {
     const generateDPDLabel = async (order) => {
         setIsGeneratingLabel(true);
         try {
-            const totalWeightKg = order.content.reduce((acc, product) => {
-                return acc + (parseFloat(product.weight) * parseFloat(product.quantity)) / 1000;
+            // ── Récupération du poids d'emballage depuis constants ────────────
+            const totalProductsWeightKg = order.content.reduce((acc, product) => {
+            return acc + (parseFloat(product.weight) * parseFloat(product.quantity)) / 1000;
             }, 0);
+
+            const { data: packagingData } = await supabase
+                .from('constants')
+                .select('value')
+                .eq('name', 'packagingWeight')
+                .maybeSingle();
+            const packagingWeightKg = parseFloat(packagingData?.value ?? 0) / 1000;
+            const totalWeightKg = totalProductsWeightKg + packagingWeightKg;
+            // ─────────────────────────────────────────────────────────────────
 
             const shippingDate = new Date().toISOString().split("T")[0];
             const referenceNumber = `CMD-${order.id}`;
