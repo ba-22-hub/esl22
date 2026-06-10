@@ -9,6 +9,7 @@
 //                            du colis : poids des produits + poids de l'emballage
 // 2026-06-08    Louvel       Traitement du colis en mode "relais"
 // 2026-06-08    Louvel       Blindage complet du code pour le mode "relais" (validation des champs, gestion des erreurs)
+// 2026-06-09    Louvel       create-dpd-label => dpd-create-label-relay
 //
 // =============================================================================
 
@@ -175,14 +176,14 @@ function OrderTable() {
 
             // 7. Construction du payload pour le mode "relais"
             const payload = {
-                mode: "relais", // 👈 Mode relais
+                mode: "relais",
                 poids: totalWeightKg,
                 shippingdate: shippingDate,
                 referencenumber: referenceNumber,
                 relais: {
-                    shopid: pickupId, // 👈 ID DPD du point relais
-                    sms: normalizePhone(userData?.phone) || defaultPhone, // 👈 Téléphone du destinataire
-                    email: userData?.email || defaultEmail, // 👈 Email du destinataire
+                    shopid: pickupId, // ID DPD du point relais
+                    sms: normalizePhone(userData?.phone) || defaultPhone, // Téléphone du destinataire
+                    email: userData?.email || defaultEmail, // email du destinataire
                 },
                 destinataire,
                 expediteur,
@@ -200,7 +201,7 @@ function OrderTable() {
 
             // 9. Appel à l'Edge Function
             const { data: labelData, error: functionError } = await supabase.functions.invoke(
-                "create-dpd-label",
+                "dpd-create-label-relay",
                 {
                     body: payload,
                 }
