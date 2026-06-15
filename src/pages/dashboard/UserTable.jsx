@@ -1,3 +1,14 @@
+// =============================================================================
+// HISTORIQUE DES MODIFICATIONS
+// =============================================================================
+//
+// Date          Auteur        Description
+// ----------    ----------    -------------------------------------------------
+// 2026-06-14    Louvel       Ajout d'un filtre pourafficher les users selon le status
+// 2026-06-14    Louvel		  Ajout de la caractéristique "admin" dans la présentation des users
+//
+// =============================================================================
+
 // Importing dependencies
 import { useEffect, useState } from 'react';
 import { supabase } from '@lib/supabaseClient.js';
@@ -22,6 +33,9 @@ const UserTable = () => {
 	const [update, setUpdate] = useState(true)
 	const [isLoading, setIsLoading] = useState(true);
 	const [modalOpen, setModalOpen] = useState(false)
+	const [statusFilter, setStatusFilter] = useState('');
+	const [adminIds, setAdminIds] = useState([]);
+
 
 	const { isAdmin, loading } = useAuthor()
 	const navigate = useNavigate()
@@ -37,8 +51,13 @@ const UserTable = () => {
 		} else {
 			setUsers(data);
 		}
+
+		// Récupérer les ids admins
+		const { data: admins } = await supabase.from('Admins').select('id');
+		if (admins) setAdminIds(admins.map(a => a.id));
+
 		setIsLoading(false);
-	};
+		};
 
 	useEffect(() => {
 		if (loading) return;
@@ -91,9 +110,10 @@ const UserTable = () => {
 	}, [update, loading]);
 
 	const filteredUsers = users.filter(user =>
-		`${user.firstName} ${user.lastName} ${user.email} ${user.phone}`
-			.toLowerCase()
-			.includes(search.toLowerCase())
+	`${user.firstName} ${user.lastName} ${user.email} ${user.phone}`
+		.toLowerCase()
+		.includes(search.toLowerCase())
+	&& (statusFilter === '' || user.status === statusFilter)
 	);
 
 	const toggleExpand = (id) => {
@@ -164,6 +184,16 @@ const UserTable = () => {
 					value={search}
 					onChange={(e) => setSearch(e.target.value)}
 				/>
+				<select
+					value={statusFilter}
+					onChange={(e) => setStatusFilter(e.target.value)}
+					className="mb-6 p-3 border-2 border-rayonblue rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-rayonorange transition"
+					>
+					<option value="">Tous les statuts</option>
+					{selectStatus.map(s => (
+						<option key={s} value={s}>{s}</option>
+					))}
+				</select>
 
 				<div className="space-y-4 mb-6">
 					{filteredUsers.map(user => (
@@ -189,13 +219,20 @@ const UserTable = () => {
 											<p className="text-xs text-gray-500 mb-1">Nom</p>
 											{editMode === user.id ? (
 												<input
-													name="lastName"
-													value={editedUser.lastName || ''}
-													onChange={handleChange}
-													className="w-full border-2 border-rayonblue rounded px-2 py-1 text-lg font-semibold"
+												name="lastName"
+												value={editedUser.lastName || ''}
+												onChange={handleChange}
+												className="w-full border-2 border-rayonblue rounded px-2 py-1 text-lg font-semibold"
 												/>
 											) : (
+												<div className="flex items-center gap-2">
 												<p className="text-lg font-semibold text-gray-800 truncate">{user.lastName}</p>
+												{adminIds.includes(user.id) && (
+													<span className="bg-rayonblue text-white text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
+													👑 Admin
+													</span>
+												)}
+												</div>
 											)}
 										</div>
 
@@ -388,6 +425,13 @@ const UserTable = () => {
 												<p className="text-gray-800">{user["status"] || '—'}</p>
 											)}
 										</div>
+										{adminIds.includes(user.id) && (
+										<div className="mb-4">
+											<span className="bg-rayonblue text-white text-xs font-bold px-3 py-1 rounded-full">
+											👑 Administrateur
+											</span>
+										</div>
+										)}
 									</div>
 								</div>
 							)}
