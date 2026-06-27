@@ -1,3 +1,12 @@
+// =============================================================================
+// HISTORIQUE DES MODIFICATIONS
+// =============================================================================
+//
+// Date          Auteur        Description
+// ----------    ----------    -------------------------------------------------
+// 2026-06-15    Louvel       coquille dans texte item 17
+//
+// =============================================================================
 import { useEffect, useState } from 'react';
 
 function Faq() {
@@ -222,7 +231,7 @@ function Faq() {
 
 
                     <FaqItem id="q17" question="17 Quelle quantité puis-je commander chaque mois ?">
-                        <p>Le poids total commandable par mois est visible sur à la rubrique mon compte, vos droits, Poids maximum mensuel. Ce poids maximum est défini par le nombre de personnes du foyer. Le poids restant commandable dans le mois figure également (Poids restant ce mois-ci). </p>
+                        <p>Le poids total commandable par mois est visible à la rubrique mon compte, vos droits, Poids maximum mensuel. Ce poids maximum est défini par le nombre de personnes du foyer. Le poids restant commandable dans le mois figure également (Poids restant ce mois-ci). </p>
                     </FaqItem>
 
 
