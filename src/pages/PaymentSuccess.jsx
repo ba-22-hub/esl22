@@ -1,3 +1,13 @@
+// =============================================================================
+// HISTORIQUE DES MODIFICATIONS
+// =============================================================================
+//
+// Date          Auteur        Description
+// ----------    ----------    -------------------------------------------------
+// 2026-06-15    Louvel       recalcul de current_price et current_weight lors
+// 2026-06-15    Louvel		  de l'update => ajout shippingCost et packagingWeight
+//
+// =============================================================================
 // Importing dependencies
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@lib/supabaseClient";
@@ -17,32 +27,10 @@ function PaymentSuccess() {
     const { setCart } = useCart();
     const { user } = useAuthor();
     const [isProcessing, setIsProcessing] = useState(true);
-    const [shippingCost, setShippingCost] = useState(1.35) // État pour les frais de port
-    const shippingCostFetched = useRef(false)
 
     function roundTwoDigits(nb) {
         return Math.round(nb * 100) / 100
     }
-
-
-    useEffect(() => {
-        if (!user) return;
-        if (shippingCostFetched.current) return;
-
-        const fetchShippingCost = async () => {
-            const { data, error } = await supabase
-                .from('constants')
-                .select('value')
-                .eq("name", "shippingCost")
-                .maybeSingle();
-            if (!error && data) {
-                setShippingCost(data.value)
-                shippingCostFetched.current = true
-            }
-        };
-
-        fetchShippingCost();
-    }, [user]);
 
     useEffect(() => {
         if (hasRun.current || !user) return;
@@ -147,6 +135,20 @@ function PaymentSuccess() {
 
         const confirmPayment = async () => {
             try {
+
+                // 1. Fetch des constantes shippingCost & packagingWeight
+                const { data: constants, error: constantsError } = await supabase
+                    .from('constants')
+                    .select('name, value')
+                    .in("name", ["shippingCost", "packagingWeight"]);
+
+                if (constantsError) {
+                    console.warn("Impossible de récupérer les constantes, valeurs par défaut utilisées :", constantsError.message);
+                }
+
+                const shippingCost = parseFloat(constants?.find(c => c.name === "shippingCost")?.value) || 1.35;
+                const packagingWeight = parseFloat(constants?.find(c => c.name === "packagingWeight")?.value) || 300;
+
                 const urlParams = new URLSearchParams(window.location.search);
                 const session_id = urlParams.get("session_id");
 
@@ -278,7 +280,7 @@ function PaymentSuccess() {
                     }
 
                     let name = ""
-                    // get user firstname 
+                    // get user firstname
                     try {
                         const { data: firstName, error: dberror } = await supabase
                             .from('User')
@@ -301,8 +303,8 @@ function PaymentSuccess() {
                     const { error: updateError } = await supabase
                         .from("User")
                         .update({
-                            current_weight: oldWeight + cartWeight,
-                            current_price: oldPrice + cartPrice,
+                            current_weight: oldWeight + cartWeight + packagingWeight,
+                            current_price: oldPrice + cartPrice + shippingCost,
                             current_order: oldOrder + 1
                         })
                         .eq('id', cartMetadata.client_id)
@@ -326,7 +328,7 @@ function PaymentSuccess() {
                     //     userData: currentUserData
                     // });
 
-                    //  notify user 
+                    //  notify user
                     try {
                         await sendMail({
                             email: user.email,

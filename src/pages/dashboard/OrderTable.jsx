@@ -10,6 +10,7 @@
 // 2026-06-08    Louvel       Traitement du colis en mode "relais"
 // 2026-06-08    Louvel       Blindage complet du code pour le mode "relais" (validation des champs, gestion des erreurs)
 // 2026-06-09    Louvel       create-dpd-label => dpd-create-label-relay
+// 2026-06-27    Louvel       ajout du shippingCost de l'expédition sur la facture de l'utilisateur
 //
 // =============================================================================
 
@@ -421,12 +422,18 @@ function OrderTable() {
             yPosition += 5;
 
             // ── AJOUT : récupération shippingCost ──────────────────────────────
-            const { data: shippingData } = await supabase
+            const { data: shippingData, error: shippingError } = await supabase
                 .from('constants')
                 .select('value')
                 .eq('name', 'shippingCost')
                 .maybeSingle();
-            const shippingCost = shippingData?.value ?? 0;
+
+            if (shippingError) {
+                console.warn("Impossible de récupérer shippingCost, valeur par défaut utilisée :", shippingError.message);
+            }
+
+            const shippingCost = parseFloat(shippingData?.value) || 1.35;
+
             // ──────────────────────────────────────────────────────────────────
 
             const tableColumn = ["Quantité", "Produit", "Prix unitaire", "Montant"];
