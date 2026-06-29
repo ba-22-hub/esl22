@@ -3,6 +3,7 @@ dist/
 .vscode
 .vite
 .env
+.env.local
 .vscode
 schema.sql
 supabase/.temp

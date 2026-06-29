@@ -1,3 +1,12 @@
+// =============================================================================
+// HISTORIQUE DES MODIFICATIONS
+// =============================================================================
+//
+// Date          Auteur        Description
+// ----------    ----------    -------------------------------------------------
+// 2026-06-29    Louvel       FIX : forcer la synchronisation du nouveau JWT après updateUser()
+//
+// =============================================================================
 // Importing dependencies
 import { useState } from 'react';
 import { displayNotification } from '@lib/displayNotification.jsx';
@@ -89,6 +98,18 @@ function FirstConnection() {
 
                 if (authError) {
                     displayNotification("Erreur lors de la réinitialisation : " + authError.message, "", "danger");
+                    setDbLoading(false);
+                    return;
+                }
+
+                // 🔧 FIX : forcer la synchronisation du nouveau JWT après updateUser()
+                // Sans ce refresh, le SDK React conserve l'ancien token en mémoire,
+                // ce qui provoque un 500 lors du premier appel à une Edge Function.
+                const { error: refreshError } = await supabase.auth.refreshSession(); // force un nouveau JWT immédiatement
+                if (refreshError) {
+                    displayNotification("Erreur de session, veuillez vous reconnecter.", "", "danger");
+                    await supabase.auth.signOut();
+                    navigate('/login');
                     setDbLoading(false);
                     return;
                 }
