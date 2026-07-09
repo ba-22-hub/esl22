@@ -258,7 +258,10 @@ function PaymentSuccess() {
                         .single();
 
                     if (insertError) {
-                        displayNotification("Erreur", "Échec de l'enregistrement de la commande", "danger");
+                        console.error("Supabase insert error:", insertError);
+                        // insertError.message, insertError.code, insertError.details, insertError.hint
+                        displayNotification("Erreur", `Échec: ${insertError.message}`, "danger");
+                        //displayNotification("Erreur", "Échec de l'enregistrement de la commande", "danger");
                         setIsProcessing(false);
                         return;
                     } else {
@@ -313,12 +316,39 @@ function PaymentSuccess() {
                         displayNotification("Échec de mise à jour des compteurs liés au compte", updateError.message, "danger")
                     }
 
-                    // // Create shipping label
-                    // const { data: currentUserData } = await supabase
-                    //     .from("User")
-                    //     .select("firstName, lastName")
-                    //     .eq("id", user.id)
-                    //     .single();
+                    // Récupération des infos client nécessaires à la facture
+                    const { data: currentUserData, error: currentUserError } = await supabase
+                        .from("User")
+                        .select("firstName, lastName, address, city, postalCode")
+                        .eq("id", user.id)
+                        .single();
+                    if (currentUserError) {
+                            console.warn("Impossible de récupérer les infos client pour la facture :", currentUserError.message);
+                    }
+
+                    // Génération de la facture en best-effort (ne bloque jamais le flow utilisateur)
+                    if (currentUserData) {
+                        supabase.functions.invoke("create-invoice", {
+                            body: {
+                                cartId: dataInsertedCart.id,
+                                client: {
+                                    id: cartMetadata.client_id,
+                                    firstName: currentUserData.firstName,
+                                    lastName: currentUserData.lastName,
+                                    address: currentUserData.address,
+                                    city: currentUserData.city,
+                                    postalCode: currentUserData.postalCode,
+                                },
+                                items: fullCartContent,
+                                shippingCost,
+                                totalPrice: cartMetadata.price + shippingCost,
+                            },
+                        }).then(({ error }) => {
+                            if (error) {
+                                console.warn(`Facture non générée pour la commande ${dataInsertedCart.id} :`, error.message);
+                            }
+                        });
+                    }
 
                     // const label = await createAndInsertLabel({
                     //     cartId: dataInsertedCart.id,
