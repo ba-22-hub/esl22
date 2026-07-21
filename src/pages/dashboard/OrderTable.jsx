@@ -11,6 +11,7 @@
 // 2026-06-08    Louvel       Blindage complet du code pour le mode "relais" (validation des champs, gestion des erreurs)
 // 2026-06-09    Louvel       create-dpd-label => dpd-create-label-relay
 // 2026-06-27    Louvel       ajout du shippingCost de l'expédition sur la facture de l'utilisateur
+// 2026-08-02    Louvel       prise en compte bucket "invoices"
 //
 // =============================================================================
 
@@ -21,8 +22,6 @@ import { useNavigate } from "react-router-dom";
 import { displayNotification } from '@lib/displayNotification.jsx';
 import { supabase } from "@lib/supabaseClient";
 import { getPickupPoint } from '@lib/pudo_helper.js';
-import { jsPDF } from 'jspdf'
-import { autoTable } from 'jspdf-autotable'
 
 // Importing common components
 import Loading from "@common/Loading.jsx";
@@ -68,11 +67,12 @@ function OrderTable() {
                 status,
                 referenceNumber,
                 shippingLabelFileName,
+                invoiceFileName,
                 pickupPoint,
                 User: client_id (
-                  firstName,
-                  lastName,
-                  email
+                firstName,
+                lastName,
+                email
                 )
             `)
             .order("created_at", { ascending: false });
@@ -383,127 +383,74 @@ function OrderTable() {
         }
     }
 
-    async function createAndDownloadBill(order) {
-        try {
-            const doc = new jsPDF();
-            const pageWidth = doc.internal.pageSize.getWidth();
-            const pageHeight = doc.internal.pageSize.getHeight();
-            let yPosition = 20;
+async function downloadInvoice(order) {
+    const { data: invoiceData, error: invoiceError } = await supabase
+        .storage
+        .from("invoices")
+        .download(order.invoiceFileName);
 
-            doc.setFontSize(20);
-            doc.setTextColor(255,130,0);
-            doc.text("L'épicerie Sociale en Ligne des Côtes d'Armor", 20, yPosition);
-            yPosition += 10;
-
-            doc.setFontSize(14);
-            doc.setTextColor(0, 0, 0);
-            doc.text("FACTURE", 20, yPosition);
-            yPosition += 12;
-
-            doc.setFontSize(10);
-            doc.text(`Numéro de facture : ${order.referenceNumber || order.id}`, 20, yPosition);
-            yPosition += 6;
-            doc.text(`Date de la commande : ${new Date(order.created_at).toLocaleDateString('fr-FR')}`, 20, yPosition);
-            yPosition += 12;
-
-            doc.setFontSize(11);
-            doc.setFont(undefined, 'bold');
-            doc.text("Informations client :", 20, yPosition);
-            yPosition += 6;
-
-            doc.setFont(undefined, 'normal');
-            doc.setFontSize(10);
-            if (order.User) {
-                doc.text(`${order.User.firstName} ${order.User.lastName}`, 20, yPosition);
-                yPosition += 5;
-                doc.text(`Email: ${order.User.email}`, 20, yPosition);
-                yPosition += 5;
-            }
-            yPosition += 5;
-
-            // ── AJOUT : récupération shippingCost ──────────────────────────────
-            const { data: shippingData, error: shippingError } = await supabase
-                .from('constants')
-                .select('value')
-                .eq('name', 'shippingCost')
-                .maybeSingle();
-
-            if (shippingError) {
-                console.warn("Impossible de récupérer shippingCost, valeur par défaut utilisée :", shippingError.message);
-            }
-
-            const shippingCost = parseFloat(shippingData?.value) || 1.35;
-
-            // ──────────────────────────────────────────────────────────────────
-
-            const tableColumn = ["Quantité", "Produit", "Prix unitaire", "Montant"];
-            const tableRows = [];
-
-            const contentArray = Array.isArray(order.content)
-                ? order.content
-                : JSON.parse(order.content || "[]");
-
-            contentArray.forEach(item => {
-                tableRows.push([
-                    item.quantity.toString(),
-                    item.name,
-                    `${item.salePrice.toFixed(2)} €`,
-                    `${(item.salePrice * item.quantity).toFixed(2)} €`
-                ]);
-            });
-
-            // ── AJOUT : ligne frais de port dans le tableau ────────────────────
-            tableRows.push([
-                "1",
-                "Frais de livraison",
-                `${shippingCost.toFixed(2)} €`,
-                `${shippingCost.toFixed(2)} €`
-            ]);
-            // ──────────────────────────────────────────────────────────────────
-
-            autoTable(doc, {
-                head: [tableColumn],
-                body: tableRows,
-                startY: yPosition,
-                theme: 'grid',
-                headStyles: {
-                    fillColor: [0, 71, 171],
-                    textColor: 255,
-                    fontStyle: 'bold'
-                },
-                bodyStyles: {
-                    textColor: 0
-                }
-            })
-
-            yPosition = doc.lastAutoTable.finalY + 10;
-
-            // ── MODIFIÉ : total décomposé ──────────────────────────────────────
-            const produitsTotal = contentArray.reduce(
-                (acc, item) => acc + item.salePrice * item.quantity, 0
-            );
-
-            doc.setFont(undefined, 'bold');
-            doc.setFontSize(12);
-            doc.text(`Total: ${(order.price || 0).toFixed(2)} €`, pageWidth - 40, yPosition, { align: 'right' });
-
-            doc.setFontSize(8);
-            doc.setTextColor(150);
-            doc.text(
-                "Merci de votre commande!",
-                pageWidth / 2,
-                pageHeight - 10,
-                { align: "center" }
-            );
-
-            doc.save(`facture_${order.id}.pdf`);
-
-            displayNotification("Facture générée", `Facture créée pour la commande ${order.id}`, "success");
-
-        } catch (error) {
-            displayNotification("Erreur", "Impossible de générer la facture : " + error.message, "danger");
-        }
+    if (invoiceError) {
+        displayNotification("Erreur lors du téléchargement de la facture " + order.invoiceFileName, invoiceError.message, "danger")
+    } else {
+        const url = URL.createObjectURL(invoiceData);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `facture_${order.id}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
     }
+}
+
+async function generateInvoice(order) {
+    try {
+        const { data: userData, error: userError } = await supabase
+            .from("User")
+            .select("firstName, lastName, address, city, postalCode")
+            .eq("id", order.client_id)
+            .single();
+
+        if (userError) {
+            throw new Error(`Impossible de récupérer les données de l'utilisateur: ${userError.message}`);
+        }
+
+        const { data: shippingData } = await supabase
+            .from('constants')
+            .select('value')
+            .eq('name', 'shippingCost')
+            .maybeSingle();
+        const shippingCost = parseFloat(shippingData?.value) || 1.35;
+
+        const contentArray = Array.isArray(order.content)
+            ? order.content
+            : JSON.parse(order.content || "[]");
+
+        const { error: functionError } = await supabase.functions.invoke("create-invoice", {
+            body: {
+                cartId: order.id,
+                client: {
+                    id: order.client_id,
+                    firstName: userData.firstName,
+                    lastName: userData.lastName,
+                    address: userData.address,
+                    city: userData.city,
+                    postalCode: userData.postalCode,
+                },
+                items: contentArray,
+                shippingCost,
+                totalPrice: order.price,
+            },
+        });
+
+        if (functionError) {
+            throw new Error(functionError.message);
+        }
+
+        displayNotification("Facture générée", `Facture créée pour la commande ${order.id}`, "success");
+        fetchOrders();
+    } catch (error) {
+        displayNotification("Erreur", "Impossible de générer la facture : " + error.message, "danger");
+    }
+}
 
     return (
         <div className="p-6 bg-gray-50 min-h-screen">
@@ -690,14 +637,25 @@ function OrderTable() {
                                                         <p className="text-gray-800 font-medium">{order.referenceNumber}</p>
                                                     </div>
                                                 )}
-                                                <div>
-                                                    <button
-                                                        onClick={() => createAndDownloadBill(order)}
-                                                        className="text-rayonblue hover:underline font-medium"
-                                                    >
-                                                        Générer la facture
-                                                    </button>
-                                                </div>
+                                                {order.invoiceFileName ? (
+                                                    <div>
+                                                        <button
+                                                            onClick={() => downloadInvoice(order)}
+                                                            className="text-rayonblue hover:underline font-medium"
+                                                        >
+                                                            Télécharger la facture
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <div>
+                                                        <button
+                                                            onClick={() => generateInvoice(order)}
+                                                            className="text-rayonblue hover:underline font-medium"
+                                                        >
+                                                            Générer la facture
+                                                        </button>
+                                                    </div>
+                                                )}
                                                 {order.shippingLabelFileName && (
                                                     <div>
                                                         <button
