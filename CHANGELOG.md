@@ -5,7 +5,11 @@
 ### À venir
 - ...
 
-## v7 — 2026-076-21
+## v8 — 2026-07-22
+### Corrigé
+- feat: affichage des 4 statuts de livraison (correction JES - delivery.jsx) 
+
+## v7 — 2026-07-21
 ### Corrigé
 - merge feature/invoice depuis branch develop dans main 
 - la branch develop sert pour tester avant livraison sur main
