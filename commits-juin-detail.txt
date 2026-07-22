@@ -1,0 +1,1849 @@
+commit d772041ff450634bd4ee0f03028496815df0c574
+Author: geronimo <geronimo@geronimo22.ynh.fr>
+Date:   Wed Jun 10 08:40:06 2026 +0200
+
+    traitement de l'étiquette en mode relais
+
+diff --git a/src/pages/dashboard/OrderTable.jsx b/src/pages/dashboard/OrderTable.jsx
+index e22454b..3661138 100644
+--- a/src/pages/dashboard/OrderTable.jsx
++++ b/src/pages/dashboard/OrderTable.jsx
+@@ -9,6 +9,7 @@
+ //                            du colis : poids des produits + poids de l'emballage
+ // 2026-06-08    Louvel       Traitement du colis en mode "relais"
+ // 2026-06-08    Louvel       Blindage complet du code pour le mode "relais" (validation des champs, gestion des erreurs)
++// 2026-06-09    Louvel       create-dpd-label => dpd-create-label-relay
+ //
+ // =============================================================================
+ 
+@@ -175,14 +176,14 @@ function OrderTable() {
+ 
+             // 7. Construction du payload pour le mode "relais"
+             const payload = {
+-                mode: "relais", // 👈 Mode relais
++                mode: "relais",
+                 poids: totalWeightKg,
+                 shippingdate: shippingDate,
+                 referencenumber: referenceNumber,
+                 relais: {
+-                    shopid: pickupId, // 👈 ID DPD du point relais
+-                    sms: normalizePhone(userData?.phone) || defaultPhone, // 👈 Téléphone du destinataire
+-                    email: userData?.email || defaultEmail, // 👈 Email du destinataire
++                    shopid: pickupId, // ID DPD du point relais
++                    sms: normalizePhone(userData?.phone) || defaultPhone, // Téléphone du destinataire
++                    email: userData?.email || defaultEmail, // email du destinataire
+                 },
+                 destinataire,
+                 expediteur,
+@@ -200,7 +201,7 @@ function OrderTable() {
+ 
+             // 9. Appel à l'Edge Function
+             const { data: labelData, error: functionError } = await supabase.functions.invoke(
+-                "create-dpd-label",
++                "dpd-create-label-relay",
+                 {
+                     body: payload,
+                 }
+
+commit fb0aad019a41f184dd41ad2210f889819fd97083
+Author: geronimo <geronimo@geronimo22.ynh.fr>
+Date:   Tue Jun 9 18:31:20 2026 +0200
+
+    Banque Alimenatire => BA22 par discrétion
+
+diff --git a/src/content/sender_content.json b/src/content/sender_content.json
+index a61e5da..a8e0889 100644
+--- a/src/content/sender_content.json
++++ b/src/content/sender_content.json
+@@ -1,9 +1,9 @@
+ {
+   "adresse": {
+-        "nom": "Banque Alimentaire 22",
++        "nom": "BA22",
+         "pays": "FR",
+         "cp": "22300",
+         "ville": "Lannion",
+         "rue": "126 Rue de l'Aérodrome"
+     }
+-}
+\ No newline at end of file
++}
+
+commit 76d6fe93fc67a896fa7b7773a715d0bb0a5007df
+Author: geronimo <geronimo@geronimo22.ynh.fr>
+Date:   Mon Jun 8 21:24:22 2026 +0200
+
+    Traitement du colis en mode relais
+
+diff --git a/src/pages/dashboard/OrderTable.jsx b/src/pages/dashboard/OrderTable.jsx
+index e3f691b..e22454b 100644
+--- a/src/pages/dashboard/OrderTable.jsx
++++ b/src/pages/dashboard/OrderTable.jsx
+@@ -7,6 +7,8 @@
+ // 2026-06-07    Louvel       Ajout shippingCost dans la facture
+ // 2026-06-08    Louvel       Ajout packagingWeight pour le calcul du poids brut
+ //                            du colis : poids des produits + poids de l'emballage
++// 2026-06-08    Louvel       Traitement du colis en mode "relais"
++// 2026-06-08    Louvel       Blindage complet du code pour le mode "relais" (validation des champs, gestion des erreurs)
+ //
+ // =============================================================================
+ 
+@@ -104,16 +106,18 @@ function OrderTable() {
+             const userData = await (async () => {
+                 const { data: userData, error: userError } = await supabase
+                     .from("User")
+-                    .select("firstName, lastName")
++                    .select("phone, email, firstName, lastName, postalCode, city, address, addAddress")
+                     .eq("id", order.client_id)
+                     .single();
+                 if (userError) {
+                     displayNotification("Utilisateur introuvable", userError.message, "danger");
++                    throw new Error(`Impossible de récupérer les données de l'utilisateur: ${userError.message}`);
+                 }
+                 return userData;
+             })();
+ 
+-            let pickupId = order.pickup_point || order.pickupPoint;
++            // 2. Récupération du point relais
++            let pickupId = order.pickupPoint;
+ 
+             if (!pickupId) {
+                 let contentArr = [];
+@@ -133,12 +137,29 @@ function OrderTable() {
+ 
+             const pickupPoint = await getPickupPoint(pickupId);
+ 
++            // 3. Vérification que pickupPoint existe
++            if (!pickupPoint) {
++                throw new Error(`Point relais introuvable pour l'ID: ${pickupId}`);
++            }
++
++            // 4. Valeurs par défaut
++            const defaultPhone = "0651047772";
++            const defaultEmail = "ba220.epicerie@banquealimentaire.org";
++
++            // 5. Normalisation du téléphone (suppression du +33)
++            const normalizePhone = (phone) => phone?.replace(/^\+33/, '0');
++
++            // 6. Construction des objets destinataire et expéditeur
+             const destinataire = {
+-                nom: pickupPoint.name || userData.firstName || "Client",
++                nom: `${userData?.firstName || ''} ${userData?.lastName || ''}`.trim() || pickupPoint.name || "Client",
+                 pays: "FR",
+-                cp: pickupPoint.zipCode,
+-                ville: pickupPoint.city,
+-                rue: `${pickupPoint.address1 || ""} ${pickupPoint.address2 || ""}`.trim(),
++                cp: userData?.postalCode || pickupPoint.zipCode, // Code postal du destinataire ou du point relais
++                vville: userData?.city || pickupPoint.city, // Ville du destinataire ou du point relais
++                rue: userData?.address || `${pickupPoint.address1 || ""} ${pickupPoint.address2 || ""}`.trim(),
++                contact: {
++                    phone: normalizePhone(userData?.phone) || defaultPhone,
++                    email: userData?.email || defaultEmail,
++                },
+             };
+ 
+             const expediteur = {
+@@ -147,16 +168,37 @@ function OrderTable() {
+                 cp: content.adresse.cp,
+                 ville: content.adresse.ville,
+                 rue: content.adresse.rue,
++                contact: {
++                phone: normalizePhone(content.adresse.phone) || defaultPhone,
++                },
+             };
+ 
++            // 7. Construction du payload pour le mode "relais"
+             const payload = {
++                mode: "relais", // 👈 Mode relais
+                 poids: totalWeightKg,
+                 shippingdate: shippingDate,
+                 referencenumber: referenceNumber,
++                relais: {
++                    shopid: pickupId, // 👈 ID DPD du point relais
++                    sms: normalizePhone(userData?.phone) || defaultPhone, // 👈 Téléphone du destinataire
++                    email: userData?.email || defaultEmail, // 👈 Email du destinataire
++                },
+                 destinataire,
+                 expediteur,
+             };
+ 
++            // 8. Validation du payload
++            if (!payload.relais?.shopid) {
++                throw new Error("ID du point relais manquant dans le payload.");
++            }
++            if (!payload.destinataire?.contact?.phone) {
++                throw new Error("Téléphone du destinataire manquant.");
++            }
++
++            console.log("Payload DPD (mode relais) :", payload);
++
++            // 9. Appel à l'Edge Function
+             const { data: labelData, error: functionError } = await supabase.functions.invoke(
+                 "create-dpd-label",
+                 {
+
+commit e74d32a5919e82b58b80916d9a9e8d4399292f5d
+Author: geronimo <geronimo@geronimo22.ynh.fr>
+Date:   Mon Jun 8 15:19:55 2026 +0200
+
+    ajout du poids de l'emballage dans le poids total du colis
+
+diff --git a/src/pages/dashboard/OrderTable.jsx b/src/pages/dashboard/OrderTable.jsx
+index 98d29de..e3f691b 100644
+--- a/src/pages/dashboard/OrderTable.jsx
++++ b/src/pages/dashboard/OrderTable.jsx
+@@ -5,6 +5,8 @@
+ // Date          Auteur        Description
+ // ----------    ----------    -------------------------------------------------
+ // 2026-06-07    Louvel       Ajout shippingCost dans la facture
++// 2026-06-08    Louvel       Ajout packagingWeight pour le calcul du poids brut
++//                            du colis : poids des produits + poids de l'emballage
+ //
+ // =============================================================================
+ 
+@@ -82,10 +84,20 @@ function OrderTable() {
+     const generateDPDLabel = async (order) => {
+         setIsGeneratingLabel(true);
+         try {
+-            const totalWeightKg = order.content.reduce((acc, product) => {
+-                return acc + (parseFloat(product.weight) * parseFloat(product.quantity)) / 1000;
++            // ── Récupération du poids d'emballage depuis constants ────────────
++            const totalProductsWeightKg = order.content.reduce((acc, product) => {
++            return acc + (parseFloat(product.weight) * parseFloat(product.quantity)) / 1000;
+             }, 0);
+ 
++            const { data: packagingData } = await supabase
++                .from('constants')
++                .select('value')
++                .eq('name', 'packagingWeight')
++                .maybeSingle();
++            const packagingWeightKg = parseFloat(packagingData?.value ?? 0) / 1000;
++            const totalWeightKg = totalProductsWeightKg + packagingWeightKg;
++            // ─────────────────────────────────────────────────────────────────
++
+             const shippingDate = new Date().toISOString().split("T")[0];
+             const referenceNumber = `CMD-${order.id}`;
+ 
+diff --git a/src/pages/dashboard/ProductTable.jsx b/src/pages/dashboard/ProductTable.jsx
+index abeba57..52d40dc 100644
+--- a/src/pages/dashboard/ProductTable.jsx
++++ b/src/pages/dashboard/ProductTable.jsx
+@@ -1,3 +1,14 @@
++// =============================================================================
++// HISTORIQUE DES MODIFICATIONS
++// =============================================================================
++//
++// Date          Auteur        Description
++// ----------    ----------    -------------------------------------------------
++// 2026-06-08    Louvel       Ajout packagingWeight pour le calcul du poids brut
++//                            du colis : poids des produits + poids de l'emballage
++//
++// =============================================================================
++
+ // Importing dependencies
+ import { useEffect, useState, useRef } from "react";
+ import { supabase } from "@lib/supabaseClient";
+@@ -38,6 +49,7 @@ function ProductTable() {
+     max_order: '',
+     minCartWeight: '',
+     maxCartWeight: '',
++    packagingWeight: '',
+   })
+ 
+   const [formData, setFormData] = useState({
+@@ -392,9 +404,25 @@ function ProductTable() {
+       console.error("Erreur lors du téléchargement de l'ancienne valeur du poids maximal du panier", maxCartWeightError)
+       displayNotification("Erreur lors du téléchargement de l'ancienne valeur du poids maximal du panier", maxCartWeightError.message, "danger")
+     }
++
++     // ── AJOUT : récupération packagingWeight ──────────────────────────────
++    const { data: packagingWeightData, error: packagingWeightError } = await supabase
++      .from('constants')
++      .select('value')
++      .eq("name", "packagingWeight")
++      .maybeSingle();
++    if (!packagingWeightError) {
++        setSettings(prevData => ({
++            ...prevData,
++            packagingWeight: packagingWeightData.value
++        }))
++    } else {
++        displayNotification("Erreur lors du téléchargement du poids d'emballage", packagingWeightError.message, "danger")
++    }
++    // ──────────────────────────────────────────────────────────────────
+   }
+ 
+-  const handleChangeInSettings = (e) => {
++ const handleChangeInSettings = (e) => {
+     setSettings(prevData => ({
+       ...prevData,
+       [e.target.name]: e.target.value
+@@ -594,6 +622,24 @@ function ProductTable() {
+                       className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
+                       onChange={handleChangeInSettings}
+                     />
++                    <div className="relative group">
++                        <FormInput
++                            name="packagingWeight"
++                            type="number"
++                            step="1"
++                            value={settings.packagingWeight ?? 0}
++                            inputText="Poids d'emballage (g) ℹ️"
++                            className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
++                            onChange={handleChangeInSettings}
++                        />
++                        <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-10
++                                        bg-gray-800 text-white text-xs rounded-lg px-3 py-2 w-72 shadow-lg pointer-events-none">
++                            💡 Cette constante représente le poids médian d'un colis
++                            (emballage + protection). Il s'ajoute au poids des produits
++                            pour calculer le poids brut transmis à DPD.
++                            <div className="absolute top-full left-4 border-4 border-transparent border-t-gray-800" />
++                        </div>
++                    </div>
+                   </div>
+                   <button
+                     type="submit"
+@@ -853,4 +899,4 @@ function ProductTable() {
+   );
+ }
+ 
+-export default ProductTable;
+\ No newline at end of file
++export default ProductTable;
+
+commit 0692fbf74cdc036d334f537fd9d61e691710ceb9
+Author: geronimo <geronimo@geronimo22.ynh.fr>
+Date:   Mon Jun 8 10:56:58 2026 +0200
+
+    ajout d'un historique dans le source
+
+diff --git a/src/pages/dashboard/OrderTable.jsx b/src/pages/dashboard/OrderTable.jsx
+index 8e677d7..98d29de 100644
+--- a/src/pages/dashboard/OrderTable.jsx
++++ b/src/pages/dashboard/OrderTable.jsx
+@@ -1,3 +1,13 @@
++// =============================================================================
++// HISTORIQUE DES MODIFICATIONS
++// =============================================================================
++//
++// Date          Auteur        Description
++// ----------    ----------    -------------------------------------------------
++// 2026-06-07    Louvel       Ajout shippingCost dans la facture
++//
++// =============================================================================
++
+ // Importing dependencies
+ import { useEffect, useState } from "react";
+ import { useAuthor } from "@context/AuthorContext";
+
+commit 648e02bf84d7bba95c1b7a10851080f7879ed8f7
+Author: geronimo <geronimo@geronimo22.ynh.fr>
+Date:   Sun Jun 7 20:22:29 2026 +0200
+
+    ajout des frais de livraison dans la facture
+
+diff --git a/src/pages/dashboard/OrderTable.jsx b/src/pages/dashboard/OrderTable.jsx
+index b141e21..8e677d7 100644
+--- a/src/pages/dashboard/OrderTable.jsx
++++ b/src/pages/dashboard/OrderTable.jsx
+@@ -355,6 +355,15 @@ function OrderTable() {
+             }
+             yPosition += 5;
+ 
++            // ── AJOUT : récupération shippingCost ──────────────────────────────
++            const { data: shippingData } = await supabase
++                .from('constants')
++                .select('value')
++                .eq('name', 'shippingCost')
++                .maybeSingle();
++            const shippingCost = shippingData?.value ?? 0;
++            // ──────────────────────────────────────────────────────────────────
++
+             const tableColumn = ["Quantité", "Produit", "Prix unitaire", "Montant"];
+             const tableRows = [];
+ 
+@@ -371,6 +380,15 @@ function OrderTable() {
+                 ]);
+             });
+ 
++            // ── AJOUT : ligne frais de port dans le tableau ────────────────────
++            tableRows.push([
++                "1",
++                "Frais de livraison",
++                `${shippingCost.toFixed(2)} €`,
++                `${shippingCost.toFixed(2)} €`
++            ]);
++            // ──────────────────────────────────────────────────────────────────
++
+             autoTable(doc, {
+                 head: [tableColumn],
+                 body: tableRows,
+@@ -388,6 +406,11 @@ function OrderTable() {
+ 
+             yPosition = doc.lastAutoTable.finalY + 10;
+ 
++            // ── MODIFIÉ : total décomposé ──────────────────────────────────────
++            const produitsTotal = contentArray.reduce(
++                (acc, item) => acc + item.salePrice * item.quantity, 0
++            );
++
+             doc.setFont(undefined, 'bold');
+             doc.setFontSize(12);
+             doc.text(`Total: ${(order.price || 0).toFixed(2)} €`, pageWidth - 40, yPosition, { align: 'right' });
+
+commit c1b33cdb40a17736e350714e1e4f92e178627d3f
+Author: geronimo <geronimo@geronimo22.ynh.fr>
+Date:   Wed Jun 3 18:56:46 2026 +0200
+
+    correctif bucket 'labels' et genération de la facture
+
+diff --git a/package-lock.json b/package-lock.json
+index 3cd0e73..1d4080d 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -12,6 +12,8 @@
+         "@stripe/react-stripe-js": "^3.9.0",
+         "@stripe/stripe-js": "^7.8.0",
+         "@supabase/supabase-js": "^2.52.1",
++        "jspdf": "^4.2.1",
++        "jspdf-autotable": "^5.0.8",
+         "react": "^19.0.0",
+         "react-cookie-manager": "^4.0.3",
+         "react-dom": "^19.0.0",
+@@ -304,9 +306,9 @@
+       }
+     },
+     "node_modules/@babel/runtime": {
+-      "version": "7.28.4",
+-      "resolved": "https://registry.npmjs.org/@babel/runtime/-/runtime-7.28.4.tgz",
+-      "integrity": "sha512-Q/N6JNWvIvPnLDvjlE1OUBLPQHH6l3CltCEsHIujp45zQUSSh8K+gHnaEX45yAT1nyngnINhvWtzN+Nb9D8RAQ==",
++      "version": "7.29.7",
++      "resolved": "https://registry.npmjs.org/@babel/runtime/-/runtime-7.29.7.tgz",
++      "integrity": "sha512-Nq8OhGWiZIZGV6hLHoyAKLLcJihP/xFeBMGJoUrxTX2psI8dCifzLhZISFb+VWS3wFMRDmCGw5R+dOySCqPLhw==",
+       "license": "MIT",
+       "engines": {
+         "node": ">=6.9.0"
+@@ -1813,12 +1815,25 @@
+         "undici-types": "~7.10.0"
+       }
+     },
++    "node_modules/@types/pako": {
++      "version": "2.0.4",
++      "resolved": "https://registry.npmjs.org/@types/pako/-/pako-2.0.4.tgz",
++      "integrity": "sha512-VWDCbrLeVXJM9fihYodcLiIv0ku+AlOa/TQ1SvYOaBuyrSKgEcro95LJyIsJ4vSo6BXIxOKxiJAat04CmST9Fw==",
++      "license": "MIT"
++    },
+     "node_modules/@types/phoenix": {
+       "version": "1.6.6",
+       "resolved": "https://registry.npmjs.org/@types/phoenix/-/phoenix-1.6.6.tgz",
+       "integrity": "sha512-PIzZZlEppgrpoT2QgbnDU+MMzuR6BbCjllj0bM70lWoejMeNJAxCchxnv7J3XFkI8MpygtRpzXrIlmWUBclP5A==",
+       "license": "MIT"
+     },
++    "node_modules/@types/raf": {
++      "version": "3.4.3",
++      "resolved": "https://registry.npmjs.org/@types/raf/-/raf-3.4.3.tgz",
++      "integrity": "sha512-c4YAvMedbPZ5tEyxzQdMoOhhJ4RD3rngZIdwC2/qDN3d7JpEhB6fiBRKVY1lg5B7Wk+uPBjn5f39j1/2MY1oOw==",
++      "license": "MIT",
++      "optional": true
++    },
+     "node_modules/@types/react": {
+       "version": "19.1.10",
+       "resolved": "https://registry.npmjs.org/@types/react/-/react-19.1.10.tgz",
+@@ -1845,6 +1860,13 @@
+       "integrity": "sha512-1Xve+NMN7FWjY14vLoY5tL3BVEQ/n42YLwaqJIPYhotZ9uBHt87VceMwWQpzmdEt2TNXIorIFG+YeCUUW7RInw==",
+       "license": "MIT"
+     },
++    "node_modules/@types/trusted-types": {
++      "version": "2.0.7",
++      "resolved": "https://registry.npmjs.org/@types/trusted-types/-/trusted-types-2.0.7.tgz",
++      "integrity": "sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==",
++      "license": "MIT",
++      "optional": true
++    },
+     "node_modules/@types/ws": {
+       "version": "8.18.1",
+       "resolved": "https://registry.npmjs.org/@types/ws/-/ws-8.18.1.tgz",
+@@ -2037,6 +2059,16 @@
+       "dev": true,
+       "license": "MIT"
+     },
++    "node_modules/base64-arraybuffer": {
++      "version": "1.0.2",
++      "resolved": "https://registry.npmjs.org/base64-arraybuffer/-/base64-arraybuffer-1.0.2.tgz",
++      "integrity": "sha512-I3yl4r9QB5ZRY3XuJVEPfc2XhZO6YweFPI+UovAzn+8/hb3oJ6lnysaFcjVpkCPfVWFUDvoZ8kmVDP7WyRtYtQ==",
++      "license": "MIT",
++      "optional": true,
++      "engines": {
++        "node": ">= 0.6.0"
++      }
++    },
+     "node_modules/bin-links": {
+       "version": "6.0.0",
+       "resolved": "https://registry.npmjs.org/bin-links/-/bin-links-6.0.0.tgz",
+@@ -2162,6 +2194,26 @@
+       ],
+       "license": "CC-BY-4.0"
+     },
++    "node_modules/canvg": {
++      "version": "3.0.11",
++      "resolved": "https://registry.npmjs.org/canvg/-/canvg-3.0.11.tgz",
++      "integrity": "sha512-5ON+q7jCTgMp9cjpu4Jo6XbvfYwSB2Ow3kzHKfIyJfaCAOHLbdKPQqGKgfED/R5B+3TFFfe8pegYA+b423SRyA==",
++      "license": "MIT",
++      "optional": true,
++      "dependencies": {
++        "@babel/runtime": "^7.12.5",
++        "@types/raf": "^3.4.0",
++        "core-js": "^3.8.3",
++        "raf": "^3.4.1",
++        "regenerator-runtime": "^0.13.7",
++        "rgbcolor": "^1.0.1",
++        "stackblur-canvas": "^2.0.0",
++        "svg-pathdata": "^6.0.3"
++      },
++      "engines": {
++        "node": ">=10.0.0"
++      }
++    },
+     "node_modules/chalk": {
+       "version": "4.1.2",
+       "resolved": "https://registry.npmjs.org/chalk/-/chalk-4.1.2.tgz",
+@@ -2298,6 +2350,18 @@
+         "url": "https://opencollective.com/express"
+       }
+     },
++    "node_modules/core-js": {
++      "version": "3.49.0",
++      "resolved": "https://registry.npmjs.org/core-js/-/core-js-3.49.0.tgz",
++      "integrity": "sha512-es1U2+YTtzpwkxVLwAFdSpaIMyQaq0PBgm3YD1W3Qpsn1NAmO3KSgZfu+oGSWVu6NvLHoHCV/aYcsE5wiB7ALg==",
++      "hasInstallScript": true,
++      "license": "MIT",
++      "optional": true,
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/core-js"
++      }
++    },
+     "node_modules/cross-spawn": {
+       "version": "7.0.6",
+       "resolved": "https://registry.npmjs.org/cross-spawn/-/cross-spawn-7.0.6.tgz",
+@@ -2322,6 +2386,16 @@
+         "node": ">=4"
+       }
+     },
++    "node_modules/css-line-break": {
++      "version": "2.1.0",
++      "resolved": "https://registry.npmjs.org/css-line-break/-/css-line-break-2.1.0.tgz",
++      "integrity": "sha512-FHcKFCZcAha3LwfVBhCQbW2nCNbkZXn7KVUJcsT5/P8YmfsVja0FMPJr0B903j/E69HUphKiV9iQArX8SDYA4w==",
++      "license": "MIT",
++      "optional": true,
++      "dependencies": {
++        "utrie": "^1.0.2"
++      }
++    },
+     "node_modules/css-to-react-native": {
+       "version": "3.2.0",
+       "resolved": "https://registry.npmjs.org/css-to-react-native/-/css-to-react-native-3.2.0.tgz",
+@@ -2409,6 +2483,16 @@
+         "csstype": "^3.0.2"
+       }
+     },
++    "node_modules/dompurify": {
++      "version": "3.4.8",
++      "resolved": "https://registry.npmjs.org/dompurify/-/dompurify-3.4.8.tgz",
++      "integrity": "sha512-yb1cEmaOum7wFvOCSQxyfgVlv5D47Rc30iZWoMpbDIWTnJ6grDDQyu2KFJzB2k7u0pMuJcQ1zphH//fFnw2tjQ==",
++      "license": "(MPL-2.0 OR Apache-2.0)",
++      "optional": true,
++      "optionalDependencies": {
++        "@types/trusted-types": "^2.0.7"
++      }
++    },
+     "node_modules/eastasianwidth": {
+       "version": "0.2.0",
+       "resolved": "https://registry.npmjs.org/eastasianwidth/-/eastasianwidth-0.2.0.tgz",
+@@ -2754,6 +2838,17 @@
+       "dev": true,
+       "license": "MIT"
+     },
++    "node_modules/fast-png": {
++      "version": "6.4.0",
++      "resolved": "https://registry.npmjs.org/fast-png/-/fast-png-6.4.0.tgz",
++      "integrity": "sha512-kAqZq1TlgBjZcLr5mcN6NP5Rv4V2f22z00c3g8vRrwkcqjerx7BEhPbOnWCPqaHUl2XWQBJQvOT/FQhdMT7X/Q==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/pako": "^2.0.3",
++        "iobuffer": "^5.3.2",
++        "pako": "^2.1.0"
++      }
++    },
+     "node_modules/fastq": {
+       "version": "1.19.1",
+       "resolved": "https://registry.npmjs.org/fastq/-/fastq-1.19.1.tgz",
+@@ -2805,6 +2900,12 @@
+         "node": "^12.20 || >= 14.13"
+       }
+     },
++    "node_modules/fflate": {
++      "version": "0.8.3",
++      "resolved": "https://registry.npmjs.org/fflate/-/fflate-0.8.3.tgz",
++      "integrity": "sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==",
++      "license": "MIT"
++    },
+     "node_modules/file-entry-cache": {
+       "version": "8.0.0",
+       "resolved": "https://registry.npmjs.org/file-entry-cache/-/file-entry-cache-8.0.0.tgz",
+@@ -3052,6 +3153,20 @@
+         "node": ">= 0.4"
+       }
+     },
++    "node_modules/html2canvas": {
++      "version": "1.4.1",
++      "resolved": "https://registry.npmjs.org/html2canvas/-/html2canvas-1.4.1.tgz",
++      "integrity": "sha512-fPU6BHNpsyIhr8yyMpTLLxAbkaK8ArIBcmZIRiBLiDhjeqvXolaEmDGmELFuX9I4xDcaKKcJl+TKZLqruBbmWA==",
++      "license": "MIT",
++      "optional": true,
++      "dependencies": {
++        "css-line-break": "^2.1.0",
++        "text-segmentation": "^1.0.3"
++      },
++      "engines": {
++        "node": ">=8.0.0"
++      }
++    },
+     "node_modules/https-proxy-agent": {
+       "version": "9.0.0",
+       "resolved": "https://registry.npmjs.org/https-proxy-agent/-/https-proxy-agent-9.0.0.tgz",
+@@ -3111,6 +3226,12 @@
+         "node": ">=0.8.19"
+       }
+     },
++    "node_modules/iobuffer": {
++      "version": "5.4.0",
++      "resolved": "https://registry.npmjs.org/iobuffer/-/iobuffer-5.4.0.tgz",
++      "integrity": "sha512-DRebOWuqDvxunfkNJAlc3IzWIPD5xVxwUNbHr7xKB8E6aLJxIPfNX3CoMJghcFjpv6RWQsrcJbghtEwSPoJqMA==",
++      "license": "MIT"
++    },
+     "node_modules/is-binary-path": {
+       "version": "2.1.0",
+       "resolved": "https://registry.npmjs.org/is-binary-path/-/is-binary-path-2.1.0.tgz",
+@@ -3288,6 +3409,32 @@
+         "node": ">=6"
+       }
+     },
++    "node_modules/jspdf": {
++      "version": "4.2.1",
++      "resolved": "https://registry.npmjs.org/jspdf/-/jspdf-4.2.1.tgz",
++      "integrity": "sha512-YyAXyvnmjTbR4bHQRLzex3CuINCDlQnBqoSYyjJwTP2x9jDLuKDzy7aKUl0hgx3uhcl7xzg32agn5vlie6HIlQ==",
++      "license": "MIT",
++      "dependencies": {
++        "@babel/runtime": "^7.28.6",
++        "fast-png": "^6.2.0",
++        "fflate": "^0.8.1"
++      },
++      "optionalDependencies": {
++        "canvg": "^3.0.11",
++        "core-js": "^3.6.0",
++        "dompurify": "^3.3.1",
++        "html2canvas": "^1.0.0-rc.5"
++      }
++    },
++    "node_modules/jspdf-autotable": {
++      "version": "5.0.8",
++      "resolved": "https://registry.npmjs.org/jspdf-autotable/-/jspdf-autotable-5.0.8.tgz",
++      "integrity": "sha512-Hy05N86yBO7CXBrnSLOge7i1ZYpKH2DjQ94iybaP7vBhSInjvRBgDc99ngKzSbSO8Jc98ZCally8I6n0tj2RJQ==",
++      "license": "MIT",
++      "peerDependencies": {
++        "jspdf": "^2 || ^3 || ^4"
++      }
++    },
+     "node_modules/keyv": {
+       "version": "4.5.4",
+       "resolved": "https://registry.npmjs.org/keyv/-/keyv-4.5.4.tgz",
+@@ -3641,6 +3788,12 @@
+       "dev": true,
+       "license": "BlueOak-1.0.0"
+     },
++    "node_modules/pako": {
++      "version": "2.1.0",
++      "resolved": "https://registry.npmjs.org/pako/-/pako-2.1.0.tgz",
++      "integrity": "sha512-w+eufiZ1WuJYgPXbV/PO3NCMEc3xqylkKHzp8bxp1uW4qaSNQUkwmLLEc3kKsfz8lpV1F8Ht3U1Cm+9Srog2ug==",
++      "license": "(MIT AND Zlib)"
++    },
+     "node_modules/parent-module": {
+       "version": "1.0.1",
+       "resolved": "https://registry.npmjs.org/parent-module/-/parent-module-1.0.1.tgz",
+@@ -3705,6 +3858,13 @@
+       "dev": true,
+       "license": "ISC"
+     },
++    "node_modules/performance-now": {
++      "version": "2.1.0",
++      "resolved": "https://registry.npmjs.org/performance-now/-/performance-now-2.1.0.tgz",
++      "integrity": "sha512-7EAHlyLHI56VEIdK57uwHdHKIaAGbnXPiw0yWbarQZOKaKpvUIgW0jWRVLiatnM+XXlSwsanIBH/hzGMJulMow==",
++      "license": "MIT",
++      "optional": true
++    },
+     "node_modules/picocolors": {
+       "version": "1.1.1",
+       "resolved": "https://registry.npmjs.org/picocolors/-/picocolors-1.1.1.tgz",
+@@ -3954,6 +4114,16 @@
+       ],
+       "license": "MIT"
+     },
++    "node_modules/raf": {
++      "version": "3.4.1",
++      "resolved": "https://registry.npmjs.org/raf/-/raf-3.4.1.tgz",
++      "integrity": "sha512-Sq4CW4QhwOHE8ucn6J34MqtZCeWFP2aQSmrlroYgqAV1PjStIhJXxYuTgUIfkEk7zTLjmIjLmU5q+fbD1NnOJA==",
++      "license": "MIT",
++      "optional": true,
++      "dependencies": {
++        "performance-now": "^2.1.0"
++      }
++    },
+     "node_modules/react": {
+       "version": "19.2.0",
+       "resolved": "https://registry.npmjs.org/react/-/react-19.2.0.tgz",
+@@ -4184,6 +4354,13 @@
+         "url": "https://github.com/sponsors/jonschlinkert"
+       }
+     },
++    "node_modules/regenerator-runtime": {
++      "version": "0.13.11",
++      "resolved": "https://registry.npmjs.org/regenerator-runtime/-/regenerator-runtime-0.13.11.tgz",
++      "integrity": "sha512-kY1AZVr2Ra+t+piVaJ4gxaFaReZVH40AKNo7UCX6W+dEwBo/2oZJzqfuN1qLq1oL45o56cPaTXELwrTh8Fpggg==",
++      "license": "MIT",
++      "optional": true
++    },
+     "node_modules/resize-observer-polyfill": {
+       "version": "1.5.1",
+       "resolved": "https://registry.npmjs.org/resize-observer-polyfill/-/resize-observer-polyfill-1.5.1.tgz",
+@@ -4232,6 +4409,16 @@
+         "node": ">=0.10.0"
+       }
+     },
++    "node_modules/rgbcolor": {
++      "version": "1.0.1",
++      "resolved": "https://registry.npmjs.org/rgbcolor/-/rgbcolor-1.0.1.tgz",
++      "integrity": "sha512-9aZLIrhRaD97sgVhtJOW6ckOEh6/GnvQtdVNfdZ6s67+3/XwLS9lBcQYzEEhYVeUowN7pRzMLsyGhK2i/xvWbw==",
++      "license": "MIT OR SEE LICENSE IN FEEL-FREE.md",
++      "optional": true,
++      "engines": {
++        "node": ">= 0.8.15"
++      }
++    },
+     "node_modules/rollup": {
+       "version": "4.59.0",
+       "resolved": "https://registry.npmjs.org/rollup/-/rollup-4.59.0.tgz",
+@@ -4382,6 +4569,16 @@
+         "node": ">=0.10.0"
+       }
+     },
++    "node_modules/stackblur-canvas": {
++      "version": "2.7.0",
++      "resolved": "https://registry.npmjs.org/stackblur-canvas/-/stackblur-canvas-2.7.0.tgz",
++      "integrity": "sha512-yf7OENo23AGJhBriGx0QivY5JP6Y1HbrrDI6WLt6C5auYZXlQrheoY8hD4ibekFKz1HOfE48Ww8kMWMnJD/zcQ==",
++      "license": "MIT",
++      "optional": true,
++      "engines": {
++        "node": ">=0.1.14"
++      }
++    },
+     "node_modules/string-convert": {
+       "version": "0.2.1",
+       "resolved": "https://registry.npmjs.org/string-convert/-/string-convert-0.2.1.tgz",
+@@ -4635,6 +4832,16 @@
+         "url": "https://github.com/sponsors/ljharb"
+       }
+     },
++    "node_modules/svg-pathdata": {
++      "version": "6.0.3",
++      "resolved": "https://registry.npmjs.org/svg-pathdata/-/svg-pathdata-6.0.3.tgz",
++      "integrity": "sha512-qsjeeq5YjBZ5eMdFuUa4ZosMLxgr5RZ+F+Y1OrDhuOCEInRMA3x74XdBtggJcj9kOeInz0WE+LgCPDkZFlBYJw==",
++      "license": "MIT",
++      "optional": true,
++      "engines": {
++        "node": ">=12.0.0"
++      }
++    },
+     "node_modules/tailwindcss": {
+       "version": "3.4.17",
+       "resolved": "https://registry.npmjs.org/tailwindcss/-/tailwindcss-3.4.17.tgz",
+@@ -4708,6 +4915,16 @@
+         "node": ">=18"
+       }
+     },
++    "node_modules/text-segmentation": {
++      "version": "1.0.3",
++      "resolved": "https://registry.npmjs.org/text-segmentation/-/text-segmentation-1.0.3.tgz",
++      "integrity": "sha512-iOiPUo/BGnZ6+54OsWxZidGCsdU8YbE4PSpdPinp7DeMtUJNJBoJ/ouUSTJjHkh1KntHaltHl/gDs2FC4i5+Nw==",
++      "license": "MIT",
++      "optional": true,
++      "dependencies": {
++        "utrie": "^1.0.2"
++      }
++    },
+     "node_modules/thenify": {
+       "version": "3.3.1",
+       "resolved": "https://registry.npmjs.org/thenify/-/thenify-3.3.1.tgz",
+@@ -4847,6 +5064,16 @@
+       "dev": true,
+       "license": "MIT"
+     },
++    "node_modules/utrie": {
++      "version": "1.0.2",
++      "resolved": "https://registry.npmjs.org/utrie/-/utrie-1.0.2.tgz",
++      "integrity": "sha512-1MLa5ouZiOmQzUbjbu9VmjLzn1QLXBhwpUa7kdLUQK+KQ5KA9I1vk5U4YHe/X2Ch7PYnJfWuWT+VbuxbGwljhw==",
++      "license": "MIT",
++      "optional": true,
++      "dependencies": {
++        "base64-arraybuffer": "^1.0.2"
++      }
++    },
+     "node_modules/vanilla-cookieconsent": {
+       "version": "3.1.0",
+       "resolved": "https://registry.npmjs.org/vanilla-cookieconsent/-/vanilla-cookieconsent-3.1.0.tgz",
+diff --git a/package.json b/package.json
+index 4396b76..5f893e0 100644
+--- a/package.json
++++ b/package.json
+@@ -18,6 +18,8 @@
+     "@stripe/react-stripe-js": "^3.9.0",
+     "@stripe/stripe-js": "^7.8.0",
+     "@supabase/supabase-js": "^2.52.1",
++    "jspdf": "^4.2.1",
++    "jspdf-autotable": "^5.0.8",
+     "react": "^19.0.0",
+     "react-cookie-manager": "^4.0.3",
+     "react-dom": "^19.0.0",
+diff --git a/src/pages/dashboard/OrderTable.jsx b/src/pages/dashboard/OrderTable.jsx
+index ee85780..b141e21 100644
+--- a/src/pages/dashboard/OrderTable.jsx
++++ b/src/pages/dashboard/OrderTable.jsx
+@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
+ import { displayNotification } from '@lib/displayNotification.jsx';
+ import { supabase } from "@lib/supabaseClient";
+ import { getPickupPoint } from '@lib/pudo_helper.js';
++import { jsPDF } from 'jspdf'
++import { autoTable } from 'jspdf-autotable'
+ 
+ // Importing common components
+ import Loading from "@common/Loading.jsx";
+@@ -220,10 +222,9 @@ function OrderTable() {
+                 throw new Error(`Erreur mise à jour: ${updateError.message}`);
+             }
+ 
+-            displayNotification("Label généré", `Label DPD généré pour la commande ${order.id.slice(0, 8)}`, "success");
++            displayNotification("Label généré", `Label DPD généré pour la commande ${order.id}`, "success");
+             fetchOrders();
+         } catch (error) {
+-            console.error("Erreur lors de la génération du label:", error);
+             displayNotification("Erreur", error.message, "danger");
+         } finally {
+             setIsGeneratingLabel(false);
+@@ -246,9 +247,9 @@ function OrderTable() {
+         }
+     };
+ 
+-    const prepareDPD = (id) => generateDPDLabel(orders.find(o => o.id === id), updateOrderStatus(id, 'validated', `Commande ${id.slice(0, 8)} marquée comme "En préparation DPD" ✅`));
+-    const markAsShipped = (id) => updateOrderStatus(id, 'shipped', `Commande ${id.slice(0, 8)} marquée comme "Expédiée" ✅`);
+-    const confirmDelivery = (id) => updateOrderStatus(id, 'delivered', `Commande ${id.slice(0, 8)} marquée comme "Livrée" ✅`);
++    const prepareDPD = (id) => generateDPDLabel(orders.find(o => o.id === id), updateOrderStatus(id, 'validated', `Commande ${id} marquée comme "En préparation DPD" ✅`));
++    const markAsShipped = (id) => updateOrderStatus(id, 'shipped', `Commande ${id} marquée comme "Expédiée" ✅`);
++    const confirmDelivery = (id) => updateOrderStatus(id, 'delivered', `Commande ${id} marquée comme "Livrée" ✅`);
+ 
+ 
+     if (loading || loadingOrders) {
+@@ -298,6 +299,117 @@ function OrderTable() {
+         delivered: { label: "Livrée", color: "text-green-600", bgColor: "bg-green-100" },
+     };
+ 
++    async function downloadLabel(order) {
++        const { data: labelData, error: labelError } = await supabase
++            .storage
++            .from("labels")
++            .download(order.shippingLabelFileName);
++
++        if (labelError) {
++            displayNotification("Erreur lors du téléchargement de l'étiquette " + order.shippingLabelFileName, labelError.message, "danger")
++        } else {
++            const url = URL.createObjectURL(labelData);
++            const a = document.createElement('a');
++            a.href = url;
++            a.download = `label_${order.id}.pdf`;
++            a.click();
++            URL.revokeObjectURL(url);
++        }
++    }
++
++    async function createAndDownloadBill(order) {
++        try {
++            const doc = new jsPDF();
++            const pageWidth = doc.internal.pageSize.getWidth();
++            const pageHeight = doc.internal.pageSize.getHeight();
++            let yPosition = 20;
++
++            doc.setFontSize(20);
++            doc.setTextColor(255,130,0);
++            doc.text("L'épicerie Sociale en Ligne des Côtes d'Armor", 20, yPosition);
++            yPosition += 10;
++
++            doc.setFontSize(14);
++            doc.setTextColor(0, 0, 0);
++            doc.text("FACTURE", 20, yPosition);
++            yPosition += 12;
++
++            doc.setFontSize(10);
++            doc.text(`Numéro de facture : ${order.referenceNumber || order.id}`, 20, yPosition);
++            yPosition += 6;
++            doc.text(`Date de la commande : ${new Date(order.created_at).toLocaleDateString('fr-FR')}`, 20, yPosition);
++            yPosition += 12;
++
++            doc.setFontSize(11);
++            doc.setFont(undefined, 'bold');
++            doc.text("Informations client :", 20, yPosition);
++            yPosition += 6;
++
++            doc.setFont(undefined, 'normal');
++            doc.setFontSize(10);
++            if (order.User) {
++                doc.text(`${order.User.firstName} ${order.User.lastName}`, 20, yPosition);
++                yPosition += 5;
++                doc.text(`Email: ${order.User.email}`, 20, yPosition);
++                yPosition += 5;
++            }
++            yPosition += 5;
++
++            const tableColumn = ["Quantité", "Produit", "Prix unitaire", "Montant"];
++            const tableRows = [];
++
++            const contentArray = Array.isArray(order.content)
++                ? order.content
++                : JSON.parse(order.content || "[]");
++
++            contentArray.forEach(item => {
++                tableRows.push([
++                    item.quantity.toString(),
++                    item.name,
++                    `${item.salePrice.toFixed(2)} €`,
++                    `${(item.salePrice * item.quantity).toFixed(2)} €`
++                ]);
++            });
++
++            autoTable(doc, {
++                head: [tableColumn],
++                body: tableRows,
++                startY: yPosition,
++                theme: 'grid',
++                headStyles: {
++                    fillColor: [0, 71, 171],
++                    textColor: 255,
++                    fontStyle: 'bold'
++                },
++                bodyStyles: {
++                    textColor: 0
++                }
++            })
++
++            yPosition = doc.lastAutoTable.finalY + 10;
++
++            doc.setFont(undefined, 'bold');
++            doc.setFontSize(12);
++            doc.text(`Total: ${(order.price || 0).toFixed(2)} €`, pageWidth - 40, yPosition, { align: 'right' });
++
++            doc.setFontSize(8);
++            doc.setTextColor(150);
++            doc.text(
++                "Merci de votre commande!",
++                pageWidth / 2,
++                pageHeight - 10,
++                { align: "center" }
++            );
++
++            doc.save(`facture_${order.id}.pdf`);
++
++            displayNotification("Facture générée", `Facture créée pour la commande ${order.id}`, "success");
++
++        } catch (error) {
++            displayNotification("Erreur", "Impossible de générer la facture : " + error.message, "danger");
++        }
++    }
++
+     return (
+         <div className="p-6 bg-gray-50 min-h-screen">
+             <div className="max-w-7xl mx-auto">
+@@ -457,7 +569,7 @@ function OrderTable() {
+                                             <div className="grid grid-cols-2 gap-3 text-sm">
+                                                 <div>
+                                                     <p className="text-gray-500 text-xs">ID de la commande</p>
+-                                                    <p className="text-gray-800 font-medium">{order.id.slice(0, 8)}...</p>
++                                                    <p className="text-gray-800 font-medium">{order.id}</p>
+                                                 </div>
+                                                 <div>
+                                                     <p className="text-gray-500 text-xs">Statut</p>
+@@ -474,7 +586,7 @@ function OrderTable() {
+                                                 {order.User && (
+                                                     <div>
+                                                         <p className="text-gray-500 text-xs">ID client</p>
+-                                                        <p className="text-gray-800 font-medium">{order.client_id.slice(0, 8)}...</p>
++                                                        <p className="text-gray-800 font-medium">{order.client_id}</p>
+                                                     </div>
+                                                 )}
+                                                 {order.referenceNumber && (
+@@ -483,17 +595,22 @@ function OrderTable() {
+                                                         <p className="text-gray-800 font-medium">{order.referenceNumber}</p>
+                                                     </div>
+                                                 )}
++                                                <div>
++                                                    <button
++                                                        onClick={() => createAndDownloadBill(order)}
++                                                        className="text-rayonblue hover:underline font-medium"
++                                                    >
++                                                        Générer la facture
++                                                    </button>
++                                                </div>
+                                                 {order.shippingLabelFileName && (
+                                                     <div>
+-                                                        <p className="text-gray-500 text-xs">Étiquette</p>
+-                                                        <a
+-                                                            href={supabase.storage.from("labels").getPublicUrl(order.shippingLabelFileName).data.publicUrl}
+-                                                            target="_blank"
+-                                                            rel="noopener noreferrer"
++                                                        <button
++                                                            onClick={() => downloadLabel(order)}
+                                                             className="text-rayonblue hover:underline font-medium"
+                                                         >
+                                                             Télécharger l'étiquette
+-                                                        </a>
++                                                        </button>
+                                                     </div>
+                                                 )}
+                                             </div>
+@@ -538,4 +655,4 @@ function OrderTable() {
+     );
+ }
+ 
+-export default OrderTable;
+\ No newline at end of file
++export default OrderTable;
+
+commit 9d3ca05414b34a2a5f20f3529194714b4b3760b5
+Author: geronimo <geronimo@geronimo22.ynh.fr>
+Date:   Wed Jun 3 14:06:01 2026 +0200
+
+    Prise en compte modif pour étiquette et worflow - commande
+
+diff --git a/src/common/ProductCarouselCatalog.jsx b/src/common/ProductCarouselCatalog.jsx
+index c1b6d94..1fc63ef 100644
+--- a/src/common/ProductCarouselCatalog.jsx
++++ b/src/common/ProductCarouselCatalog.jsx
+@@ -53,7 +53,7 @@ function SamplePrevArrow(props) {
+ 
+ function ProductCarousel({ data }) {
+   const { user } = useAuthor();
+-  const { cart, setCart, isLoaded, clearCart } = useCart();
++  const { cart, setCart, isLoaded } = useCart();
+ 
+   const [stockIncertainThreshold, setStockIncertainThreshold] = useState(3);
+   const [selectedProduct, setSelectedProduct] = useState(null);
+@@ -323,4 +323,4 @@ function ProductCarousel({ data }) {
+   );
+ }
+ 
+-export default ProductCarousel;
+\ No newline at end of file
++export default ProductCarousel;
+diff --git a/src/content/sender_content.json b/src/content/sender_content.json
+new file mode 100644
+index 0000000..a61e5da
+--- /dev/null
++++ b/src/content/sender_content.json
+@@ -0,0 +1,9 @@
++{
++  "adresse": {
++        "nom": "Banque Alimentaire 22",
++        "pays": "FR",
++        "cp": "22300",
++        "ville": "Lannion",
++        "rue": "126 Rue de l'Aérodrome"
++    }
++}
+\ No newline at end of file
+diff --git a/src/pages/PaymentSuccess.jsx b/src/pages/PaymentSuccess.jsx
+index 5d8db3b..46a6507 100644
+--- a/src/pages/PaymentSuccess.jsx
++++ b/src/pages/PaymentSuccess.jsx
+@@ -48,32 +48,102 @@ function PaymentSuccess() {
+         if (hasRun.current || !user) return;
+         hasRun.current = true;
+ 
+-        // Creating the label
+-        const createAndInsertLabel = async (cartId) => {
+-            try {
+-                const { data, error } = await supabase.functions.invoke('dpd_create_label', {
+-                    body: JSON.stringify({
+-                        cartId: cartId
+-                    })
+-                })
+-                if (error) {
+-                    throw new Error(error)
+-                } else {
+-                    // Inserting useful label datas associated to cart in database
+-                    const { error: labelError } = await supabase
+-                        .from("cart")
+-                        .update({ orderReference: data.orderReference, trackingUrl: data.trackingUrl })
+-                        .eq('id', cartId)
+-
+-                    if (labelError) {
+-                        displayNotification("Échec de l'enregistrement des références de votre colis", labelError.message, "danger")
+-                    }
+-                }
+-                return data;
+-            } catch (e) {
+-                displayNotification("Erreur lors de la création de l'étiquette associée à votre colis", e.message, "danger")
+-            }
+-        };
++        // const createAndInsertLabel = async ({
++        //     cartId,
++        //     fullCartContent,
++        //     pickupPoint,
++        //     userData
++        // }) => {
++        //     try {
++        //         const totalWeightKg = roundTwoDigits(
++        //             fullCartContent.reduce((acc, product) => {
++        //                 return acc + (
++        //                     (parseFloat(product.weight) * parseFloat(product.quantity)) / 1000
++        //                 );
++        //             }, 0)
++        //         );
++
++        //         const shippingDate = new Date().toISOString().split("T")[0];
++        //         const referenceNumber = `CMD-${cartId}`;
++
++        //         const destinataire = {
++        //             nom: pickupPoint.name || userData.firstName || "Client",
++        //             pays: "FR",
++        //             cp: pickupPoint.zipCode,
++        //             ville: pickupPoint.city,
++        //             rue: `${pickupPoint.address1 || ""} ${pickupPoint.address2 || ""}`.trim(),
++        //         };
++
++        //         const expediteur = {
++        //             nom: content.adresse.nom,
++        //             pays: content.adresse.pays,
++        //             cp: content.adresse.cp,
++        //             ville: content.adresse.ville,
++        //             rue: content.adresse.rue,
++        //         };
++
++        //         const payload = {
++        //             poids: totalWeightKg,
++        //             shippingdate: shippingDate,
++        //             referencenumber: referenceNumber,
++        //             destinataire: destinataire,
++        //             expediteur: expediteur,
++        //         };
++
++        //         console.log("Payload étiquette :", payload);
++
++        //         const { data: labelData, error: functionError } = await supabase.functions.invoke(
++        //             "create-dpd-label",
++        //             {
++        //                 body: payload,
++        //             }
++        //         );
++
++        //         if (functionError) {
++        //             displayNotification("Erreur fonction Edge", functionError.message, "danger");
++        //             throw new Error(`Erreur fonction Edge: ${functionError.message}`);
++        //         }
++
++        //         const blob = new Blob([labelData], { type: "application/pdf" });
++        //         console.log("blob", blob)
++
++        //         const fileName = `label-${cartId}.pdf`;
++
++        //         const { error: uploadError } = await supabase
++        //             .storage
++        //             .from("labels")
++        //             .upload(fileName, blob, {
++        //                 contentType: "application/pdf",
++        //                 upsert: true,
++        //             });
++
++        //         if (uploadError) {
++        //             displayNotification("Erreur lors de la sauvegarde de l'étiquette", labelError.message, "danger");
++        //         }
++
++        //         console.log("Réponse API :", labelData);
++
++        //         const { error: labelError } = await supabase
++        //             .from("cart")
++        //             .update({
++        //                 referenceNumber: referenceNumber,
++        //                 shippingLabelFileName: fileName,
++        //                 status: "paid"
++        //             })
++        //             .eq("id", cartId);
++
++        //         if (labelError) {
++        //             displayNotification("Erreur lors de la sauvegarde des données liées à la commande", labelError.message, "danger");
++        //         }
++
++        //         return labelData;
++
++        //     } catch (e) {
++        //         displayNotification("Erreur lors de la création de l'étiquette", e.message, "danger");
++
++        //         return null;
++        //     }
++        // };
+ 
+         const confirmPayment = async () => {
+             try {
+@@ -140,7 +210,8 @@ function PaymentSuccess() {
+                         client_id: cartMetadata.client_id,
+                         content: fullCartContent,
+                         price: cartMetadata.price + shippingCost,
+-                        delivered: cartMetadata.delivered
++                        delivered: cartMetadata.delivered,
++                        pickupPoint: cartMetadata.pickup_point
+                     };
+ 
+                     // Fetching old counters
+@@ -240,8 +311,20 @@ function PaymentSuccess() {
+                         displayNotification("Échec de mise à jour des compteurs liés au compte", updateError.message, "danger")
+                     }
+ 
+-                    // Create shipping label
+-                    const label = await createAndInsertLabel(dataInsertedCart.id)
++                    // // Create shipping label
++                    // const { data: currentUserData } = await supabase
++                    //     .from("User")
++                    //     .select("firstName, lastName")
++                    //     .eq("id", user.id)
++                    //     .single();
++
++                    // const label = await createAndInsertLabel({
++                    //     cartId: dataInsertedCart.id,
++                    //     cartMetadata,
++                    //     fullCartContent,
++                    //     pickupPoint,
++                    //     userData: currentUserData
++                    // });
+ 
+                     //  notify user 
+                     try {
+@@ -249,10 +332,10 @@ function PaymentSuccess() {
+                             email: user.email,
+                             templateId: 2,
+                             params: {
+-                                FIRSTNAME: name || "Error404_User_FirstName_Not_Found",
+-                                COMMAND_NUMBER: label?.orderReference || "Error404_Command_Number_Not_Found",
++                                FIRSTNAME: name || "Client",
++                                COMMAND_NUMBER: dataInsertedCart.id.slice(0, 8),
+                                 CONTENT: fullCartContent.map(item => `- ${item.name} x ${item.quantity}<br>`).join(""),
+-                                PRICE: cartPrice.toFixed(2).replace('.', ','),
++                                PRICE: (cartMetadata.price + shippingCost).toFixed(2).replace('.', ','),
+                                 PICKUP_POINT_NAME: pickupPoint.name,
+                                 PICKUP_POINT_ADDRESS: `${pickupPoint.address1} ${pickupPoint.address2}, ${pickupPoint.zipCode} ${pickupPoint.city}`
+                             },
+@@ -278,7 +361,8 @@ function PaymentSuccess() {
+                     navigate("/cart");
+                 }
+             } catch (err) {
+-                displayNotification("Erreur", "Une erreur est survenue lors de la validation", "danger");
++                console.error("Erreur lors de la validation", err.message);
++                displayNotification("Erreur", "Une erreur est survenue lors de la validation", err.message, "danger");
+                 setIsProcessing(false);
+                 navigate("/cart");
+             }
+@@ -301,4 +385,4 @@ function PaymentSuccess() {
+     );
+ }
+ 
+-export default PaymentSuccess;
++export default PaymentSuccess;
+\ No newline at end of file
+diff --git a/src/pages/dashboard/OrderTable.jsx b/src/pages/dashboard/OrderTable.jsx
+index c4f864f..ee85780 100644
+--- a/src/pages/dashboard/OrderTable.jsx
++++ b/src/pages/dashboard/OrderTable.jsx
+@@ -4,11 +4,14 @@ import { useAuthor } from "@context/AuthorContext";
+ import { useNavigate } from "react-router-dom";
+ import { displayNotification } from '@lib/displayNotification.jsx';
+ import { supabase } from "@lib/supabaseClient";
++import { getPickupPoint } from '@lib/pudo_helper.js';
+ 
+ // Importing common components
+-import FunctionButton from "@common/FunctionButton.jsx";
+ import Loading from "@common/Loading.jsx";
+ 
++// Importing content
++import content from "../../content/sender_content.json";
++
+ /**
+  * Component to display and manage orders in the admin dashboard.
+  * Allows admins to view, confirm delivery, and manage orders.
+@@ -18,7 +21,8 @@ function OrderTable() {
+     const [orders, setOrders] = useState([]);
+     const [loadingOrders, setLoadingOrders] = useState(true);
+     const [expandedOrder, setExpandedOrder] = useState(null);
+-    const [activeTab, setActiveTab] = useState('pending'); // 'pending' or 'delivered'
++    const [activeTab, setActiveTab] = useState('paid');
++    const [isGeneratingLabel, setIsGeneratingLabel] = useState(false);
+ 
+     const { isAdmin, loading } = useAuthor();
+     const navigate = useNavigate();
+@@ -43,6 +47,10 @@ function OrderTable() {
+                 price,
+                 delivered,
+                 created_at,
++                status,
++                referenceNumber,
++                shippingLabelFileName,
++                pickupPoint,
+                 User: client_id (
+                   firstName,
+                   lastName,
+@@ -59,25 +67,205 @@ function OrderTable() {
+         setLoadingOrders(false);
+     };
+ 
+-    const confirmDelivery = async (id) => {
+-        if (!confirm('Êtes-vous sûr de vouloir marquer cette commande comme livrée ?')) return;
++    const generateDPDLabel = async (order) => {
++        setIsGeneratingLabel(true);
++        try {
++            const totalWeightKg = order.content.reduce((acc, product) => {
++                return acc + (parseFloat(product.weight) * parseFloat(product.quantity)) / 1000;
++            }, 0);
++
++            const shippingDate = new Date().toISOString().split("T")[0];
++            const referenceNumber = `CMD-${order.id}`;
++
++            const userData = await (async () => {
++                const { data: userData, error: userError } = await supabase
++                    .from("User")
++                    .select("firstName, lastName")
++                    .eq("id", order.client_id)
++                    .single();
++                if (userError) {
++                    displayNotification("Utilisateur introuvable", userError.message, "danger");
++                }
++                return userData;
++            })();
++
++            let pickupId = order.pickup_point || order.pickupPoint;
++
++            if (!pickupId) {
++                let contentArr = [];
++                try {
++                    contentArr = Array.isArray(order.content) ? order.content : JSON.parse(order.content || "[]");
++                } catch (e) {
++                    contentArr = [];
++                }
++                const itemWithPickup = contentArr.find(it => it && (it.pickupPointId || it.pickup_point));
++                pickupId = itemWithPickup?.pickupPointId || itemWithPickup?.pickup_point;
++            }
++
++            if (!pickupId) {
++                displayNotification("Erreur", "Aucun pickup point associé à cette commande", "danger");
++                throw new Error("pickupId not found for order " + order.id);
++            }
++
++            const pickupPoint = await getPickupPoint(pickupId);
++
++            const destinataire = {
++                nom: pickupPoint.name || userData.firstName || "Client",
++                pays: "FR",
++                cp: pickupPoint.zipCode,
++                ville: pickupPoint.city,
++                rue: `${pickupPoint.address1 || ""} ${pickupPoint.address2 || ""}`.trim(),
++            };
++
++            const expediteur = {
++                nom: content.adresse.nom,
++                pays: content.adresse.pays,
++                cp: content.adresse.cp,
++                ville: content.adresse.ville,
++                rue: content.adresse.rue,
++            };
++
++            const payload = {
++                poids: totalWeightKg,
++                shippingdate: shippingDate,
++                referencenumber: referenceNumber,
++                destinataire,
++                expediteur,
++            };
++
++            const { data: labelData, error: functionError } = await supabase.functions.invoke(
++                "create-dpd-label",
++                {
++                    body: payload,
++                }
++            );
++
++            if (functionError) {
++                throw new Error(`Erreur fonction Edge: ${functionError.message}`);
++            }
++
++            let pdfBlob;
++
++            if (labelData instanceof Blob) {
++                pdfBlob = labelData;
++            } else if (labelData instanceof ArrayBuffer) {
++                pdfBlob = new Blob([labelData], { type: "application/pdf" });
++            } else if (labelData instanceof Uint8Array) {
++                pdfBlob = new Blob([labelData], { type: "application/pdf" });
++            } else if (typeof labelData === 'string' && labelData.startsWith('%PDF')) {
++                const encoder = new TextEncoder();
++                const uint8Array = encoder.encode(labelData);
++                pdfBlob = new Blob([uint8Array], { type: "application/pdf" });
++            } else if (typeof labelData === 'string') {
++                try {
++                    const binaryString = atob(labelData);
++                    const bytes = new Uint8Array(binaryString.length);
++                    for (let i = 0; i < binaryString.length; i++) {
++                        bytes[i] = binaryString.charCodeAt(i);
++                    }
++                    pdfBlob = new Blob([bytes], { type: "application/pdf" });
++                } catch (e) {
++                    throw new Error("Impossible de décoder le PDF: " + e.message);
++                }
++            } else if (typeof labelData === 'object' && labelData !== null) {
++                if (labelData.pdf && typeof labelData.pdf === 'string') {
++                    const binaryString = atob(labelData.pdf);
++                    const bytes = new Uint8Array(binaryString.length);
++                    for (let i = 0; i < binaryString.length; i++) {
++                        bytes[i] = binaryString.charCodeAt(i);
++                    }
++                    pdfBlob = new Blob([bytes], { type: "application/pdf" });
++                } else {
++                    throw new Error(`Format d'objet inattendu`);
++                }
++            } else {
++                throw new Error(`Type inattendu: ${typeof labelData}`);
++            }
++
++            if (!pdfBlob || pdfBlob.size === 0) {
++                throw new Error("Le PDF généré est vide ou invalide");
++            }
++
++            const fileName = `label-${order.id}.pdf`;
++
++            const url = URL.createObjectURL(pdfBlob);
++            const a = document.createElement('a');
++            a.href = url;
++            a.download = `label_${order.id}.pdf`;
++            a.click();
++            URL.revokeObjectURL(url);
++
++            const { error: uploadError } = await supabase
++                .storage
++                .from("labels")
++                .upload(fileName, pdfBlob, {
++                    contentType: "application/pdf",
++                    upsert: true,
++                });
++
++            if (uploadError) {
++                throw new Error(`Erreur upload: ${uploadError.message}`);
++            }
++
++            const { error: updateError } = await supabase
++                .from("cart")
++                .update({
++                    referenceNumber: referenceNumber,
++                    shippingLabelFileName: fileName,
++                    status: "validated",
++                })
++                .eq("id", order.id);
++
++            if (updateError) {
++                throw new Error(`Erreur mise à jour: ${updateError.message}`);
++            }
++
++            displayNotification("Label généré", `Label DPD généré pour la commande ${order.id.slice(0, 8)}`, "success");
++            fetchOrders();
++        } catch (error) {
++            console.error("Erreur lors de la génération du label:", error);
++            displayNotification("Erreur", error.message, "danger");
++        } finally {
++            setIsGeneratingLabel(false);
++        }
++    };
++
++    const updateOrderStatus = async (id, newStatus, successMessage) => {
++        // if (!confirm(`Êtes-vous sûr de vouloir passer cette commande au statut "${newStatus}" ?`)) return;
+ 
+-        const { error } = await supabase.from("cart").update({ delivered: true }).eq("id", id);
++        const { error } = await supabase
++            .from("cart")
++            .update({ status: newStatus })
++            .eq("id", id);
+ 
+         if (error) {
+-            displayNotification("Erreur de confirmation", error.message, "danger")
++            displayNotification("Erreur de mise à jour", error.message, "danger");
+         } else {
+-            displayNotification("Livraison confirmée", `Commande ${id.slice(0, 8)} marquée comme livrée ✅`, "success")
++            displayNotification("Statut mis à jour", successMessage, "success");
+             fetchOrders();
+         }
+     };
+ 
++    const prepareDPD = (id) => generateDPDLabel(orders.find(o => o.id === id), updateOrderStatus(id, 'validated', `Commande ${id.slice(0, 8)} marquée comme "En préparation DPD" ✅`));
++    const markAsShipped = (id) => updateOrderStatus(id, 'shipped', `Commande ${id.slice(0, 8)} marquée comme "Expédiée" ✅`);
++    const confirmDelivery = (id) => updateOrderStatus(id, 'delivered', `Commande ${id.slice(0, 8)} marquée comme "Livrée" ✅`);
++
++
+     if (loading || loadingOrders) {
+         return <Loading />;
+     }
+ 
+-    const deliveredOrders = orders.filter((o) => o.delivered);
+-    const pendingOrders = orders.filter((o) => !o.delivered);
++    const paidOrders = orders.filter((o) => o.status === 'paid');
++    const validatedOrders = orders.filter((o) => o.status === 'validated');
++    const shippedOrders = orders.filter((o) => o.status === 'shipped');
++    const deliveredOrders = orders.filter((o) => o.status === 'delivered');
++
++    const displayOrders = {
++        paid: paidOrders,
++        validated: validatedOrders,
++        shipped: shippedOrders,
++        delivered: deliveredOrders,
++    }[activeTab] || [];
+ 
+     // helper to display order content
+     const renderContent = (content) => {
+@@ -103,27 +291,50 @@ function OrderTable() {
+         }
+     };
+ 
+-    const displayOrders = activeTab === 'pending' ? pendingOrders : deliveredOrders;
++    const statusConfig = {
++        paid: { label: "Payée", color: "text-blue-600", bgColor: "bg-blue-100" },
++        validated: { label: "En préparation DPD", color: "text-yellow-600", bgColor: "bg-yellow-100" },
++        shipped: { label: "Expédiée", color: "text-purple-600", bgColor: "bg-purple-100" },
++        delivered: { label: "Livrée", color: "text-green-600", bgColor: "bg-green-100" },
++    };
+ 
+     return (
+         <div className="p-6 bg-gray-50 min-h-screen">
+             <div className="max-w-7xl mx-auto">
+                 <h1 className="text-3xl font-bold mb-6 text-rayonblue">Gestion des Commandes</h1>
+ 
+-                {/* Onglets */}
+-                <div className="flex gap-2 mb-6">
++                {/* Onglets pour chaque statut */}
++                <div className="flex gap-2 mb-6 flex-wrap">
+                     <button
+-                        onClick={() => setActiveTab('pending')}
+-                        className={`flex-1 px-6 py-3 rounded-lg font-semibold transition ${activeTab === 'pending'
++                        onClick={() => setActiveTab('paid')}
++                        className={`px-6 py-3 rounded-lg font-semibold transition ${activeTab === 'paid'
+                             ? 'bg-rayonblue text-white'
+                             : 'bg-white text-rayonblue border-2 border-rayonblue hover:bg-blue-50'
+                             }`}
+                     >
+-                        📦 En attente ({pendingOrders.length})
++                        💳 Payées ({paidOrders.length})
++                    </button>
++                    <button
++                        onClick={() => setActiveTab('validated')}
++                        className={`px-6 py-3 rounded-lg font-semibold transition ${activeTab === 'validated'
++                            ? 'bg-yellow-500 text-white'
++                            : 'bg-white text-yellow-600 border-2 border-yellow-500 hover:bg-yellow-50'
++                            }`}
++                    >
++                        📦 En préparation DPD ({validatedOrders.length})
++                    </button>
++                    <button
++                        onClick={() => setActiveTab('shipped')}
++                        className={`px-6 py-3 rounded-lg font-semibold transition ${activeTab === 'shipped'
++                            ? 'bg-purple-500 text-white'
++                            : 'bg-white text-purple-600 border-2 border-purple-500 hover:bg-purple-50'
++                            }`}
++                    >
++                        🚚 Expédiées ({shippedOrders.length})
+                     </button>
+                     <button
+                         onClick={() => setActiveTab('delivered')}
+-                        className={`flex-1 px-6 py-3 rounded-lg font-semibold transition ${activeTab === 'delivered'
++                        className={`px-6 py-3 rounded-lg font-semibold transition ${activeTab === 'delivered'
+                             ? 'bg-green-500 text-white'
+                             : 'bg-white text-green-600 border-2 border-green-500 hover:bg-green-50'
+                             }`}
+@@ -137,9 +348,7 @@ function OrderTable() {
+                     {displayOrders.length === 0 ? (
+                         <div className="text-center py-12 text-gray-500 bg-white rounded-lg">
+                             <p className="text-lg">
+-                                {activeTab === 'pending'
+-                                    ? 'Aucune commande en attente'
+-                                    : 'Aucune commande livrée'}
++                                Aucune commande avec le statut "{statusConfig[activeTab]?.label}"
+                             </p>
+                         </div>
+                     ) : (
+@@ -169,11 +378,16 @@ function OrderTable() {
+                                             <div className="flex items-center gap-4 text-xs text-gray-500">
+                                                 <span>{new Date(order.created_at).toLocaleDateString('fr-FR')} à {new Date(order.created_at).toLocaleTimeString('fr-FR')}</span>
+                                                 <span className="font-semibold text-rayonorange text-lg">
+-                                                    {order.price.toFixed(2)} €
++                                                    {(order.price || 0).toFixed(2)} €
+                                                 </span>
+                                             </div>
+                                         </div>
+ 
++                                        {/* Statut de la commande */}
++                                        <div className={`px-3 py-1 rounded-full text-xs font-semibold ${statusConfig[order.status]?.bgColor} ${statusConfig[order.status]?.color} ml-4`}>
++                                            {statusConfig[order.status]?.label || order.status}
++                                        </div>
++
+                                         {/* Boutons d'action */}
+                                         <div className="flex items-center gap-2 ml-4">
+                                             <button
+@@ -184,20 +398,34 @@ function OrderTable() {
+                                                 {expandedOrder === order.id ? "▲ Masquer" : "▼ Détails"}
+                                             </button>
+ 
+-                                            {!order.delivered && (
++                                            {/* Boutons de transition de statut */}
++                                            {order.status === 'paid' && (
+                                                 <button
+-                                                    onClick={() => confirmDelivery(order.id)}
+-                                                    className="w-10 h-10 bg-green-500 hover:bg-green-600 text-white rounded-lg transition flex items-center justify-center text-xl"
+-                                                    title="Marquer comme livrée"
++                                                    onClick={() => prepareDPD(order.id)}
++                                                    disabled={isGeneratingLabel}
++                                                    className="px-3 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition text-sm font-medium disabled:opacity-50"
++                                                    title="En préparation DPD"
+                                                 >
+-                                                    ✓
++                                                    {isGeneratingLabel ? "⏳ Génération..." : "Préparer DPD"}
+                                                 </button>
+                                             )}
+-
+-                                            {order.delivered && (
+-                                                <div className="w-10 h-10 bg-green-100 text-green-600 rounded-lg flex items-center justify-center text-xl">
+-                                                    ✓
+-                                                </div>
++                                            {order.status === 'validated' && (
++                                                <button
++                                                    onClick={() => markAsShipped(order.id)}
++                                                    className="px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition text-sm font-medium"
++                                                    title="Marquer comme expédiée"
++                                                >
++                                                    Expédier
++                                                </button>
++                                            )}
++                                            {order.status === 'shipped' && (
++                                                <button
++                                                    onClick={() => confirmDelivery(order.id)}
++                                                    className="px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition text-sm font-medium"
++                                                    title="Confirmer la livraison"
++                                                >
++                                                    Livrer
++                                                </button>
+                                             )}
+                                         </div>
+                                     </div>
+@@ -216,7 +444,7 @@ function OrderTable() {
+                                             <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
+                                                 <span className="text-lg font-semibold text-gray-800">Total</span>
+                                                 <span className="text-2xl font-bold text-rayonorange">
+-                                                    {order.price.toFixed(2)} €
++                                                    {(order.price || 0).toFixed(2)} €
+                                                 </span>
+                                             </div>
+                                         </div>
+@@ -233,8 +461,8 @@ function OrderTable() {
+                                                 </div>
+                                                 <div>
+                                                     <p className="text-gray-500 text-xs">Statut</p>
+-                                                    <p className={`font-medium ${order.delivered ? 'text-green-600' : 'text-orange-600'}`}>
+-                                                        {order.delivered ? '✓ Livrée' : '📦 En attente'}
++                                                    <p className={`font-medium ${statusConfig[order.status]?.color}`}>
++                                                        {statusConfig[order.status]?.label || order.status}
+                                                     </p>
+                                                 </div>
+                                                 <div>
+@@ -249,20 +477,56 @@ function OrderTable() {
+                                                         <p className="text-gray-800 font-medium">{order.client_id.slice(0, 8)}...</p>
+                                                     </div>
+                                                 )}
++                                                {order.referenceNumber && (
++                                                    <div>
++                                                        <p className="text-gray-500 text-xs">Référence</p>
++                                                        <p className="text-gray-800 font-medium">{order.referenceNumber}</p>
++                                                    </div>
++                                                )}
++                                                {order.shippingLabelFileName && (
++                                                    <div>
++                                                        <p className="text-gray-500 text-xs">Étiquette</p>
++                                                        <a
++                                                            href={supabase.storage.from("labels").getPublicUrl(order.shippingLabelFileName).data.publicUrl}
++                                                            target="_blank"
++                                                            rel="noopener noreferrer"
++                                                            className="text-rayonblue hover:underline font-medium"
++                                                        >
++                                                            Télécharger l'étiquette
++                                                        </a>
++                                                    </div>
++                                                )}
+                                             </div>
+                                         </div>
+ 
+-                                        {/* Bouton de confirmation en bas */}
+-                                        {!order.delivered && (
+-                                            <div className="mt-4">
++                                        {/* Boutons de transition en bas */}
++                                        <div className="mt-4 flex gap-2">
++                                            {order.status === 'paid' && (
++                                                <button
++                                                    onClick={() => prepareDPD(order.id)}
++                                                    disabled={isGeneratingLabel}
++                                                    className="flex-1 px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-semibold transition disabled:opacity-50"
++                                                >
++                                                    {isGeneratingLabel ? "⏳ Génération en cours..." : "✅ En préparation DPD"}
++                                                </button>
++                                            )}
++                                            {order.status === 'validated' && (
++                                                <button
++                                                    onClick={() => markAsShipped(order.id)}
++                                                    className="flex-1 px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold transition"
++                                                >
++                                                    🚚 Marquer comme expédiée
++                                                </button>
++                                            )}
++                                            {order.status === 'shipped' && (
+                                                 <button
+                                                     onClick={() => confirmDelivery(order.id)}
+-                                                    className="w-full px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition"
++                                                    className="flex-1 px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition"
+                                                 >
+-                                                    ✓ Confirmer la livraison
++                                                    ✅ Confirmer la livraison
+                                                 </button>
+-                                            </div>
+-                                        )}
++                                            )}
++                                        </div>
+                                     </div>
+                                 )}
+                             </div>
+@@ -274,4 +538,4 @@ function OrderTable() {
+     );
+ }
+ 
+-export default OrderTable;
++export default OrderTable;
+\ No newline at end of file
+
+commit d52b99f9b5b1d706946578c17e79c7d17cf5c850
+Author: geronimo <geronimo@geronimo22.ynh.fr>
+Date:   Wed Jun 3 14:03:22 2026 +0200
+
+    sauvegarde colonne stock de la table product
+
+diff --git a/Sauvegarde_table_products_30052026/backup_products_colonne_stock_2026-06-03.csv.csv b/Sauvegarde_table_products_30052026/backup_products_colonne_stock_2026-06-03.csv.csv
+new file mode 100644
+index 0000000..560910f
+--- /dev/null
++++ b/Sauvegarde_table_products_30052026/backup_products_colonne_stock_2026-06-03.csv.csv
+@@ -0,0 +1,47 @@
++id,original_stock
++085f5d3a-2dc5-4f75-ae08-0e8880ffa039,30
++0874a08c-dc1d-4dd4-a780-a8e125428ab3,50
++15260371-8700-4fa4-b85c-48725599a387,156
++1595d46b-8c27-4e1d-9e33-2f84fca73835,108
++163fae6a-9de3-4f2b-b476-460f7b76daac,100
++16eedf77-a168-4aa1-9ae3-cf799d21b39b,96
++1781c8d1-6358-420b-9c8e-1a12d45b333a,72
++218bddf2-b0a8-4ae2-922d-be8993536ec4,24
++3698815f-abaa-4c11-bca6-bc3786c47e84,100
++3e6ba1a3-6fa6-498c-b676-749379a3c360,100
++413d11c9-30ee-4a47-9a8c-c4adc0f2f173,60
++4198f643-7da7-4ff4-88e5-82247a941a89,102
++485c1c9d-2c1b-4344-b50a-d241c37b28ec,120
++5b5e3d41-cdd5-4a30-b5b9-0bb8dde979c0,20
++6211c1d2-a815-4378-95fd-250d70e6257e,108
++689c6221-a723-4765-bbcf-795b69c540df,107
++6e052728-fada-408d-931c-86f13be12b5c,96
++6e2a318c-05dc-4588-ab31-75f197a82e60,108
++728e7ef7-da37-47fc-a331-b806e971a013,20
++7495fbe9-9a6c-4f6f-8204-de385db38959,96
++757d62ca-c16a-4ca1-82c7-a3fd30ee44e3,99
++763bf884-37b1-4e50-899d-fd5f0b3b96bc,108
++7cc80335-d35b-42ec-aa8c-b656ea36ba14,100
++819d9381-050c-44f0-bc37-b0870724db83,168
++82bc2005-c9b2-4e64-a0b7-b409c3f4f973,20
++94b3dbef-de69-490e-aa03-895f6bb5c415,108
++99d21945-979a-4f01-a1c9-2fe0c3eb9179,156
++9b22661b-70c5-4393-afe9-fe1a6c8f4b59,108
++a44d603a-bcb1-45e5-91c1-a4cb8d34b8f9,96
++a85a4f82-4638-40f4-bfbc-ee9f722cda4d,50
++b63db63b-f85c-42a8-8ead-80ba705ff62e,108
++b893c048-9868-4961-bb59-b9ba7a04adbb,108
++bad888bd-0526-469c-aa62-fe017e073c84,100
++c6f2e668-2bb6-4981-9010-e32a75dd1b59,100
++c712078f-f058-41e4-a04c-a6a0f283b5d1,204
++c8924679-3f14-410b-a194-82dbc65ad8ec,96
++ca92079a-52b6-4c52-a98b-d3cf4524868a,96
++cdb6d090-8915-4f40-9a84-2f507f5ebfec,100
++d113bc3b-49a7-4ef0-96de-1b1d82c29706,1156
++d48fbfa9-e41d-416c-ba4f-c4bf4b4bd723,99
++d68e1b99-3b38-4d0b-af52-c4da895c1c47,156
++e6118f15-9ef2-4c1e-9446-246ad05d294a,108
++eb2a96d0-6a8b-4390-8a6e-ad284b2e6698,98
++f50ee17c-21c6-4e5f-8158-cce0bfb822c9,100
++f7f7f309-73c0-417c-9e4f-141efde3c306,108
++fa8e83fd-33bb-4da3-b692-b20fc2f706e4,168
+\ No newline at end of file
+
+commit 185cac57e99e4a2d14b95784e6473aaf296410d5
+Author: geronimo <geronimo@geronimo22.ynh.fr>
+Date:   Tue Jun 2 15:45:19 2026 +0200
+
+    name, surname and mail are now readonly
+
+diff --git a/src/pages/Account.jsx b/src/pages/Account.jsx
+index ce33d32..67d4fb9 100644
+--- a/src/pages/Account.jsx
++++ b/src/pages/Account.jsx
+@@ -149,6 +149,15 @@ function Account() {
+             </div>
+         </div>
+     );
++    // même élément mais en lecture seule
++    const renderReadOnly = (label, fieldName) => (
++        <div className="flex flex-row items-center text-rayonblue mb-2 text-sm lg:text-base">
++            <label className="font-semibold min-w-[180px] whitespace-nowrap lg:mr-4 mr-0">{label} :</label>
++            <div className="flex-1">
++                <p className="text-rayonblue">{clientEdit[fieldName]}</p>
++            </div>
++        </div>
++    );
+ 
+ 
+     const renderSelect = (label, fieldName, options) => (
+@@ -220,14 +229,14 @@ function Account() {
+                         <div className="flex flex-col md:flex-row gap-4 mt-6">
+                             <div className="border border-rayonblue rounded-lg p-4 flex-1 min-w-0">
+                                 <h2 className="text-rayonblue text-xl font-semibold mb-4">État civil</h2>
+-                                {renderField("Nom", "lastName")}
+-                                {renderField("Prénom", "firstName")}
++                                {renderReadOnly("Nom", "lastName")}
++                                {renderReadOnly("Prénom", "firstName")}
+                                 {renderSelect("Genre", "gender", genderOptions)}
+                             </div>
+ 
+                             <div className="border border-rayonblue rounded-lg p-4 flex-1 min-w-0">
+                                 <h2 className="text-rayonblue text-xl font-semibold mb-4">Contact</h2>
+-                                {renderField("E-mail", "email")}
++                                {renderReadOnly("E-mail", "email")}
+                                 {renderField("Téléphone", "phone")}
+                                 {renderField("Adresse", "address")}
+                                 {renderField("Précisions", "addAddress")}

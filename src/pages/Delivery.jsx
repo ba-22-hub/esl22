@@ -90,6 +90,37 @@ function Delivery() {
         return content.reduce((sum, product) => sum + product.quantity, 0);
     };
 
+    const statusConfig = {
+        paid: { 
+            label: "Payée",
+            text: "Colis en cours de validation par la banque alimentaire",
+            subText: "Vous recevrez un lien de suivi une fois votre commande validée",
+            color: "text-blue-600", 
+            bgColor: "bg-blue-100" 
+        },
+        validated: { 
+            label: "En préparation DPD",
+            text: "Colis en cours de préparation par DPD",
+            subText: "",
+            color: "text-yellow-600", 
+            bgColor: "bg-yellow-100" 
+        },
+        shipped: { 
+            label: "Expédiée",
+            text: "Colis expédié",
+            subText: "",
+            color: "text-purple-600", 
+            bgColor: "bg-purple-100" 
+        },
+        delivered: { 
+            label: "Livrée",
+            text: "Colis livré",
+            subText: "",
+            color: "text-green-600", 
+            bgColor: "bg-green-100" 
+        },
+    };
+
     return (
         <>
             {loading ? (
@@ -134,11 +165,8 @@ function Delivery() {
                                             <div className="flex items-center justify-between">
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-3 mb-2">
-                                                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${delivery.delivered
-                                                            ? "bg-[#FF8200] text-white"
-                                                            : "bg-blue-100 text-blue-800"
-                                                            }`}>
-                                                            {delivery.delivered ? "Expédié" : "En cours de validation"}
+                                                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${statusConfig[delivery.status]?.bgColor} ${statusConfig[delivery.status]?.color}`}>
+                                                            {statusConfig[delivery.status]?.label || delivery.status}
                                                         </span>
                                                         <span className="text-gray-500 text-sm">
                                                             Commande du {formatDate(delivery.created_at)}
@@ -240,14 +268,18 @@ function Delivery() {
                                                             Suivi du colis
                                                         </h4>
                                                         <div className="space-y-4">
-                                                            {delivery.delivered ? (
-                                                                <>
-                                                                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                                                                        <p className="text-green-800 text-sm font-medium">
-                                                                            ✓ Votre colis est expédié
-                                                                        </p>
-                                                                    </div>
-                                                                    <a
+                                                            <div className={`border ${statusConfig[delivery.status]?.bgColor} ${statusConfig[delivery.status]?.color} rounded-lg p-4 text-center`}>
+                                                                <svg className={`w-12 h-12 ${statusConfig[delivery.status]?.color} mx-auto mb-2`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                </svg>
+                                                                <p className={`${statusConfig[delivery.status]?.color} text-sm font-medium`}>
+                                                                    {statusConfig[delivery.status]?.text || delivery.status}
+                                                                </p>
+                                                                <p className={`${statusConfig[delivery.status]?.color} text-xs mt-1`}>
+                                                                    {statusConfig[delivery.status]?.subText || ""}
+                                                                </p>
+                                                                {delivery.trackingUrl && (
+                                                                     <a
                                                                         href={delivery.trackingUrl}
                                                                         target="_blank"
                                                                         rel="noopener noreferrer"
@@ -255,20 +287,8 @@ function Delivery() {
                                                                     >
                                                                         🚚 Suivre mon colis
                                                                     </a>
-                                                                </>
-                                                            ) : (
-                                                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-                                                                    <svg className="w-12 h-12 text-blue-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                                    </svg>
-                                                                    <p className="text-blue-800 text-sm font-medium">
-                                                                        Colis en cours de validation par la banque alimentaire
-                                                                    </p>
-                                                                    <p className="text-blue-600 text-xs mt-1">
-                                                                        Vous recevrez un lien de suivi une fois votre commande validée
-                                                                    </p>
-                                                                </div>
-                                                            )}
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
