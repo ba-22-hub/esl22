@@ -17,6 +17,19 @@ import FunctionButton from '@common/FunctionButton.jsx';
 import redMarker from "@assets/Assets/marker-icon-2x-red.png"
 import orangeMarker from "@assets/Assets/marker-icon-2x-orange.png"
 
+// --- Formule de Haversine : distance réelle (km) entre deux points GPS ---
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Rayon de la Terre en km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
 function ChosePickUpPoint() {
     const [loading, setLoading] = useState(false);
     const [currentLatitude, setCurrentLatitude] = useState(null);
@@ -122,11 +135,13 @@ function ChosePickUpPoint() {
     }
 
     // --- Fonction pour récupérer les points relais ---
-    const fetchPickupPoints = async (postalCode) => {
+    // Ajout des paramètres city / address, transmis à la edge function DPD
+    // pour améliorer la précision de son géocodage.
+    const fetchPickupPoints = async (postalCode, city = "", address = "") => {
         setLoadingPickup(true);
         setErrorPickup(null);
         try {
-            // Récupérer les coordonnées du code postal
+            // Récupérer les coordonnées du code postal (fallback si pas de GPS)
             const coords = await geocode(postalCode);
             if (coords) {
                 setChosenCoords(coords);
@@ -135,13 +150,36 @@ function ChosePickUpPoint() {
             const { data, error } = await supabase.functions.invoke('dpd_pickup_points', {
                 body: JSON.stringify({
                     postalCode: postalCode,
+                    city: city,
+                    address: address,
                     countryCode: 'FR'
                 })
             })
             if (error) {
                 throw new Error(error)
             } else {
-                setPickupPoints(data.points);
+                // Position de référence pour le calcul de distance :
+                // GPS précis si disponible, sinon coords du code postal géocodé.
+                const refLat = currentLatitude ?? coords?.latitude;
+                const refLon = currentLongitude ?? coords?.longitude;
+
+                const pointsWithRealDistance = (data.points || []).map(p => {
+                    const lat = parseFloat(String(p.latitude).replace(",", "."));
+                    const lon = parseFloat(String(p.longitude).replace(",", "."));
+                    const hasValidCoords = !Number.isNaN(lat) && !Number.isNaN(lon) && refLat != null && refLon != null;
+                    const realDistance = hasValidCoords
+                        ? calculateDistance(refLat, refLon, lat, lon)
+                        : null;
+
+                    return {
+                        ...p,
+                        // On remplace la distance renvoyée par DPD par la distance réelle
+                        // calculée depuis la position connue de l'utilisateur.
+                        distance: realDistance !== null ? realDistance.toFixed(1) : p.distance
+                    };
+                }).sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
+
+                setPickupPoints(pointsWithRealDistance);
             }
         } catch (e) {
             setErrorPickup(e.message);
@@ -159,7 +197,12 @@ function ChosePickUpPoint() {
         });
 
         const data = await response.json();
-        return data.address.postcode || null;
+        const address = data.address || {};
+        return {
+            postcode: address.postcode || null,
+            city: address.city || address.town || address.village || address.municipality || "",
+            road: address.road || ""
+        };
     }
 
     async function geocode(postcode, country = "fr") {
@@ -323,8 +366,11 @@ function ChosePickUpPoint() {
                                                 return;
                                             }
                                             setChosenCoords({});
-                                            const code = await reverseGeocode(currentLatitude, currentLongitude);
-                                            if (code) await fetchPickupPoints(code);
+                                            const loc = await reverseGeocode(currentLatitude, currentLongitude);
+                                            if (loc?.postcode) {
+                                                setChosenPostalCode(loc.postcode);
+                                                await fetchPickupPoints(loc.postcode, loc.city, loc.road);
+                                            }
                                         }}
                                         disabled={loadingPickup}
                                         className="w-full py-2 text-base font-semibold border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-700 flex items-center justify-center gap-2 transition-all disabled:opacity-40"
