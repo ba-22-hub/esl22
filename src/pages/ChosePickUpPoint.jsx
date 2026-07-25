@@ -17,10 +17,25 @@ import FunctionButton from '@common/FunctionButton.jsx';
 import redMarker from "@assets/Assets/marker-icon-2x-red.png"
 import orangeMarker from "@assets/Assets/marker-icon-2x-orange.png"
 
+// --- Formule de Haversine : distance réelle (km) entre deux points GPS ---
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Rayon de la Terre en km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
 function ChosePickUpPoint() {
     const [loading, setLoading] = useState(false);
     const [currentLatitude, setCurrentLatitude] = useState(null);
     const [currentLongitude, setCurrentLongitude] = useState(null);
+    const [geoErrorCode, setGeoErrorCode] = useState(null); // 1=refusé, 2=indisponible, 3=timeout
+    const [geoLoading, setGeoLoading] = useState(false);
     const [productsInCart, setProductsInCart] = useState([])
     const [shippingCost, setShippingCost] = useState(1.35) // État pour les frais de port
     const shippingCostFetched = useRef(false)
@@ -96,25 +111,30 @@ function ChosePickUpPoint() {
         }
     }, [user, loading, navigate])
 
-    useEffect(() => {
-        const getLocation = () => {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const { latitude, longitude } = position.coords
-                        setCurrentLatitude(latitude)
-                        setCurrentLongitude(longitude)
-                    },
-                    (error) => {
-                        displayNotification("Impossible d'accéder à votre localisation", error.message, "warning")
-                    }
-                )
-            } else {
-                displayNotification("Impossible d'accéder à votre localisation", "La fonctionnalité de géolocalisation n'est pas supportée par votre navigateur", "warning")
-            }
+    const requestGeolocation = () => {
+        if (!navigator.geolocation) {
+            setGeoErrorCode(0);
+            return;
         }
 
-        getLocation();
+        setGeoLoading(true);
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords
+                setCurrentLatitude(latitude)
+                setCurrentLongitude(longitude)
+                setGeoErrorCode(null)
+                setGeoLoading(false)
+            },
+            (error) => {
+                setGeoErrorCode(error.code)
+                setGeoLoading(false)
+            }
+        )
+    };
+
+    useEffect(() => {
+        requestGeolocation();
     }, [user]);
 
     function selectPoint(point) {
@@ -122,11 +142,13 @@ function ChosePickUpPoint() {
     }
 
     // --- Fonction pour récupérer les points relais ---
-    const fetchPickupPoints = async (postalCode) => {
+    // Ajout des paramètres city / address, transmis à la edge function DPD
+    // pour améliorer la précision de son géocodage.
+    const fetchPickupPoints = async (postalCode, city = "", address = "") => {
         setLoadingPickup(true);
         setErrorPickup(null);
         try {
-            // Récupérer les coordonnées du code postal
+            // Récupérer les coordonnées du code postal (fallback si pas de GPS)
             const coords = await geocode(postalCode);
             if (coords) {
                 setChosenCoords(coords);
@@ -135,13 +157,36 @@ function ChosePickUpPoint() {
             const { data, error } = await supabase.functions.invoke('dpd_pickup_points', {
                 body: JSON.stringify({
                     postalCode: postalCode,
+                    city: city,
+                    address: address,
                     countryCode: 'FR'
                 })
             })
             if (error) {
                 throw new Error(error)
             } else {
-                setPickupPoints(data.points);
+                // Position de référence pour le calcul de distance :
+                // GPS précis si disponible, sinon coords du code postal géocodé.
+                const refLat = currentLatitude ?? coords?.latitude;
+                const refLon = currentLongitude ?? coords?.longitude;
+
+                const pointsWithRealDistance = (data.points || []).map(p => {
+                    const lat = parseFloat(String(p.latitude).replace(",", "."));
+                    const lon = parseFloat(String(p.longitude).replace(",", "."));
+                    const hasValidCoords = !Number.isNaN(lat) && !Number.isNaN(lon) && refLat != null && refLon != null;
+                    const realDistance = hasValidCoords
+                        ? calculateDistance(refLat, refLon, lat, lon)
+                        : null;
+
+                    return {
+                        ...p,
+                        // On remplace la distance renvoyée par DPD par la distance réelle
+                        // calculée depuis la position connue de l'utilisateur.
+                        distance: realDistance !== null ? realDistance.toFixed(1) : p.distance
+                    };
+                }).sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
+
+                setPickupPoints(pointsWithRealDistance);
             }
         } catch (e) {
             setErrorPickup(e.message);
@@ -159,7 +204,12 @@ function ChosePickUpPoint() {
         });
 
         const data = await response.json();
-        return data.address.postcode || null;
+        const address = data.address || {};
+        return {
+            postcode: address.postcode || null,
+            city: address.city || address.town || address.village || address.municipality || "",
+            road: address.road || ""
+        };
     }
 
     async function geocode(postcode, country = "fr") {
@@ -319,22 +369,41 @@ function ChosePickUpPoint() {
                                     <button
                                         onClick={async () => {
                                             if (!currentLatitude || !currentLongitude) {
-                                                displayNotification("Géolocalisation non disponible", "Veuillez autoriser l'accès à votre position", "warning");
+                                                // Pas de position connue : on (re)déclenche la demande navigateur
+                                                requestGeolocation();
                                                 return;
                                             }
                                             setChosenCoords({});
-                                            const code = await reverseGeocode(currentLatitude, currentLongitude);
-                                            if (code) await fetchPickupPoints(code);
+                                            const loc = await reverseGeocode(currentLatitude, currentLongitude);
+                                            if (loc?.postcode) {
+                                                setChosenPostalCode(loc.postcode);
+                                                await fetchPickupPoints(loc.postcode, loc.city, loc.road);
+                                            }
                                         }}
-                                        disabled={loadingPickup}
+                                        disabled={loadingPickup || geoLoading}
                                         className="w-full py-2 text-base font-semibold border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-700 flex items-center justify-center gap-2 transition-all disabled:opacity-40"
                                     >
                                         <svg className="w-4 h-4 text-[#FF8200]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                         </svg>
-                                        Me localiser
+                                        {geoLoading ? "Localisation en cours..." : "Me localiser"}
                                     </button>
+
+                                    {/* Texte de réassurance, toujours visible */}
+                                    <p className="text-sm text-gray-400 mt-2 text-center">
+                                        Utilisée uniquement pour trouver le point relais le plus proche. Non conservée.
+                                    </p>
+
+                                    {/* Message générique en cas d'erreur, avec lien vers la FAQ */}
+                                    {geoErrorCode && !currentLatitude && (
+                                        <p className="text-sm text-orange-600 mt-2 text-center">
+                                            Géolocalisation indisponible.{" "}
+                                            <a href="/Faq#geolocalisation" className="underline font-medium">
+                                                Voir la FAQ
+                                            </a>
+                                        </p>
+                                    )}
 
                                     {errorPickup && (
                                         <p className="text-base text-red-500 mt-3">{errorPickup}</p>
