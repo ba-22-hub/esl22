@@ -239,15 +239,25 @@ function Faq() {
                         <p>Votre intérêt est de minimiser le nombre de colis pas mois pour payer le minimum de participation aux frais de livraison. Un colis de 15 kg vaut mieux que trois de 5kg, vous économiserez 2,70€ sur le mois.</p>
                     </FaqItem>
 
+                    <FaqItem id="geolocalisation" question="19 Pourquoi le site me demande-t-il ma position ?">
+                        <p>Cette information sert uniquement à identifier le point relais le plus proche de chez vous pour la livraison de votre commande. Elle n'est ni stockée, ni transmise à d'autres services, ni utilisée à d'autres fins. Vous pouvez refuser l'accès à votre position et choisir votre point relais manuellement en saisissant votre code postal.</p>
+                    </FaqItem>
+
+                    <FaqItem id="q20" question="20 Comment autoriser la géolocalisation ?">
+                        <p>Lorsque vous cliquez sur « Me localiser », votre navigateur affiche une petite fenêtre demandant l'autorisation d'accéder à votre position. Cliquez sur <span className="font-bold text-orange-500">« Autoriser »</span> (ou « Allow »). Aucune autre action n'est nécessaire.</p>
+                    </FaqItem>
+
+                    <FaqItem id="q21" question="21 J'ai refusé par erreur, comment réactiver la géolocalisation ?">
+                        <p>Le plus simple est de saisir votre code postal manuellement pour trouver un point relais, sans avoir besoin de la géolocalisation. Si vous préférez réactiver la position, vous pouvez le faire dans les réglages de votre navigateur, dans la rubrique consacrée aux autorisations du site.</p>
+                    </FaqItem>
+
                 </div>
 
                 {/* Section contact */}
                 <div className="text-center my-8 p-6 bg-gray-50 rounded-lg border border-rayonorange border-600 lg:w-[40%] lg:ml-[30%]">
                     <h2 className="text-green-600 text-2xl font-bold mb-4">Besoin d'aide supplémentaire ?</h2>
                     <div className="mt-4 text-lg">
-                        <p className="mb-2">📧 <a href="mailto:ba220.epicerie@banquealimentaire.org" className="text-orange-500 font-bold hover:underline">ba220.epicerie@banquealimentaire.org</a></p>
-                        <p className="mb-4">🌐 <a href="https://lerayon22.org" className="text-orange-500 font-bold hover:underline">lerayon22.org</a></p>
-                        <a href="/" className="inline-block py-2.5 px-5 bg-[#3435FF] text-white rounded-md font-bold mt-4 hover:bg-orange-500 transition-colors shadow-md">Retour à l'accueil</a>
+                        <p className="mb-4">📧 <a href="mailto:ba220.epicerie@banquealimentaire.org" className="text-orange-500 font-bold hover:underline">ba220.epicerie@banquealimentaire.org</a></p>
                     </div>
                 </div>
             </main>

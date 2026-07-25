@@ -34,6 +34,8 @@ function ChosePickUpPoint() {
     const [loading, setLoading] = useState(false);
     const [currentLatitude, setCurrentLatitude] = useState(null);
     const [currentLongitude, setCurrentLongitude] = useState(null);
+    const [geoErrorCode, setGeoErrorCode] = useState(null); // 1=refusé, 2=indisponible, 3=timeout
+    const [geoLoading, setGeoLoading] = useState(false);
     const [productsInCart, setProductsInCart] = useState([])
     const [shippingCost, setShippingCost] = useState(1.35) // État pour les frais de port
     const shippingCostFetched = useRef(false)
@@ -109,25 +111,30 @@ function ChosePickUpPoint() {
         }
     }, [user, loading, navigate])
 
-    useEffect(() => {
-        const getLocation = () => {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const { latitude, longitude } = position.coords
-                        setCurrentLatitude(latitude)
-                        setCurrentLongitude(longitude)
-                    },
-                    (error) => {
-                        displayNotification("Impossible d'accéder à votre localisation", error.message, "warning")
-                    }
-                )
-            } else {
-                displayNotification("Impossible d'accéder à votre localisation", "La fonctionnalité de géolocalisation n'est pas supportée par votre navigateur", "warning")
-            }
+    const requestGeolocation = () => {
+        if (!navigator.geolocation) {
+            setGeoErrorCode(0);
+            return;
         }
 
-        getLocation();
+        setGeoLoading(true);
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords
+                setCurrentLatitude(latitude)
+                setCurrentLongitude(longitude)
+                setGeoErrorCode(null)
+                setGeoLoading(false)
+            },
+            (error) => {
+                setGeoErrorCode(error.code)
+                setGeoLoading(false)
+            }
+        )
+    };
+
+    useEffect(() => {
+        requestGeolocation();
     }, [user]);
 
     function selectPoint(point) {
@@ -362,7 +369,8 @@ function ChosePickUpPoint() {
                                     <button
                                         onClick={async () => {
                                             if (!currentLatitude || !currentLongitude) {
-                                                displayNotification("Géolocalisation non disponible", "Veuillez autoriser l'accès à votre position", "warning");
+                                                // Pas de position connue : on (re)déclenche la demande navigateur
+                                                requestGeolocation();
                                                 return;
                                             }
                                             setChosenCoords({});
@@ -372,15 +380,30 @@ function ChosePickUpPoint() {
                                                 await fetchPickupPoints(loc.postcode, loc.city, loc.road);
                                             }
                                         }}
-                                        disabled={loadingPickup}
+                                        disabled={loadingPickup || geoLoading}
                                         className="w-full py-2 text-base font-semibold border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-700 flex items-center justify-center gap-2 transition-all disabled:opacity-40"
                                     >
                                         <svg className="w-4 h-4 text-[#FF8200]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                         </svg>
-                                        Me localiser
+                                        {geoLoading ? "Localisation en cours..." : "Me localiser"}
                                     </button>
+
+                                    {/* Texte de réassurance, toujours visible */}
+                                    <p className="text-sm text-gray-400 mt-2 text-center">
+                                        Utilisée uniquement pour trouver le point relais le plus proche. Non conservée.
+                                    </p>
+
+                                    {/* Message générique en cas d'erreur, avec lien vers la FAQ */}
+                                    {geoErrorCode && !currentLatitude && (
+                                        <p className="text-sm text-orange-600 mt-2 text-center">
+                                            Géolocalisation indisponible.{" "}
+                                            <a href="/Faq#geolocalisation" className="underline font-medium">
+                                                Voir la FAQ
+                                            </a>
+                                        </p>
+                                    )}
 
                                     {errorPickup && (
                                         <p className="text-base text-red-500 mt-3">{errorPickup}</p>
