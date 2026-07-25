@@ -5,9 +5,17 @@
 ### À venir
 - ...
 
+## v9 — 2026-07-22
+## test-4.1.0 (version test) 
+### Corrigé
+- correction de la géolocalisation erronée + Simplification du message d'erreur géoloc et mise à jour la FAQ
+- fichier ChosePickUpPoint.jsx et FAQ.jsx 
+- correspond  à l'image test test-4.1.0 (scaleway)
+
 ## v8 — 2026-07-22
 ### Corrigé
 - feat: affichage des 4 statuts de livraison (correction JES - delivery.jsx) 
+- fix#185 src/pages/Delivery.jsx 
 
 ## v7 — 2026-07-21
 ### Corrigé
