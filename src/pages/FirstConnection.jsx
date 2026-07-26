@@ -5,6 +5,7 @@
 // Date          Auteur        Description
 // ----------    ----------    -------------------------------------------------
 // 2026-06-29    Louvel       FIX : forcer la synchronisation du nouveau JWT après updateUser()
+// 2026-07-26    Louvel	      Remplacement de rayon22 par esl22 
 //
 // =============================================================================
 // Importing dependencies
@@ -41,7 +42,7 @@ function FirstConnection() {
         'hasUppercase': false,
         'hasLowercase': false,
         'hasNumber': false,
-        'hasNotRayon22': true
+        'hasNotEsl22': true
     })
 
     const { user } = useAuthor()
@@ -72,7 +73,7 @@ function FirstConnection() {
                 "hasLowercase": /[a-z]/.test(pass),
                 "hasUppercase": /[A-Z]/.test(pass),
                 "hasNumber": /[0-9]/.test(pass),
-                "hasNotRayon22": !(/rayon22/i.test(pass))
+                "hasNotEsl22": !(/esl22/i.test(pass))
 
             })
         }
@@ -150,9 +151,9 @@ function FirstConnection() {
                 <img src={illustration} alt="Illustration" className="w-64 mt-3 mb-6" />
 
                 {/* Sous-titre */}
-                <h2 className="text-[#2E2EFF] text-4xl font-bold mb-6">Bienvenue sur le Rayon 22</h2>
+                <h2 className="text-[#2E2EFF] text-4xl font-bold mb-6">Bienvenue sur ESL22</h2>
                 <p className='text-base text-center mb-10 mt-4'>Avant de continuer, merci de créer un nouveau mot de passe personnalisé <br />
-                    Pour plus de sécurité, merci de ne pas intégrer <b className='text-rayonorange'>"rayon22"</b> dans votre mot de passe</p>
+                    Pour plus de sécurité, merci de ne pas intégrer <b className='text-rayonorange'>"esl22"</b> dans votre mot de passe</p>
 
                 {/* Formulaire */}
                 {dbLoading ? (
@@ -184,7 +185,7 @@ function FirstConnection() {
                                 <li className={criteriaPassword.hasUppercase ? 'text-green' : 'text-red'}>Doit contenir au moins un caractère en majuscule</li>
                                 <li className={criteriaPassword.hasLowercase ? 'text-green' : 'text-red'}>Doit contenir au moins un caractère en minuscule</li>
                                 <li className={criteriaPassword.hasNumber ? 'text-green' : 'text-red'}>Doit contenir au moins un nombre</li>
-                                <li className={criteriaPassword.hasNotRayon22 ? 'text-green' : 'text-red'}>Ne doit pas contenir "Rayon22"</li>
+                                <li className={criteriaPassword.hasNotEsl22 ? 'text-green' : 'text-red'}>Ne doit pas contenir "ESL22"</li>
                             </ul>
                         </div>
                         <div className="ml-[5%] lg:ml-[8%] pl-4 flex items-center">
