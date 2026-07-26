@@ -5,6 +5,10 @@
 ### À venir
 - ...
 
+## v10 — 2026-07-262
+## test-4.2.0 (version test)
+- cosmétique : remplacement de rayon22 par esl22 dans FirstConnection.jsx 
+
 ## v9 — 2026-07-22
 ## test-4.1.0 (version test) 
 ### Corrigé
