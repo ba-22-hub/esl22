@@ -323,7 +323,7 @@ function Cart() {
 
         const { data: userData, error: userError } = await supabase
             .from("User")
-            .select("weight_limit, weight_min_limit, current_weight, price_limit, current_price, order_limit, current_order")
+            .select("weight_limit, current_weight, price_limit, current_price, order_limit, current_order")
             .eq('id', user.id)
             .single();
 
