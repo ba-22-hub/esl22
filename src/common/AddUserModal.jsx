@@ -112,10 +112,33 @@ function AddUserModal({ isOpen, onClose }) {
 
                     <h2 className="ml-[4%] text-xl text-rayonorange font-bold my-2">Quotas : </h2>
                     <div className="grid md:grid-cols-2 gap-4 mx-[8%]">
-                        <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Max poids par mois (g)" name="weight_limit" value={formData.weight_limit} onChange={handleChange} isStarred={true} type='number' min="0" />
-                        <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Limite de commandes" name="order_limit" value={formData.order_limit} onChange={handleChange} isStarred={true} type='number' min="0" />
-                        <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Limite de prix (€)" name="price_limit" value={formData.price_limit} onChange={handleChange} isStarred={true} type='number' min="0" step="0.01" />
-
+                        <div className="relative group">
+                            <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Poids max autorisé par mois (en grammes) ℹ️" name="weight_limit" value={formData.weight_limit} onChange={handleChange} isStarred={true} type='number' min="0" />
+                            <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-10
+                                            bg-gray-800 text-white text-xs rounded-lg px-3 py-2 w-72 shadow-lg pointer-events-none">
+                                💡 Poids maximum de colis (produits + emballage) autorisé pour ce
+                                bénéficiaire par mois, exprimé en grammes.
+                                <div className="absolute top-full left-4 border-4 border-transparent border-t-gray-800" />
+                            </div>
+                        </div>
+                        <div className="relative group">
+                            <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Limite de commandes ℹ️" name="order_limit" value={formData.order_limit} onChange={handleChange} isStarred={true} type='number' min="0" />
+                            <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-10
+                                            bg-gray-800 text-white text-xs rounded-lg px-3 py-2 w-72 shadow-lg pointer-events-none">
+                                💡 Nombre maximum de commandes que ce bénéficiaire peut passer
+                                par mois.
+                                <div className="absolute top-full left-4 border-4 border-transparent border-t-gray-800" />
+                            </div>
+                        </div>
+                        <div className="relative group">
+                            <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Limite de prix (€) ℹ️" name="price_limit" value={formData.price_limit} onChange={handleChange} isStarred={true} type='number' min="0" step="0.01" />
+                            <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-10
+                                            bg-gray-800 text-white text-xs rounded-lg px-3 py-2 w-72 shadow-lg pointer-events-none">
+                                💡 Montant total maximum des commandes que ce bénéficiaire peut
+                                passer par mois, en euros.
+                                <div className="absolute top-full left-4 border-4 border-transparent border-t-gray-800" />
+                            </div>
+                        </div>
                     </div>
 
                     <button onClick={handleSubmit} className='text-center-white bg-rayonorange w-[80%] ml-[10%] lg:w-[50%] lg:ml-[25%] mb-3 mt-10 h-[2rem]'>Ajouter</button>

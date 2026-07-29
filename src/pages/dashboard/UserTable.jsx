@@ -336,7 +336,7 @@ const UserTable = () => {
 										))}
 
 										<div className="bg-white p-3 rounded-lg border border-gray-200">
-											<label className="text-xs font-medium text-rayonblue block mb-1">Limite max de poids par mois</label>
+											<label className="text-xs font-medium text-rayonblue block mb-1">Poids maximum autorisé par mois (en grammes)</label>
 											{editMode === user.id ? (
 												<input name="weight_limit" type="number" min="0" value={editedUser.weight_limit ?? ''} onChange={handleChange} className="w-full border-2 border-rayonblue rounded px-2 py-1" />
 											) : (

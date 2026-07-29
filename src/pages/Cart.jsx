@@ -86,10 +86,12 @@ DisplayProductCard.displayName = 'DisplayProductCard';
 function Cart() {
     const [productsInCart, setProductsInCart] = useState([])
     const [shippingCost, setShippingCost] = useState(1.35)
+    const [packagingWeight, setPackagingWeight] = useState(300)
     const isNotified = useRef(false)
     const [loading, setLoading] = useState(true);
     const [stockIncertainThreshold, setStockIncertainThreshold] = useState(3);
     const shippingCostFetched = useRef(false)
+    const packagingWeightFetched = useRef(false)
     const prevCartIds = useRef([])
 
     const { user, loading: authorLoading, checkHasRights } = useAuthor()
@@ -122,6 +124,7 @@ function Cart() {
             productsInCart
                 .map((product) => parseFloat(product.weight) * parseFloat(cart.content[product.id] || 0))
                 .reduce((total, weight) => total + weight, 0)
+            + packagingWeight
         );
 
         const numberTotal = Object.keys(cart.content)
@@ -133,7 +136,7 @@ function Cart() {
             productsWeightTotal: weightTotal,
             productsNumberTotal: numberTotal
         };
-    }, [productsInCart, cart?.content, roundTwoDigits]);
+    }, [productsInCart, cart?.content, roundTwoDigits, packagingWeight]);
 
     // Charger le threshold
     useEffect(() => {
@@ -189,6 +192,25 @@ function Cart() {
         };
 
         fetchShippingCost();
+    }, []);
+
+    // Charger le poids d'emballage
+    useEffect(() => {
+        if (packagingWeightFetched.current) return;
+
+        const fetchPackagingWeight = async () => {
+            const { data, error } = await supabase
+                .from('constants')
+                .select('value')
+                .eq("name", "packagingWeight")
+                .maybeSingle();
+            if (!error && data) {
+                setPackagingWeight(parseFloat(data.value))
+                packagingWeightFetched.current = true
+            }
+        };
+
+        fetchPackagingWeight();
     }, []);
 
     // Charger les produits uniquement quand la liste d'IDs change
@@ -465,7 +487,15 @@ function Cart() {
                                         </div>
 
                                         <div className="flex justify-between text-gray-700">
-                                            <span>Poids total</span>
+                                            <span className="relative group inline-flex items-center gap-1">
+                                                Poids total
+                                                <span className="cursor-help">ℹ️</span>
+                                                <span className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-10
+                                                                bg-gray-800 text-white text-xs rounded-lg px-3 py-2 w-64 shadow-lg pointer-events-none">
+                                                    💡 Le poids de l'emballage est inclus dans ce total.
+                                                    <span className="absolute top-full left-4 border-4 border-transparent border-t-gray-800" />
+                                                </span>
+                                            </span>
                                             <span className="font-semibold">{productsWeightTotal / 1000}kg</span>
                                         </div>
 
