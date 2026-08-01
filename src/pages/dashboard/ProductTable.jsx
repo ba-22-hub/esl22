@@ -554,7 +554,7 @@ function ProductTable() {
                       name="weight"
                       type="number"
                       value={formData.weight ?? ""}
-                      inputText="Poids (en gramme)"
+                      inputText="Poids (en grammes)"
                       className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
                       onChange={handleChangeInForm}
                       isStarred={true}
@@ -609,7 +609,7 @@ function ProductTable() {
                       type="number"
                       step="1"
                       value={settings.minCartWeight ?? 0}
-                      inputText="Poids minimal du panier (en gramme)"
+                      inputText="Poids minimal du panier (en grammes)"
                       className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
                       onChange={handleChangeInSettings}
                     />
@@ -618,7 +618,7 @@ function ProductTable() {
                       type="number"
                       step="1"
                       value={settings.maxCartWeight ?? 0}
-                      inputText="Poids maximal du panier (en gramme)"
+                      inputText="Poids maximal du panier (en grammes)"
                       className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
                       onChange={handleChangeInSettings}
                     />
@@ -628,7 +628,7 @@ function ProductTable() {
                             type="number"
                             step="1"
                             value={settings.packagingWeight ?? 0}
-                            inputText="Poids d'emballage (en gramme) ℹ️"
+                            inputText="Poids d'emballage (en grammes) ℹ️"
                             className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
                             onChange={handleChangeInSettings}
                         />
