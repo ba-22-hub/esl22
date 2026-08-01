@@ -5,6 +5,18 @@
 ### À venir
 - ...
 
+## [test-4.3.1] - 2026-07-29
+## V11 - 2026-08-01 (esl22.fr) 
+### Fixed
+- **Cart.jsx** : correction de la distorsion entre le poids du panier calculé côté user et le poids restant calculé après expédition. Le poids d'emballage (`packagingWeight`) n'était pris en compte que côté back (`PaymentSuccess.jsx`) et pas côté front, provoquant un reste mensuel négatif possible en cas de panier proche du quota. Le poids d'emballage est désormais ajouté une seule fois par panier, aligné sur le calcul post-expédition (poids réel colis DPD).
+
+### Changed
+- **Cart.jsx** : ajout d'un tooltip ℹ️ sur "Poids total" précisant que l'emballage est inclus dans le total affiché au user.
+- **UserTable.jsx** : libellé admin précisé — `Poids maximum autorisé par mois (en grammes)`.
+- **AddUserModal.jsx** : libellés et tooltips ajoutés sur les 3 champs de quotas à la création de compte (poids max/mois, limite de commandes, limite de prix), pour lever l'ambiguïté pour l'admin.
+
+
+
 ## v10 — 2026-07-262
 ## test-4.2.0 (version test)
 - cosmétique : remplacement de rayon22 par esl22 dans FirstConnection.jsx 
