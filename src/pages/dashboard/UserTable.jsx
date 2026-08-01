@@ -336,20 +336,16 @@ const UserTable = () => {
 										))}
 
 										<div className="bg-white p-3 rounded-lg border border-gray-200">
-											<label className="text-xs font-medium text-rayonblue block mb-1">Limite de poids maximal</label>
+											<label className="text-xs font-medium text-rayonblue block mb-1">Poids maximum autorisé par mois (en grammes)</label>
 											{editMode === user.id ? (
 												<input name="weight_limit" type="number" min="0" value={editedUser.weight_limit ?? ''} onChange={handleChange} className="w-full border-2 border-rayonblue rounded px-2 py-1" />
 											) : (
-												<p className="text-gray-800">{user.current_weight} / {user.weight_limit}</p>
-											)}
-										</div>
-
-										<div className="bg-white p-3 rounded-lg border border-gray-200">
-											<label className="text-xs font-medium text-rayonblue block mb-1">Limite de poids minimal</label>
-											{editMode === user.id ? (
-												<input name="weight_min_limit" type="number" min="0" value={editedUser.weight_min_limit ?? ''} onChange={handleChange} className="w-full border-2 border-rayonblue rounded px-2 py-1" />
-											) : (
-												<p className="text-gray-800">{user.current_weight} / {user.weight_min_limit}</p>
+												<>
+													<p className="text-gray-800">{user.current_weight} / {user.weight_limit ?? '∞'} g</p>
+													<p className="text-[11px] text-gray-400">
+														consommé / limite{user.weight_limit === null ? " (pas de limite)" : ` — reste ${user.weight_limit - user.current_weight} g`}
+													</p>
+												</>
 											)}
 										</div>
 
@@ -358,7 +354,12 @@ const UserTable = () => {
 											{editMode === user.id ? (
 												<input name="price_limit" type="number" min="0" step="0.01" value={editedUser.price_limit ?? ''} onChange={handleChange} className="w-full border-2 border-rayonblue rounded px-2 py-1" />
 											) : (
-												<p className="text-gray-800">{user.current_price}€ / {user.price_limit}€</p>
+												<>
+													<p className="text-gray-800">{user.current_price}€ / {user.price_limit ?? '∞'}€</p>
+													<p className="text-[11px] text-gray-400">
+														consommé / limite{user.price_limit === null ? " (pas de limite)" : ` — reste ${(user.price_limit - user.current_price).toFixed(2)}€`}
+													</p>
+												</>
 											)}
 										</div>
 
@@ -367,13 +368,13 @@ const UserTable = () => {
 											{editMode === user.id ? (
 												<input name="order_limit" type="number" min="0" value={editedUser.order_limit ?? ''} onChange={handleChange} className="w-full border-2 border-rayonblue rounded px-2 py-1" />
 											) : (
-												<p className="text-gray-800">{user.current_order} / {user.order_limit}</p>
+												<>
+													<p className="text-gray-800">{user.current_order} / {user.order_limit ?? '∞'}</p>
+													<p className="text-[11px] text-gray-400">
+														consommé / limite{user.order_limit === null ? " (pas de limite)" : ` — reste ${user.order_limit - user.current_order}`}
+													</p>
+												</>
 											)}
-										</div>
-
-										<div className="bg-white p-3 rounded-lg border border-gray-200">
-											<label className="text-xs font-medium text-rayonblue block mb-1"></label>
-											<p className="text-gray-800"></p>
 										</div>
 
 										<div className="bg-white p-3 rounded-lg border border-gray-200">
