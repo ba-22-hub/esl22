@@ -4,8 +4,10 @@
 //
 // Date          Auteur        Description
 // ----------    ----------    -------------------------------------------------
-// 2026-06-15    Louvel       recalcul de current_price et current_weight lors
-// 2026-06-15    Louvel		  de l'update => ajout shippingCost et packagingWeight
+// 2026-06-15    Louvel        recalcul de current_price et current_weight lors
+// 2026-06-15    Louvel        de l'update => ajout shippingCost et packagingWeight
+// 2026-08-02    Geronimo      fix#186 : mise à jour des stocks en Promise.allSettled
+// 2026-08-02    Geronimo      + alerte admin via Brevo en cas d'échec de stock
 //
 // =============================================================================
 // Importing dependencies
@@ -265,21 +267,46 @@ function PaymentSuccess() {
                         setIsProcessing(false);
                         return;
                     } else {
-                        // Updating stocks in database
-                        fullCartContent
-                            .map(async (product) => {
-                                const { data: updateStockData, error: updateStockError } = await supabase.rpc("decrement_stock", {
+                        // Mise à jour des stocks en attente et alertes admin en cas d'erreur (fix#186)
+                        const stockResults = await Promise.allSettled(
+                            fullCartContent.map(async (product) => {
+                                const { error: updateStockError } = await supabase.rpc("decrement_stock", {
                                     product_id_input: product.id,
                                     quantity_input: product.quantity
-                                })
+                                });
+
                                 if (updateStockError) {
-                                    displayNotification(
-                                        "Erreur de mise à jour des stocks de " + product.name,
-                                        updateStockError.message,
-                                        "danger"
-                                    );
+                                    throw new Error(`${product.name} : ${updateStockError.message}`);
                                 }
                             })
+                        );
+
+                        const stockErrors = stockResults
+                            .filter(result => result.status === "rejected")
+                            .map(result => result.reason?.message || "Erreur inconnue de mise à jour des stocks");
+
+                        if (stockErrors.length > 0) {
+                            try {
+                                await sendMail({
+                                    email: "ba220.epicerie@banquealimentaire.org",
+                                    templateId: 8,
+                                    params: {
+                                        ERRORS: stockErrors.join(" || "),
+                                        CART_ID: dataInsertedCart.id,
+                                        CLIENT_EMAIL: user.email,
+                                        DATE: new Date().toLocaleDateString('fr-FR'),
+                                    },
+                                });
+                            } catch (mailErr) {
+                                console.error("Échec de l'envoi de l'alerte admin :", mailErr);
+                            }
+
+                            displayNotification(
+                                "Attention",
+                                "Un incident de stock a été signalé à l'équipe. Votre commande est enregistrée.",
+                                "warning"
+                            );
+                        }
                     }
 
                     let name = ""
