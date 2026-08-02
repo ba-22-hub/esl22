@@ -5,6 +5,19 @@
 ### À venir
 - ...
 
+## [test-4.3.2] - 2026-08-02
+## V121 - 2026-08-02 (esl22.fr) 
+### Fixed
+### Corrigé
+- fix#186 (traité par JES) 
+- **Gestion des ruptures de stock au paiement** (`PaymentSuccess.jsx`) : la mise à jour des stocks (`decrement_stock`) s'effectue désormais via `Promise.allSettled`, garantissant que l'échec sur un produit (rupture de stock, race condition) n'empêche plus l'enregistrement de la commande ni la mise à jour des stocks des autres produits du panier.
+- En cas d'échec de mise à jour d'un ou plusieurs stocks, une alerte automatique est envoyée à l'équipe admin via Brevo (template #8), incluant le détail des erreurs, l'ID de la commande, l'email du client et la date.
+- Le client voit désormais un message clair ("incident de stock signalé à l'équipe") plutôt qu'un échec silencieux ou un blocage du flow de commande.
+
+### Testé
+- Validé sur `test.esl22.fr` : commande avec un produit passant en rupture entre l'ajout au panier et le paiement → commande bien enregistrée, alerte Brevo reçue et délivrée avec les bonnes variables.
+
+
 ## [test-4.3.1] - 2026-07-29
 ## V11 - 2026-08-01 (esl22.fr) 
 ### Fixed
