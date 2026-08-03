@@ -5,7 +5,10 @@
 // Date          Auteur        Description
 // ----------    ----------    -------------------------------------------------
 // 2026-06-14    Louvel       Ajout d'un filtre pourafficher les users selon le status
-// 2026-06-14    Louvel		  Ajout de la caractéristique "admin" dans la présentation des users
+// 2026-06-14    Louvel       Ajout de la caractéristique "admin" dans la présentation des users
+// 2026-08-03    Louvel       Suppression de notifyUsers - (le useEffect ne fait plus que fetchUsers())
+//                            Fix handleChange sur end_right : réactivation automatique de has_right/status
+//                            quand la date est repoussée dans le futur, avec la notification explicative.
 //
 // =============================================================================
 
@@ -21,7 +24,6 @@ import { displayNotification } from '@lib/displayNotification.jsx';
 // Importing common components
 import Loading from '@common/Loading.jsx';
 import AddUserModal from '@common/AddUserModal';
-import sendMail from '@lib/sendMail';
 
 
 const UserTable = () => {
@@ -41,8 +43,6 @@ const UserTable = () => {
 	const navigate = useNavigate()
 
 	const selectStatus = ["Enregistré", "Validé", "Actif", "Suspendu", "Résilié", "En attente", "Inactif"]
-
-	let isNotifying = false;
 
 	const fetchUsers = async () => {
 		const { data, error } = await supabase.from('User').select('*');
@@ -65,47 +65,6 @@ const UserTable = () => {
 			navigate('/admin')
 			return;
 		}
-		const notifyUsers = async () => {
-			if (isNotifying) return;
-			isNotifying = true;
-
-			const { data, error } = await supabase
-				.from('User')
-				.select('id, email, firstName')
-				.eq('should_notify', true)
-				.eq('notified', false);
-
-			if (error) {
-				displayNotification("Erreur lors de la récupération des utilisateurs à notifier", error.message, "danger")
-				return;
-			}
-
-			for (const user of data) {
-				try {
-					await sendMail({
-						email: user.email,
-						templateId: 3,
-						params: {
-							FIRSTNAME: user.firstName
-						}
-					});
-
-					const { error: updateError } = await supabase
-						.from('User')
-						.update({ should_notify: false, notified: true })
-						.eq('id', user.id);
-
-					if (updateError) {
-						displayNotification("Erreur lors de la mise à jour de l'utilisateur " + user.id, updateError.message, "danger")
-					} else {
-						displayNotification("Notification envoyée à " + user.email, "", "success")
-					}
-				} catch (err) {
-					displayNotification("Erreur inattendue lors de l'envoi de la notification à " + user.email, err.message, "danger")
-				}
-			}
-		};
-		notifyUsers();
 		fetchUsers();
 	}, [update, loading]);
 
@@ -135,9 +94,20 @@ const UserTable = () => {
 			const endDate = new Date(value);
 			const now = new Date();
 
-			if (!isNaN(endDate) && endDate < now) {
-				updatedUser.status = "Résilié";
-				updatedUser.has_right = false;
+			if (!isNaN(endDate)) {
+				const isActive = endDate >= now;
+				setEditedUser(prev => ({
+					...prev,
+					end_right: value,
+					has_right: isActive,
+					status: isActive ? "Actif" : "Résilié",
+				}));
+				displayNotification(
+					"Statut mis à jour automatiquement",
+					`Suite au changement de date, le statut a été basculé sur "${isActive ? "Actif" : "Résilié"}". Vous pouvez le corriger manuellement avant de valider.`,
+					"info"
+				);
+				return;
 			}
 		}
 		setEditedUser(prev => ({ ...prev, [name]: value }));
