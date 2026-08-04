@@ -101,6 +101,7 @@ const UserTable = () => {
 					end_right: value,
 					has_right: isActive,
 					status: isActive ? "Actif" : "Résilié",
+					reminder_sent_at: null,
 				}));
 				displayNotification(
 					"Statut mis à jour automatiquement",
