@@ -43,9 +43,9 @@ function AddUserModal({ isOpen, onClose }) {
                     ...prevData,
                     accountType,
                     end_right: farFuture.toISOString().slice(0, 10),
-                    weight_limit: '',
-                    order_limit: '',
-                    price_limit: ''
+                    weight_limit: null,
+                    order_limit: null,
+                    price_limit: null
                 };
             }
             return { ...prevData, accountType, end_right: '' };
