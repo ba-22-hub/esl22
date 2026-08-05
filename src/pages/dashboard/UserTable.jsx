@@ -88,6 +88,13 @@ const UserTable = () => {
 
 	const handleChange = (e) => {
 		const { name, value } = e.target;
+		// Garde défensive : un compte MDS n'entre jamais dans le cycle de droits
+		// (has_right toujours true, non affecté par status/end_right). Même si
+		// ces champs ne sont normalement plus édités pour ce type de compte,
+		// on bloque ici pour ne jamais casser has_right par erreur.
+		if (editedUser.accountType === 'mds' && (name === "status" || name === "end_right")) {
+			return;
+		}
 		if (name == "status") {
 			setEditedUser(prev => ({ ...prev, ["has_right"]: value == "Actif" }));
 		} else if (name == "end_right") {
@@ -203,6 +210,11 @@ const UserTable = () => {
 													👑 Admin
 													</span>
 												)}
+												{user.accountType === 'mds' && (
+													<span className="bg-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
+													🏢 MDS
+													</span>
+												)}
 												</div>
 											)}
 										</div>
@@ -308,8 +320,10 @@ const UserTable = () => {
 
 										<div className="bg-white p-3 rounded-lg border border-gray-200">
 											<label className="text-xs font-medium text-rayonblue block mb-1">Poids maximum autorisé par mois (en grammes)</label>
-											{editMode === user.id ? (
+											{editMode === user.id && editedUser.accountType !== 'mds' ? (
 												<input name="weight_limit" type="number" min="0" value={editedUser.weight_limit ?? ''} onChange={handleChange} className="w-full border-2 border-rayonblue rounded px-2 py-1" />
+											) : user.accountType === 'mds' ? (
+												<p className="text-gray-500 italic">Illimité (compte MDS)</p>
 											) : (
 												<>
 													<p className="text-gray-800">{user.current_weight} / {user.weight_limit ?? '∞'} g</p>
@@ -322,8 +336,10 @@ const UserTable = () => {
 
 										<div className="bg-white p-3 rounded-lg border border-gray-200">
 											<label className="text-xs font-medium text-rayonblue block mb-1">Limite de prix</label>
-											{editMode === user.id ? (
+											{editMode === user.id && editedUser.accountType !== 'mds' ? (
 												<input name="price_limit" type="number" min="0" step="0.01" value={editedUser.price_limit ?? ''} onChange={handleChange} className="w-full border-2 border-rayonblue rounded px-2 py-1" />
+											) : user.accountType === 'mds' ? (
+												<p className="text-gray-500 italic">Illimité (compte MDS)</p>
 											) : (
 												<>
 													<p className="text-gray-800">{user.current_price}€ / {user.price_limit ?? '∞'}€</p>
@@ -336,8 +352,10 @@ const UserTable = () => {
 
 										<div className="bg-white p-3 rounded-lg border border-gray-200">
 											<label className="text-xs font-medium text-rayonblue block mb-1">Limite de commandes</label>
-											{editMode === user.id ? (
+											{editMode === user.id && editedUser.accountType !== 'mds' ? (
 												<input name="order_limit" type="number" min="0" value={editedUser.order_limit ?? ''} onChange={handleChange} className="w-full border-2 border-rayonblue rounded px-2 py-1" />
+											) : user.accountType === 'mds' ? (
+												<p className="text-gray-500 italic">Illimité (compte MDS)</p>
 											) : (
 												<>
 													<p className="text-gray-800">{user.current_order} / {user.order_limit ?? '∞'}</p>
@@ -350,7 +368,7 @@ const UserTable = () => {
 
 										<div className="bg-white p-3 rounded-lg border border-gray-200">
 											<label className="text-xs font-medium text-rayonblue block mb-1">Début des droits</label>
-											{editMode === user.id ? (
+											{editMode === user.id && editedUser.accountType !== 'mds' ? (
 												<input
 													type="date"
 													name="start_right"
@@ -358,6 +376,8 @@ const UserTable = () => {
 													onChange={handleChange}
 													className="w-full border-2 border-rayonblue rounded px-2 py-1"
 												/>
+											) : user.accountType === 'mds' ? (
+												<p className="text-gray-500 italic">Sans objet (compte MDS)</p>
 											) : (
 												<p className="text-gray-800">{formatDate(user["start_right"])}</p>
 											)}
@@ -365,7 +385,7 @@ const UserTable = () => {
 
 										<div className="bg-white p-3 rounded-lg border border-gray-200">
 											<label className="text-xs font-medium text-rayonblue block mb-1">Fin des droits</label>
-											{editMode === user.id ? (
+											{editMode === user.id && editedUser.accountType !== 'mds' ? (
 												<input
 													type="date"
 													name="end_right"
@@ -374,6 +394,8 @@ const UserTable = () => {
 													onChange={handleChange}
 													className="w-full border-2 border-rayonblue rounded px-2 py-1"
 												/>
+											) : user.accountType === 'mds' ? (
+												<p className="text-gray-500 italic">Sans objet (compte MDS, accès permanent)</p>
 											) : (
 												<p className="text-gray-800">{formatDate(user["end_right"])}</p>
 											)}
@@ -381,7 +403,7 @@ const UserTable = () => {
 
 										<div className="bg-white p-3 rounded-lg border border-gray-200">
 											<label className="text-xs font-medium text-rayonblue block mb-1">Statut du compte</label>
-											{editMode === user.id ? (
+											{editMode === user.id && editedUser.accountType !== 'mds' ? (
 												<select
 													className="w-full px-3 py-2 border border-gray-200 rounded-md text-rayonblue bg-white focus:outline-none focus:ring-2 focus:ring-rayonblue"
 													name="status"
@@ -393,6 +415,8 @@ const UserTable = () => {
 														<option key={option} value={option}>{option}</option>
 													))}
 												</select>
+											) : user.accountType === 'mds' ? (
+												<p className="text-gray-500 italic">Toujours actif (compte MDS)</p>
 											) : (
 												<p className="text-gray-800">{user["status"] || '—'}</p>
 											)}
@@ -401,6 +425,13 @@ const UserTable = () => {
 										<div className="mb-4">
 											<span className="bg-rayonblue text-white text-xs font-bold px-3 py-1 rounded-full">
 											👑 Administrateur
+											</span>
+										</div>
+										)}
+										{user.accountType === 'mds' && (
+										<div className="mb-4">
+											<span className="bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+											🏢 Centre social (MDS) — accès illimité, sans expiration
 											</span>
 										</div>
 										)}
