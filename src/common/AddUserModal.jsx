@@ -9,6 +9,7 @@ function AddUserModal({ isOpen, onClose }) {
 
     const [length, setLength] = useState('')
     const [formData, setFormData] = useState({
+        accountType: 'beneficiary',
         gender: '',
         firstName: '',
         lastName: '',
@@ -24,6 +25,32 @@ function AddUserModal({ isOpen, onClose }) {
         order_limit: '',
         price_limit: ''
     })
+
+    // Un compte MDS (centre social) n'a ni date d'expiration de droits
+    // pertinente, ni quotas individuels : on lui pose une échéance très
+    // lointaine (la colonne end_right est NOT NULL en base) et on vide les
+    // quotas, qui doivent rester NULL = illimité côté back.
+    const MDS_DEFAULT_VALIDITY_YEARS = 100;
+
+    function handleAccountTypeChange(e) {
+        const accountType = e.target.value;
+        setLength('');
+        setFormData(prevData => {
+            if (accountType === 'mds') {
+                const farFuture = new Date();
+                farFuture.setFullYear(farFuture.getFullYear() + MDS_DEFAULT_VALIDITY_YEARS);
+                return {
+                    ...prevData,
+                    accountType,
+                    end_right: farFuture.toISOString().slice(0, 10),
+                    weight_limit: '',
+                    order_limit: '',
+                    price_limit: ''
+                };
+            }
+            return { ...prevData, accountType, end_right: '' };
+        });
+    }
 
     function handleChange(e) {
         const { name, value, type } = e.target;
@@ -83,6 +110,17 @@ function AddUserModal({ isOpen, onClose }) {
                     </button>
                 </div>
                 <div className="flex-1 overflow-y-auto p-6">
+                    <h2 className="ml-[4%] text-xl text-rayonorange font-bold mb-2">Type de compte</h2>
+                    <div className="ml-[8%] mb-4">
+                        <input className="" type="radio" name="accountType" value="beneficiary" checked={formData.accountType === "beneficiary"} onChange={handleAccountTypeChange} /> <a className="text-rayonblue ml-1">Bénéficiaire</a>
+                        <input className="ml-8" type="radio" name="accountType" value="mds" checked={formData.accountType === "mds"} onChange={handleAccountTypeChange} /> <a className="text-rayonblue ml-1">Centre social (MDS)</a>
+                        {formData.accountType === "mds" && (
+                            <p className="text-sm text-gray-500 mt-1">
+                                💡 Compte sans expiration de droits ni quotas individuels (accès illimité).
+                            </p>
+                        )}
+                    </div>
+
                     <h2 className="ml-[4%] text-xl text-rayonorange font-bold mb-2">Informations personnelles</h2>
                     {/* Gender */}
                     <div>
@@ -100,46 +138,52 @@ function AddUserModal({ isOpen, onClose }) {
                     {/* Mail */}
                     <FormInput labelClassName="ml-[8%]" className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Adresse mail" name="email" value={formData.email} onChange={handleChange} isStarred={true} />
                     {/* Street */}
-                    <FormInput labelClassName="ml-[8%]" className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Rue :" name="address" value={formData.street} onChange={handleChange} isStarred={true} />
+                    <FormInput labelClassName="ml-[8%]" className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Rue :" name="address" value={formData.address} onChange={handleChange} isStarred={true} />
                     {/* add addresse */}
-                    <FormInput labelClassName="ml-[8%]" className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Complément d'adresse :" name="addAddress" value={formData.addr} onChange={handleChange} />
+                    <FormInput labelClassName="ml-[8%]" className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Complément d'adresse :" name="addAddress" value={formData.addAddress} onChange={handleChange} />
                     {/* City  */}
-                    <FormInput labelClassName="ml-[8%]" className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Commune :" name="city" value={formData.region} onChange={handleChange} isStarred={true} />
+                    <FormInput labelClassName="ml-[8%]" className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Commune :" name="city" value={formData.city} onChange={handleChange} isStarred={true} />
                     {/* Post code */}
                     <FormInput labelClassName="ml-[8%]" className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Code postal :" name="postalCode" value={formData.postalCode} onChange={handleChange} isStarred={true} type='number' />
                     {/* length */}
-                    <FormInput labelClassName="ml-[8%]" className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Durée de validité (jours)" name="length" value={length} onChange={handleChange} isStarred={true} type='number' min="0" />
+                    {formData.accountType !== "mds" && (
+                        <FormInput labelClassName="ml-[8%]" className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Durée de validité (jours)" name="length" value={length} onChange={handleChange} isStarred={true} type='number' min="0" />
+                    )}
 
-                    <h2 className="ml-[4%] text-xl text-rayonorange font-bold my-2">Quotas : </h2>
-                    <div className="grid md:grid-cols-2 gap-4 mx-[8%]">
-                        <div className="relative group">
-                            <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Poids max autorisé par mois (en grammes) ℹ️" name="weight_limit" value={formData.weight_limit} onChange={handleChange} isStarred={true} type='number' min="0" />
-                            <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-10
-                                            bg-gray-800 text-white text-xs rounded-lg px-3 py-2 w-72 shadow-lg pointer-events-none">
-                                💡 Poids maximum de colis (produits + emballage) autorisé pour ce
-                                bénéficiaire par mois, exprimé en grammes.
-                                <div className="absolute top-full left-4 border-4 border-transparent border-t-gray-800" />
+                    {formData.accountType !== "mds" && (
+                        <>
+                            <h2 className="ml-[4%] text-xl text-rayonorange font-bold my-2">Quotas : </h2>
+                            <div className="grid md:grid-cols-2 gap-4 mx-[8%]">
+                                <div className="relative group">
+                                    <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Poids max autorisé par mois (en grammes) ℹ️" name="weight_limit" value={formData.weight_limit} onChange={handleChange} isStarred={true} type='number' min="0" />
+                                    <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-10
+                                                    bg-gray-800 text-white text-xs rounded-lg px-3 py-2 w-72 shadow-lg pointer-events-none">
+                                        💡 Poids maximum de colis (produits + emballage) autorisé pour ce
+                                        bénéficiaire par mois, exprimé en grammes.
+                                        <div className="absolute top-full left-4 border-4 border-transparent border-t-gray-800" />
+                                    </div>
+                                </div>
+                                <div className="relative group">
+                                    <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Limite de commandes ℹ️" name="order_limit" value={formData.order_limit} onChange={handleChange} isStarred={true} type='number' min="0" />
+                                    <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-10
+                                                    bg-gray-800 text-white text-xs rounded-lg px-3 py-2 w-72 shadow-lg pointer-events-none">
+                                        💡 Nombre maximum de commandes que ce bénéficiaire peut passer
+                                        par mois.
+                                        <div className="absolute top-full left-4 border-4 border-transparent border-t-gray-800" />
+                                    </div>
+                                </div>
+                                <div className="relative group">
+                                    <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Limite de prix (€) ℹ️" name="price_limit" value={formData.price_limit} onChange={handleChange} isStarred={true} type='number' min="0" step="0.01" />
+                                    <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-10
+                                                    bg-gray-800 text-white text-xs rounded-lg px-3 py-2 w-72 shadow-lg pointer-events-none">
+                                        💡 Montant total maximum des commandes que ce bénéficiaire peut
+                                        passer par mois, en euros.
+                                        <div className="absolute top-full left-4 border-4 border-transparent border-t-gray-800" />
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div className="relative group">
-                            <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Limite de commandes ℹ️" name="order_limit" value={formData.order_limit} onChange={handleChange} isStarred={true} type='number' min="0" />
-                            <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-10
-                                            bg-gray-800 text-white text-xs rounded-lg px-3 py-2 w-72 shadow-lg pointer-events-none">
-                                💡 Nombre maximum de commandes que ce bénéficiaire peut passer
-                                par mois.
-                                <div className="absolute top-full left-4 border-4 border-transparent border-t-gray-800" />
-                            </div>
-                        </div>
-                        <div className="relative group">
-                            <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Limite de prix (€) ℹ️" name="price_limit" value={formData.price_limit} onChange={handleChange} isStarred={true} type='number' min="0" step="0.01" />
-                            <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-10
-                                            bg-gray-800 text-white text-xs rounded-lg px-3 py-2 w-72 shadow-lg pointer-events-none">
-                                💡 Montant total maximum des commandes que ce bénéficiaire peut
-                                passer par mois, en euros.
-                                <div className="absolute top-full left-4 border-4 border-transparent border-t-gray-800" />
-                            </div>
-                        </div>
-                    </div>
+                        </>
+                    )}
 
                     <button onClick={handleSubmit} className='text-center-white bg-rayonorange w-[80%] ml-[10%] lg:w-[50%] lg:ml-[25%] mb-3 mt-10 h-[2rem]'>Ajouter</button>
                 </div>
