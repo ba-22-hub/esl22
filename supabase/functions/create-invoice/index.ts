@@ -8,13 +8,6 @@ const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
 const ADMIN_EMAIL = Deno.env.get("ADMIN_ALERT_EMAIL");
 const ADMIN_ALERT_TEMPLATE_ID = Number(Deno.env.get("ADMIN_ALERT_TEMPLATE_ID"));
 
-// --- CORS ---
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "https://www.esl22.fr",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
 async function notifyAdminFailure(cartId, reason) {
   try {
     const timestamp = new Date().toLocaleString("fr-FR", {
@@ -45,6 +38,14 @@ async function notifyAdminFailure(cartId, reason) {
 }
 
 serve(async (req) => {
+  // --- CORS dynamique (fonctionne sur test.esl22.fr et esl22.fr) ---
+  const origin = req.headers.get("origin") || "*";
+  const corsHeaders = {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
+
   // 1. Répondre au preflight AVANT toute autre logique
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
