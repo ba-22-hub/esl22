@@ -1,9 +1,34 @@
- 
 # Changelog — ESL22 Banque Alimentaire des Côtes d'Armor
 
 ## v-next — en cours
 ### À venir
 - ...
+
+## [test-4.3.3] - 2026-08-07
+## v13 - 2026-08-07 (esl22.fr)
+### Ajouté
+- **Refonte complète du cycle de vie des droits usagers** : nouvelle fonction SQL unique `handle_rights_lifecycle()` remplaçant les deux anciens crons (`update_has_rights_daily`, `prepare_notifications`).
+  - Rappel automatique par email à J-21 avant échéance (auparavant J-7, et dépendant d'une connexion admin pour être réellement envoyé — souvent resté sans effet).
+  - Suspension automatique à l'échéance (`status = 'Suspendu'` en plus de `has_right = false`).
+  - Alerte automatique à l'équipe BA22 (Brevo) à chaque suspension d'usager.
+- Nouvelle Edge Function `notify-end-right`, centralisant l'envoi Brevo pour le rappel, la suspension usager et l'alerte admin.
+- Colonne `reminder_sent_at` (table `User`) pour éviter les rappels en double après un renouvellement.
+- Table privée `private.app_settings` (schéma `private`) pour stocker l'URL de l'edge function et la clé service, contournant l'impossibilité de configurer `app.settings.*` via `ALTER DATABASE` sur Supabase managé.
+
+### Corrigé
+- **UserTable.jsx** : repousser la date de fin de droits (`end_right`) vers une date future réactive désormais automatiquement le compte (`has_right = true`, `status = 'Actif'`), au lieu de nécessiter une modification manuelle du statut en plus de la date. Corrige aussi un bug latent (référence à une variable `updatedUser` non définie).
+- **create-invoice** : gestion CORS dynamique (`Access-Control-Allow-Origin` reflète l'origine de la requête), corrigeant un blocage de génération de facture sur `test.esl22.fr` ; syntaxe `jspdf-autotable` mise à jour.
+
+### Supprimé
+- Ancien mécanisme de notification manuel dans `UserTable.jsx`, déclenché à l'ouverture du dashboard admin (`notifyUsers`), remplacé par l'automatisation ci-dessus.
+
+### Sécurité
+- `handle_rights_lifecycle()` : accès restreint au rôle `postgres` (cron) via `revoke`/`grant` explicites, `search_path` fixé.
+- Versionnement dans Git de l'ensemble des Edge Functions Supabase (12 fonctions), jusqu'ici déployées uniquement via le dashboard, hors suivi de version (`chore/versionner-edge-functions`).
+
+### Testé
+- Validé sur `test.esl22.fr` : rappel J-21 (mail reçu, `reminder_sent_at` mis à jour), suspension (mails usager + admin reçus, `status`/`has_right` corrects, anti-doublon confirmé), sécurité (`anon`/`authenticated` refusés sur `handle_rights_lifecycle()`).
+- Déployé et validé sur `esl22.fr` : cron `handle_rights_lifecycle_daily` exécuté avec succès (04:00 UTC).
 
 ## [test-4.3.2] - 2026-08-02
 ## V121 - 2026-08-02 (esl22.fr) 
