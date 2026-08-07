@@ -7,4 +7,3 @@ dist/
 .vscode
 schema.sql
 supabase/.temp
-supabase/
