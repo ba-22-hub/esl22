@@ -19,6 +19,7 @@ import MessagesDashboard from "@pages/dashboard/MessagesDashboard.jsx";
 import RequestsDashboard from "@pages/dashboard/RequestsDashboard.jsx";
 import OrderTable from "@pages/dashboard/OrderTable.jsx";
 import MoreManagement from "@pages/dashboard/MoreManagement.jsx"
+import UrgentBeneficiaryTable from "@pages/dashboard/UrgentBeneficiaryTable.jsx";
 
 // Importing common components
 import PageButton from "@common/PageButton.jsx";
@@ -40,6 +41,7 @@ function AdminNavbar() {
     { to: "/admin/messages", label: "💬 Messages", icon: "💬" },
     { to: "/admin/requests", label: "📋 Demandes", icon: "📋" },
     { to: "/admin/orders", label: "🛒 Commandes", icon: "🛒" },
+    { to: "/admin/urgent-beneficiaries", label: "🆘 Bénéf. urgents", icon: "🆘" },
     { to: "/admin/more", label: "📰 Articles", icon: "📰" }
   ];
 
@@ -138,6 +140,10 @@ function AdminApp() {
             <Route path="messages" element={<MessagesDashboard />} />
             <Route path="requests" element={<RequestsDashboard />} />
             <Route path="orders" element={<OrderTable />} />
+            {/* Supervision (lecture seule) des fiches bénéficiaires "colis
+                urgent" de tous les centres sociaux. Le CRUD lui-même est
+                côté client, accessible au compte MDS propriétaire. */}
+            <Route path="urgent-beneficiaries" element={<UrgentBeneficiaryTable />} />
             <Route path="more" element={<MoreManagement />} />
             <Route path="*" element={
               <div className="p-6 bg-gray-50 min-h-screen">

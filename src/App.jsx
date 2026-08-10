@@ -38,6 +38,7 @@ import Faq from "./pages/Faq";
 import Confidentiality from "@pages/Confidentiality";
 import LegalMentions from "./pages/LegalMentions";
 import OperatingCharter from "./pages/OperatingCharter";
+import UrgentBeneficiaryTable from "@pages/dashboard/UrgentBeneficiaryTable.jsx";
 
 // Importing common components
 import Footer from "@common/Footer.jsx";
@@ -82,6 +83,10 @@ function App() {
         <Route path="/operationg-charter" element={<OperatingCharter />} />
         <Route path="/cgu" element={<Cgu />} />
         <Route path="/first-connection" element={<FirstConnection />} />
+        {/* Gestion des fiches bénéficiaires "colis urgent" par un compte MDS.
+            Le contrôle d'accès est fait dans le composant lui-même (il
+            redirige si l'utilisateur n'est ni MDS ni admin). */}
+        <Route path="/urgent-beneficiaries" element={<UrgentBeneficiaryTable />} />
         {/* {/* Redirecting to Error404 page if the route does not exist */}
         {/* <Route path="*" element={<div className="text-center mt-20 text-2xl">Page not found</div>} />  */}
       </Routes>

@@ -6,7 +6,7 @@ import banqueLogo from "../assets/esl22/Logo_Banque_Alimentaire.jpg";
 import avatar from "@assets/Assets/avatar2.png"
 
 function ClientNavbar() {
-    const { user } = useAuthor()
+    const { user, isMds } = useAuthor()
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     return (
@@ -60,6 +60,11 @@ function ClientNavbar() {
                         <Link to="/delivery" className="text-[#3435FF] hover:text-white hover:bg-[#3435FF] px-4 py-2 rounded-lg text-sm font-medium transition-all">
                             📦 Mes livraisons
                         </Link>
+                        {isMds && (
+                            <Link to="/urgent-beneficiaries" className="text-[#3435FF] hover:text-white hover:bg-[#3435FF] px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                                🆘 Mes bénéficiaires
+                            </Link>
+                        )}
                         <Link to="/contact" className="text-[#3435FF] hover:text-white hover:bg-[#3435FF] px-4 py-2 rounded-lg text-sm font-medium transition-all">
                             ✉️ Nous contacter
                         </Link>
@@ -139,6 +144,15 @@ function ClientNavbar() {
                     >
                         📦 Mes livraisons
                     </Link>
+                    {isMds && (
+                        <Link
+                            to="/urgent-beneficiaries"
+                            onClick={() => setIsMenuOpen(false)}
+                            className="block text-[#3435FF] hover:bg-[#3435FF] hover:text-white px-4 py-3 rounded-lg text-base font-medium transition-all"
+                        >
+                            🆘 Mes bénéficiaires
+                        </Link>
+                    )}
                     <Link
                         to="/contact"
                         onClick={() => setIsMenuOpen(false)}
