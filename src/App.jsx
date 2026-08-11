@@ -43,6 +43,7 @@ import UrgentBeneficiaryTable from "@pages/dashboard/UrgentBeneficiaryTable.jsx"
 // Importing common components
 import Footer from "@common/Footer.jsx";
 import ClientNavbar from "@common/ClientNavbar";
+import UrgentOrderBanner from "@common/UrgentOrderBanner.jsx";
 import FirstConnection from "./pages/FirstConnection";
 import Cgu from "./pages/Cgu";
 
@@ -58,6 +59,8 @@ function App() {
       <Toaster position="top-right" />
 
       <ClientNavbar></ClientNavbar>
+      <UrgentOrderBanner />
+
 
       {/* Creating the routes to the website pages */}
       <Routes>

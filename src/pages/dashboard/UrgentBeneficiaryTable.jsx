@@ -24,6 +24,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@lib/supabaseClient.js';
 import { useAuthor } from '@context/AuthorContext';
+import { useCart } from '@context/CartContext.jsx';
 import { useNavigate } from 'react-router-dom';
 import { displayNotification } from '@lib/displayNotification.jsx';
 
@@ -74,6 +75,7 @@ const UrgentBeneficiaryTable = () => {
 	const [update, setUpdate] = useState(true);
 
 	const { isAdmin, loading } = useAuthor();
+	const { cart, startUrgentOrder } = useCart();
 	const navigate = useNavigate();
 
 	// Un admin consulte mais ne modifie pas : la policy RLS ne lui accorde que
@@ -233,6 +235,31 @@ const UrgentBeneficiaryTable = () => {
 		setUpdate(!update);
 	};
 
+	// Le panier est unique pour le compte connecté : s'il contient déjà des
+	// articles, on demande explicitement quoi en faire plutôt que de les
+	// écraser ou de les mélanger silencieusement à la commande urgente.
+	const handleStartOrder = (b) => {
+		const cartCount = Object.keys(cart?.content || {}).length;
+
+		if (cartCount > 0) {
+			const clearCart = window.confirm(
+				`Votre panier contient déjà ${cartCount} produit${cartCount > 1 ? 's' : ''}.\n\n` +
+				`OK   : vider le panier et repartir de zéro pour ${b.firstName} ${b.lastName}\n` +
+				`Annuler : conserver les produits déjà sélectionnés`
+			);
+			startUrgentOrder(b, { clearCart });
+		} else {
+			startUrgentOrder(b);
+		}
+
+		displayNotification(
+			'Commande urgente démarrée',
+			`Les produits que vous ajoutez seront commandés pour ${b.firstName} ${b.lastName}.`,
+			'success'
+		);
+		navigate('/catalog');
+	};
+
 	const handleDelete = async (b) => {
 		if (!confirm(
 			`Supprimer la fiche de ${b.firstName} ${b.lastName} ?\n\n` +
@@ -328,6 +355,14 @@ const UrgentBeneficiaryTable = () => {
 											onClick={() => toggleExpand(b.id)}
 											className="px-3 py-2 text-rayonblue hover:bg-blue-50 rounded-lg transition text-sm font-medium whitespace-nowrap"
 										>{expanded === b.id ? '▲ Masquer' : '▼ Détails'}</button>
+
+										{canEdit && editMode !== b.id && (
+											<button
+												onClick={() => handleStartOrder(b)}
+												className="px-3 py-2 bg-rayonorange hover:opacity-90 text-white rounded-lg transition text-sm font-semibold whitespace-nowrap"
+												title={`Composer un colis urgent pour ${b.firstName} ${b.lastName}`}
+											>🛒 Commander</button>
+										)}
 
 										{canEdit && (
 											editMode === b.id ? (

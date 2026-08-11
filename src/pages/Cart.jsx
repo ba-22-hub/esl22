@@ -95,7 +95,7 @@ function Cart() {
     const prevCartIds = useRef([])
 
     const { user, loading: authorLoading, checkHasRights } = useAuthor()
-    const { cart, setCart } = useCart()
+    const { cart, setCart, isUrgentOrder, urgentBeneficiary } = useCart()
 
     let navigate = useNavigate()
 
@@ -367,10 +367,14 @@ function Cart() {
             .eq("name", "maxCartWeight")
             .maybeSingle();
 
+        // Un colis urgent est soumis à une limite basse spécifique
+        // (urgentWeightMin), plus élevée que celle d'une commande ordinaire :
+        // le déplacement d'un colis en urgence ne se justifie qu'au-delà d'un
+        // certain volume. La limite haute (maxCartWeight) reste commune.
         const { data: generalMinWeightData, error: generalMinWeightError } = await supabase
             .from('constants')
             .select('value, unit')
-            .eq("name", "minCartWeight")
+            .eq("name", isUrgentOrder ? "urgentWeightMin" : "minCartWeight")
             .maybeSingle();
 
         if (generalMaxWeightError || generalMinWeightError) {
@@ -393,7 +397,7 @@ function Cart() {
         }
 
         navigate("/chose-pickup-point")
-    }, [cart, productsPriceTotal, productsWeightTotal, productsInCart, user, navigate]);
+    }, [cart, productsPriceTotal, productsWeightTotal, productsInCart, user, navigate, isUrgentOrder]);
 
     return (
         <>
@@ -408,6 +412,11 @@ function Cart() {
                             <p className="text-blue-100 text-lg">
                                 {productsNumberTotal} {productsNumberTotal > 1 ? 'produits' : 'produit'} • {productsWeightTotal / 1000}kg
                             </p>
+                            {isUrgentOrder && urgentBeneficiary && (
+                                <p className="mt-2 inline-block bg-[#FF8200] text-white text-sm font-semibold px-3 py-1 rounded-full">
+                                    🆘 Colis urgent pour {urgentBeneficiary.firstName} {urgentBeneficiary.lastName}
+                                </p>
+                            )}
                         </div>
                     </div>
 
