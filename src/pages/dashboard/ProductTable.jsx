@@ -6,6 +6,8 @@
 // ----------    ----------    -------------------------------------------------
 // 2026-06-08    Louvel       Ajout packagingWeight pour le calcul du poids brut
 //                            du colis : poids des produits + poids de l'emballage
+// 2026-08-12    Louvel       Ajout de la constante urgentWeightMin (poids
+//                            minimal d'un colis urgent) dans les paramètres
 //
 // =============================================================================
 

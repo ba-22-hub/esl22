@@ -1,3 +1,14 @@
+// =============================================================================
+// HISTORIQUE DES MODIFICATIONS
+// =============================================================================
+//
+// Date          Auteur        Description
+// ----------    ----------    -------------------------------------------------
+// 2026-08-12    Louvel       colis urgent : limite de poids basse spécifique
+//                            (urgentWeightMin) et rappel du bénéficiaire dans
+//                            l'en-tête du panier
+//
+// =============================================================================
 // Importing dependencies
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { useAuthor } from '@context/AuthorContext.jsx'

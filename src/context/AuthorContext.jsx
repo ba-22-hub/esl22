@@ -1,3 +1,14 @@
+// =============================================================================
+// HISTORIQUE DES MODIFICATIONS
+// =============================================================================
+//
+// Date          Auteur        Description
+// ----------    ----------    -------------------------------------------------
+// 2026-08-12    Louvel       exposition de accountType / isMds ; rechargement
+//                            des rôles sur changement de session (corrige
+//                            hasRights/isAdmin obsolètes après re-connexion)
+//
+// =============================================================================
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from "@lib/supabaseClient.js"
 

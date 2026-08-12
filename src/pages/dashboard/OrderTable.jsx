@@ -12,6 +12,10 @@
 // 2026-06-09    Louvel       create-dpd-label => dpd-create-label-relay
 // 2026-06-27    Louvel       ajout du shippingCost de l'expédition sur la facture de l'utilisateur
 // 2026-08-02    Louvel       prise en compte bucket "invoices"
+// 2026-08-12    Louvel       colis urgent : étiquette DPD établie au nom du
+//                            bénéficiaire (UrgentBeneficiary) et non du centre
+//                            social émetteur de la commande ; badge dans la
+//                            liste des commandes
 //
 // =============================================================================
 
@@ -69,6 +73,9 @@ function OrderTable() {
                 shippingLabelFileName,
                 invoiceFileName,
                 pickupPoint,
+                isUrgent,
+                urgentBeneficiaryId,
+                urgentBeneficiaryName,
                 User: client_id (
                 firstName,
                 lastName,
@@ -106,6 +113,31 @@ function OrderTable() {
             const referenceNumber = `CMD-${order.id}`;
 
             const userData = await (async () => {
+                // Pour un colis urgent, le compte à l'origine de la commande est
+                // le centre social (MDS) : le destinataire réel du colis est le
+                // bénéficiaire dont la fiche est rattachée à la commande. C'est
+                // donc ses coordonnées qui doivent figurer sur l'étiquette et
+                // servir à la notification DPD.
+                if (order.isUrgent && order.urgentBeneficiaryId) {
+                    const { data: beneficiaryData, error: beneficiaryError } = await supabase
+                        .from("UrgentBeneficiary")
+                        .select("phone, email, firstName, lastName, postalCode, city, address, addAddress")
+                        .eq("id", order.urgentBeneficiaryId)
+                        .single();
+
+                    if (beneficiaryError || !beneficiaryData) {
+                        displayNotification(
+                            "Bénéficiaire introuvable",
+                            beneficiaryError?.message || "La fiche a peut-être été supprimée depuis la commande.",
+                            "danger"
+                        );
+                        throw new Error(
+                            `Impossible de récupérer la fiche bénéficiaire de la commande urgente ${order.id}`
+                        );
+                    }
+                    return beneficiaryData;
+                }
+
                 const { data: userData, error: userError } = await supabase
                     .from("User")
                     .select("phone, email, firstName, lastName, postalCode, city, address, addAddress")
@@ -525,6 +557,11 @@ async function generateInvoice(order) {
                                                     {order.User && (
                                                         <p className="text-xs text-gray-500">
                                                             {order.User.email}
+                                                        </p>
+                                                    )}
+                                                    {order.isUrgent && (
+                                                        <p className="mt-1 inline-block bg-rayonorange text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                                            🆘 Colis urgent — livré à {order.urgentBeneficiaryName || 'bénéficiaire inconnu'}
                                                         </p>
                                                     )}
                                                 </div>

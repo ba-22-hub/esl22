@@ -1,3 +1,13 @@
+// =============================================================================
+// HISTORIQUE DES MODIFICATIONS
+// =============================================================================
+//
+// Date          Auteur        Description
+// ----------    ----------    -------------------------------------------------
+// 2026-08-12    Louvel       colis urgent : contexte de commande pour un
+//                            bénéficiaire (sessionStorage)
+//
+// =============================================================================
 import { createContext, useContext, useEffect, useState } from "react";
 
 const CartContext = createContext();

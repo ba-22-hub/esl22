@@ -1,3 +1,14 @@
+// =============================================================================
+// HISTORIQUE DES MODIFICATIONS
+// =============================================================================
+//
+// Date          Auteur        Description
+// ----------    ----------    -------------------------------------------------
+// 2026-08-12    Louvel       colis urgent : points relais recherchés autour du
+//                            code postal du bénéficiaire, et enregistrement de
+//                            la commande via create-urgent-order (sans Stripe)
+//
+// =============================================================================
 // Importing dependencies
 import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@lib/supabaseClient.js';
