@@ -249,30 +249,59 @@ Deno.serve(async (req) => {
       totalPrice: roundTwoDigits(cartPrice + shippingCost),
     });
 
-    // Confirmation au centre social, et au bénéficiaire si son adresse mail
-    // est connue (elle est facultative sur la fiche).
-    const mailParams = {
-      COMMAND_NUMBER: cartId.slice(0, 8),
-      CONTENT: fullCartContent.map((i) => `- ${i.name} x ${i.quantity}<br>`).join(""),
-      PRICE: roundTwoDigits(cartPrice + shippingCost).toFixed(2).replace(".", ","),
-    };
+    // Confirmation au centre social (template dédié, orienté « commande passée
+    // pour un tiers ») et au bénéficiaire si son adresse mail est connue —
+    // elle est facultative sur la fiche.
+    const commandNumber = cartId.slice(0, 8);
+    const content = fullCartContent.map((i) => `- ${i.name} x ${i.quantity}<br>`).join("");
+    const price = roundTwoDigits(cartPrice + shippingCost).toFixed(2).replace(".", ",");
+    const beneficiaryName = `${beneficiary.firstName} ${beneficiary.lastName}`;
 
-    const recipients = [
-      { email: mdsUser.email, firstName: mdsUser.firstName || "Centre social" },
-    ];
+    await callFunction("sendmail", {
+      to: mdsUser.email,
+      templateId: 12,
+      params: {
+        BENEFICIARY_NAME: beneficiaryName,
+        COMMAND_NUMBER: commandNumber,
+        CONTENT: content,
+        PRICE: price,
+      },
+    });
+
     if (beneficiary.email) {
-      recipients.push({ email: beneficiary.email, firstName: beneficiary.firstName || "Client" });
-    }
+      // Le bénéficiaire reçoit le message de confirmation habituel : il est
+      // bien le destinataire du colis. Le point relais est récupéré ici, comme
+      // le fait le parcours de commande classique.
+      let pickupPoint: Record<string, string> = {};
+      try {
+        const res = await fetch(`${supabaseUrl}/functions/v1/get-pickup-by-id`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${serviceRoleKey}`,
+          },
+          body: JSON.stringify({ pudoId: pickupPointId }),
+        });
+        pickupPoint = await res.json();
+      } catch (err) {
+        console.warn("Point relais non récupéré pour l'e-mail bénéficiaire :", err);
+      }
 
-    await Promise.all(
-      recipients.map((r) =>
-        callFunction("sendmail", {
-          to: r.email,
-          templateId: 2,
-          params: { ...mailParams, FIRSTNAME: r.firstName },
-        }),
-      ),
-    );
+      await callFunction("sendmail", {
+        to: beneficiary.email,
+        templateId: 2,
+        params: {
+          FIRSTNAME: beneficiary.firstName || "Client",
+          COMMAND_NUMBER: commandNumber,
+          CONTENT: content,
+          PRICE: price,
+          PICKUP_POINT_NAME: pickupPoint?.name ?? "",
+          PICKUP_POINT_ADDRESS: pickupPoint?.address1
+            ? `${pickupPoint.address1} ${pickupPoint.address2 ?? ""}, ${pickupPoint.zipCode} ${pickupPoint.city}`
+            : "",
+        },
+      });
+    }
 
     if (stockErrors.length > 0) {
       await callFunction("sendmail", {
