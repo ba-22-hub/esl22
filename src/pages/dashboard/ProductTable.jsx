@@ -6,6 +6,8 @@
 // ----------    ----------    -------------------------------------------------
 // 2026-06-08    Louvel       Ajout packagingWeight pour le calcul du poids brut
 //                            du colis : poids des produits + poids de l'emballage
+// 2026-08-12    Louvel       Ajout de la constante urgentWeightMin (poids
+//                            minimal d'un colis urgent) dans les paramètres
 //
 // =============================================================================
 
@@ -49,6 +51,7 @@ function ProductTable() {
     max_order: '',
     minCartWeight: '',
     maxCartWeight: '',
+    urgentWeightMin: '',
     packagingWeight: '',
   })
 
@@ -405,6 +408,23 @@ function ProductTable() {
       displayNotification("Erreur lors du téléchargement de l'ancienne valeur du poids maximal du panier", maxCartWeightError.message, "danger")
     }
 
+     // ── Poids minimal spécifique aux colis urgents ───────────────────────
+    const { data: urgentWeightMinData, error: urgentWeightMinError } = await supabase
+      .from('constants')
+      .select('value')
+      .eq("name", "urgentWeightMin")
+      .single()
+
+    if (!urgentWeightMinError) {
+      setSettings(prevData => ({
+        ...prevData,
+        urgentWeightMin: urgentWeightMinData.value
+      }))
+    } else {
+      console.error("Erreur lors du téléchargement de l'ancienne valeur du poids minimal d'un colis urgent", urgentWeightMinError)
+      displayNotification("Erreur lors du téléchargement de l'ancienne valeur du poids minimal d'un colis urgent", urgentWeightMinError.message, "danger")
+    }
+
      // ── AJOUT : récupération packagingWeight ──────────────────────────────
     const { data: packagingWeightData, error: packagingWeightError } = await supabase
       .from('constants')
@@ -622,6 +642,24 @@ function ProductTable() {
                       className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
                       onChange={handleChangeInSettings}
                     />
+                    <div className="relative group">
+                        <FormInput
+                            name="urgentWeightMin"
+                            type="number"
+                            step="1"
+                            value={settings.urgentWeightMin ?? 0}
+                            inputText="Poids minimal d'un colis urgent (en grammes) ℹ️"
+                            className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
+                            onChange={handleChangeInSettings}
+                        />
+                        <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-10
+                                        bg-gray-800 text-white text-xs rounded-lg px-3 py-2 w-72 shadow-lg pointer-events-none">
+                            💡 Poids minimal exigé pour une commande « colis urgent »
+                            passée par un centre social. Il remplace le poids minimal
+                            ordinaire du panier ; le poids maximal reste commun.
+                            <div className="absolute top-full left-4 border-4 border-transparent border-t-gray-800" />
+                        </div>
+                    </div>
                     <div className="relative group">
                         <FormInput
                             name="packagingWeight"
