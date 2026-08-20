@@ -1,3 +1,8 @@
+## [test-4.4.1] - 2026-08-19
+### Corrigé
+- **`create-invoice`** : ajout de la date sur les factures, mention obligatoire jusqu'ici absente. La date retenue est celle de la commande (`cart.created_at`) et non celle de la génération du document, afin qu'une facture regénérée porte la même date que l'originale.
+- **`Delivery.jsx`** : les commandes urgentes n'étaient pas distinguables dans « Mes livraisons » côté centre social — le bénéficiaire destinataire est désormais indiqué.
+
 ## [test-4.4.0] - 2026-08-16
 ### Ajouté
 - **Fonctionnalité « colis urgent » (étape 1)** : un centre social peut commander pour une personne accompagnée en urgence, sans paiement en ligne.
