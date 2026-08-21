@@ -1,3 +1,4 @@
+## v14 - 2026-08-21 (esl22.fr)
 ## [test-4.4.1] - 2026-08-19
 ### Corrigé
 - **`create-invoice`** : ajout de la date sur les factures, mention obligatoire jusqu'ici absente. La date retenue est celle de la commande (`cart.created_at`) et non celle de la génération du document, afin qu'une facture regénérée porte la même date que l'originale.
