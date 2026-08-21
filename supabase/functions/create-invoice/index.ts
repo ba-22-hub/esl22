@@ -62,13 +62,41 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
     );
 
+    // Date d'émission : celle de la commande, et non celle de la génération du
+    // document. Une facture regénérée ultérieurement (bouton admin) doit porter
+    // la même date que l'originale.
+    const { data: cartRow, error: cartReadError } = await supabaseAdmin
+      .from("cart")
+      .select("created_at")
+      .eq("id", cartId)
+      .single();
+
+    if (cartReadError || !cartRow) {
+      const reason = `Commande introuvable : ${cartReadError?.message ?? "aucune ligne"}`;
+      await notifyAdminFailure(cartId, reason);
+      return new Response(JSON.stringify({ error: reason }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
+    const issueDate = new Date(cartRow.created_at).toLocaleDateString("fr-FR", {
+      timeZone: "Europe/Paris",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric"
+    });
+
     const doc = new jsPDF();
+    doc.setFontSize(16);
     doc.text("Facture BA22 - ESL22", 14, 20);
+    doc.setFontSize(11);
     doc.text(`Commande n° ${cartId.slice(0, 8)}`, 14, 30);
-    doc.text(`${client.firstName} ${client.lastName}`, 14, 40);
-    doc.text(`${client.address}, ${client.postalCode} ${client.city}`, 14, 46);
+    doc.text(`Date : ${issueDate}`, 14, 36);
+    doc.text(`${client.firstName} ${client.lastName}`, 14, 46);
+    doc.text(`${client.address}, ${client.postalCode} ${client.city}`, 14, 52);
     autoTable(doc, {
-      startY: 55,
+      startY: 61,
       head: [["Produit", "Qté", "Prix unitaire", "Total"]],
       body: items.map((item) => [
         item.name,
@@ -78,7 +106,7 @@ serve(async (req) => {
       ])
     });
 
-    const finalY = doc.lastAutoTable.finalY || 60;
+    const finalY = doc.lastAutoTable.finalY || 66;
     doc.text(`Frais de livraison : ${shippingCost.toFixed(2)} €`, 14, finalY + 10);
     doc.text(`Total : ${totalPrice.toFixed(2)} €`, 14, finalY + 18);
 

@@ -1,3 +1,13 @@
+// =============================================================================
+// HISTORIQUE DES MODIFICATIONS
+// =============================================================================
+//
+// Date          Auteur        Description
+// ----------    ----------    -------------------------------------------------
+// 2026-08-19    Louvel       colis urgent : affichage du bénéficiaire destinataire
+//                            dans la liste des livraisons du centre social
+//
+// =============================================================================
 // Importing dependencies
 import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@lib/supabaseClient.js';
@@ -171,6 +181,11 @@ function Delivery() {
                                                         <span className="text-gray-500 text-sm">
                                                             Commande du {formatDate(delivery.created_at)}
                                                         </span>
+                                                        {delivery.isUrgent && (
+                                                            <span className="px-3 py-1 rounded-full text-sm font-semibold bg-[#FF8200] text-white">
+                                                                🆘 Colis urgent — {delivery.urgentBeneficiaryName || 'bénéficiaire inconnu'}
+                                                            </span>
+                                                        )}
                                                     </div>
 
                                                     <div className="flex items-center gap-6 mt-3">

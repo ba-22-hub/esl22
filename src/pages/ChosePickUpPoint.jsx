@@ -1,3 +1,14 @@
+// =============================================================================
+// HISTORIQUE DES MODIFICATIONS
+// =============================================================================
+//
+// Date          Auteur        Description
+// ----------    ----------    -------------------------------------------------
+// 2026-08-12    Louvel       colis urgent : points relais recherchés autour du
+//                            code postal du bénéficiaire, et enregistrement de
+//                            la commande via create-urgent-order (sans Stripe)
+//
+// =============================================================================
 // Importing dependencies
 import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@lib/supabaseClient.js';
@@ -50,7 +61,7 @@ function ChosePickUpPoint() {
     const [errorPickup, setErrorPickup] = useState(null);
 
     const { user } = useAuthor();
-    const { cart, setCart } = useCart()
+    const { cart, setCart, isUrgentOrder, urgentBeneficiary, clearUrgentOrder } = useCart()
     const navigate = useNavigate()
 
     const redIcon = L.icon({
@@ -196,6 +207,24 @@ function ChosePickUpPoint() {
         }
     };
 
+    // Pour un colis urgent, les points relais pertinents sont ceux proches du
+    // bénéficiaire, et non du poste depuis lequel le centre social passe la
+    // commande : on pré-remplit la recherche avec son code postal et on la
+    // déclenche directement.
+    const urgentSearchDone = useRef(false);
+    useEffect(() => {
+        if (!isUrgentOrder || !urgentBeneficiary?.postalCode) return;
+        if (urgentSearchDone.current) return;
+        urgentSearchDone.current = true;
+
+        setChosenPostalCode(urgentBeneficiary.postalCode);
+        fetchPickupPoints(
+            urgentBeneficiary.postalCode,
+            urgentBeneficiary.city || "",
+            urgentBeneficiary.address || ""
+        );
+    }, [isUrgentOrder, urgentBeneficiary]);
+
     async function reverseGeocode(lat, lon) {
         const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`;
 
@@ -286,6 +315,43 @@ function ChosePickUpPoint() {
                 weight: parseFloat(p.weight),
                 quantity: parseInt(cart.content[p.id])
             }));
+
+            // Un colis urgent est pris en charge par le centre social : la
+            // commande est enregistrée directement, sans passer par Stripe.
+            // Les prix et poids sont recalculés côté serveur par la fonction,
+            // aucun paiement ne venant les attester ici.
+            if (isUrgentOrder && urgentBeneficiary) {
+                const { data: urgentData, error: urgentError } = await supabase.functions.invoke(
+                    "create-urgent-order",
+                    {
+                        body: {
+                            items: cartItems.map(i => ({ id: i.id, quantity: i.quantity })),
+                            pickupPointId: currPoint.id,
+                            urgentBeneficiaryId: urgentBeneficiary.id,
+                        }
+                    }
+                );
+
+                if (urgentError || !urgentData?.success) {
+                    displayNotification(
+                        "Erreur lors de l'enregistrement de la commande urgente",
+                        urgentError?.message || urgentData?.error || "Une erreur est survenue",
+                        "danger"
+                    );
+                    return;
+                }
+
+                displayNotification(
+                    "Colis urgent enregistré",
+                    `Commande n°${urgentData.cartId.slice(0, 8)} pour ${urgentBeneficiary.firstName} ${urgentBeneficiary.lastName}`,
+                    "success"
+                );
+
+                setCart({ content: {} });
+                clearUrgentOrder();
+                navigate("/delivery");
+                return;
+            }
 
             // Invoquer la fonction edge pour créer la session Stripe
             const { data, error } = await supabase.functions.invoke("create-checkout-session", {
