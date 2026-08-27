@@ -7,6 +7,9 @@
 // 2026-08-12    Louvel       colis urgent : points relais recherchés autour du
 //                            code postal du bénéficiaire, et enregistrement de
 //                            la commande via create-urgent-order (sans Stripe)
+// 2026-08-26    Louvel       étape 2 : commande passée par le bénéficiaire
+//                            lui-même, enregistrée via create-authorized-order
+//                            avec décompte du montant accordé
 //
 // =============================================================================
 // Importing dependencies
@@ -60,7 +63,7 @@ function ChosePickUpPoint() {
     const [loadingPickup, setLoadingPickup] = useState(false);
     const [errorPickup, setErrorPickup] = useState(null);
 
-    const { user } = useAuthor();
+    const { user, accountType } = useAuthor();
     const { cart, setCart, isUrgentOrder, urgentBeneficiary, clearUrgentOrder } = useCart()
     const navigate = useNavigate()
 
@@ -315,6 +318,44 @@ function ChosePickUpPoint() {
                 weight: parseFloat(p.weight),
                 quantity: parseInt(cart.content[p.id])
             }));
+
+            // Commande passée par le bénéficiaire lui-même, au titre de l'aide
+            // que le centre social lui a accordée. Le montant est décompté
+            // côté serveur, où le solde fait foi : le contrôle affiché dans le
+            // panier n'est qu'une indication.
+            if (accountType === 'urgent') {
+                const { data: authorizedData, error: authorizedError } = await supabase.functions.invoke(
+                    "create-authorized-order",
+                    {
+                        body: {
+                            items: cartItems.map(i => ({ id: i.id, quantity: i.quantity })),
+                            pickupPointId: currPoint.id,
+                        }
+                    }
+                );
+
+                if (authorizedError || !authorizedData?.success) {
+                    displayNotification(
+                        "Votre commande n'a pas pu être enregistrée",
+                        authorizedData?.error || authorizedError?.message || "Une erreur est survenue",
+                        "danger",
+                        0
+                    );
+                    return;
+                }
+
+                displayNotification(
+                    "Votre commande est enregistrée",
+                    authorizedData.remaining > 0
+                        ? `Il vous reste ${authorizedData.remaining.toFixed(2).replace('.', ',')} €.`
+                        : "Vous avez utilisé la totalité du montant qui vous était accordé.",
+                    "success"
+                );
+
+                setCart({ content: {} });
+                navigate("/delivery");
+                return;
+            }
 
             // Un colis urgent est pris en charge par le centre social : la
             // commande est enregistrée directement, sans passer par Stripe.

@@ -6,6 +6,9 @@
 // ----------    ----------    -------------------------------------------------
 // 2026-08-19    Louvel       colis urgent : affichage du bénéficiaire destinataire
 //                            dans la liste des livraisons du centre social
+// 2026-08-27    Louvel       étape 2 : le centre social voit aussi les
+//                            commandes qu'il finance, passées par un
+//                            bénéficiaire autorisé, distinguées des siennes
 //
 // =============================================================================
 // Importing dependencies
@@ -42,10 +45,15 @@ function Delivery() {
 
         const fetchOngoingDeliveries = async () => {
             setLoading(true);
+            // Un centre social doit voir non seulement ses propres commandes,
+            // mais aussi celles passées par les bénéficiaires qu'il a
+            // autorisés : il en assume la dépense et doit pouvoir en suivre la
+            // livraison. Ces commandes portent son identifiant dans
+            // billingClientId, non dans client_id.
             const { data, error } = await supabase
                 .from('cart')
                 .select('*')
-                .eq('client_id', user.id)
+                .or(`client_id.eq.${user.id},billingClientId.eq.${user.id}`)
                 .order('created_at', { ascending: false });
 
             if (error) {
@@ -182,9 +190,18 @@ function Delivery() {
                                                             Commande du {formatDate(delivery.created_at)}
                                                         </span>
                                                         {delivery.isUrgent && (
-                                                            <span className="px-3 py-1 rounded-full text-sm font-semibold bg-[#FF8200] text-white">
-                                                                🆘 Colis urgent — {delivery.urgentBeneficiaryName || 'bénéficiaire inconnu'}
-                                                            </span>
+                                                            delivery.client_id === user?.id ? (
+                                                                <span className="px-3 py-1 rounded-full text-sm font-semibold bg-[#FF8200] text-white">
+                                                                    🆘 Colis urgent pour {delivery.urgentBeneficiaryName || 'bénéficiaire inconnu'}
+                                                                </span>
+                                                            ) : (
+                                                                /* Commande composée par le bénéficiaire lui-même : le
+                                                                   centre social la finance mais n'en a pas choisi le
+                                                                   contenu. */
+                                                                <span className="px-3 py-1 rounded-full text-sm font-semibold bg-emerald-600 text-white">
+                                                                    ✉️ Commandé par {delivery.urgentBeneficiaryName || 'le bénéficiaire'}
+                                                                </span>
+                                                            )
                                                         )}
                                                     </div>
 

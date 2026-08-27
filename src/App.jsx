@@ -39,6 +39,7 @@ import Confidentiality from "@pages/Confidentiality";
 import LegalMentions from "./pages/LegalMentions";
 import OperatingCharter from "./pages/OperatingCharter";
 import UrgentBeneficiaryTable from "@pages/dashboard/UrgentBeneficiaryTable.jsx";
+import AccesUrgent from "@pages/AccesUrgent.jsx";
 
 // Importing common components
 import Footer from "@common/Footer.jsx";
@@ -90,6 +91,10 @@ function App() {
             Le contrôle d'accès est fait dans le composant lui-même (il
             redirige si l'utilisateur n'est ni MDS ni admin). */}
         <Route path="/urgent-beneficiaries" element={<UrgentBeneficiaryTable />} />
+        {/* Atterrissage du lien d'accès adressé à un bénéficiaire autorisé à
+            composer lui-même son colis. La session est ouverte par Supabase au
+            chargement ; la page vérifie que l'accès est toujours valable. */}
+        <Route path="/acces-urgent" element={<AccesUrgent />} />
         {/* {/* Redirecting to Error404 page if the route does not exist */}
         {/* <Route path="*" element={<div className="text-center mt-20 text-2xl">Page not found</div>} />  */}
       </Routes>

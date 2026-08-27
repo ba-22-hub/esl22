@@ -418,16 +418,24 @@ const UrgentBeneficiaryTable = () => {
 			`à sa place, ou lui accorder une nouvelle autorisation.`
 		)) return;
 
-		const { error } = await supabase
-			.from('UrgentAuthorization')
-			.update({ status: 'cancelled' })
-			.eq('id', authorization.id);
+		// L'annulation et la fermeture de l'accès sont faites ensemble côté
+		// base : sans cela, le compte resterait ouvert jusqu'au passage du
+		// traitement quotidien.
+		const { data, error } = await supabase.rpc('cancel_urgent_authorization', {
+			auth_id: authorization.id,
+		});
 
-		if (error) {
-			displayNotification("Erreur lors de l'annulation", error.message, 'danger');
+		if (error || !data?.ok) {
+			displayNotification(
+				"Erreur lors de l'annulation",
+				error?.message || (data?.reason === 'forbidden'
+					? "Cette autorisation a été accordée par un autre centre social."
+					: "L'autorisation n'a pas pu être annulée."),
+				'danger'
+			);
 			return;
 		}
-		displayNotification('Autorisation annulée', '', 'success');
+		displayNotification('Autorisation annulée', "L'accès est fermé.", 'success');
 		setUpdate(!update);
 	};
 

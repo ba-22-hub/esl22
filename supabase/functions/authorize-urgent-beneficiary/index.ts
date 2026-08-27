@@ -298,6 +298,24 @@ Deno.serve(async (req) => {
       return json({ error: "Impossible d'enregistrer l'autorisation" }, corsHeaders, 500);
     }
 
+    // Le compte peut avoir été fermé à l'expiration d'une autorisation
+    // précédente, ou porter l'échéance d'une aide antérieure plus courte : on
+    // le réouvre et on l'aligne sur la nouvelle autorisation. Sans cela, une
+    // personne ayant reçu un colis urgent puis un chèque resterait bloquée sur
+    // l'échéance des 48 heures.
+    const { error: reactivateError } = await supabaseAdmin
+      .from("User")
+      .update({
+        has_right: true,
+        status: "Actif",
+        end_right: expiry.toISOString().slice(0, 10),
+      })
+      .eq("id", userId);
+
+    if (reactivateError) {
+      console.warn("Réactivation du compte bénéficiaire :", reactivateError.message);
+    }
+
     // --- Lien de connexion ---------------------------------------------------
     const { data: linkData, error: generateError } = await supabaseAdmin.auth.admin.generateLink({
       type: "magiclink",
