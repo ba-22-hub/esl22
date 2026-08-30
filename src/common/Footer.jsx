@@ -103,6 +103,17 @@ const Footer = () => {
                         >
                             Nous contacter
                         </Link>
+
+                        {/* Une personne accompagnée par un service social reçoit un
+                            lien d'accès par courriel, valable quelques heures. Sans
+                            cette entrée, elle n'aurait aucun moyen d'en obtenir un
+                            nouveau : elle n'a ni compte ni mot de passe. */}
+                        <Link
+                            to="/demander-un-lien"
+                            className="block text-sm text-blue-100 hover:text-rayonorange transition-colors duration-200"
+                        >
+                            Recevoir mon lien d'accès
+                        </Link>
                     </div>
 
                     {/* Colonne 3 */}
