@@ -7,6 +7,9 @@
 // 2026-08-12    Louvel       colis urgent : limite de poids basse spécifique
 //                            (urgentWeightMin) et rappel du bénéficiaire dans
 //                            l'en-tête du panier
+// 2026-08-26    Louvel       étape 2 : affichage du montant restant au
+//                            bénéficiaire, contrôle du plafond à la validation
+//                            et seuil de poids selon le motif de l'aide
 //
 // =============================================================================
 // Importing dependencies
@@ -105,8 +108,13 @@ function Cart() {
     const packagingWeightFetched = useRef(false)
     const prevCartIds = useRef([])
 
-    const { user, loading: authorLoading, checkHasRights } = useAuthor()
+    const { user, loading: authorLoading, checkHasRights, accountType } = useAuthor()
     const { cart, setCart, isUrgentOrder, urgentBeneficiary } = useCart()
+
+    // Autorisation en cours lorsque c'est le bénéficiaire lui-même qui compose
+    // son panier (étape 2). À distinguer du cas où le centre social commande à
+    // sa place (isUrgentOrder), qui relève du contexte de panier.
+    const [authorization, setAuthorization] = useState(null);
 
     let navigate = useNavigate()
 
@@ -114,6 +122,16 @@ function Cart() {
     const roundTwoDigits = useCallback((nb) => {
         return Math.round(nb * 100) / 100
     }, []);
+
+    // Le montant accordé couvre les produits ET la participation aux frais de
+    // livraison : ce que la personne peut consacrer aux produits est donc
+    // inférieur au solde affiché.
+    const remainingAmount = authorization
+        ? roundTwoDigits(authorization.spendingLimit - authorization.spentAmount)
+        : null;
+    const availableForProducts = remainingAmount !== null
+        ? roundTwoDigits(Math.max(0, remainingAmount - shippingCost))
+        : null;
 
     // Calculs mémoïsés - ne recalculent que si productsInCart ou cart.content changent
     const { productsPriceTotal, productsWeightTotal, productsNumberTotal } = useMemo(() => {
@@ -150,6 +168,28 @@ function Cart() {
     }, [productsInCart, cart?.content, roundTwoDigits, packagingWeight]);
 
     // Charger le threshold
+    // Autorisation en cours du bénéficiaire connecté. Relue à chaque passage
+    // sur le panier plutôt que mise en cache : le montant restant évolue à
+    // chaque commande, une valeur figée deviendrait fausse.
+    useEffect(() => {
+        if (authorLoading || !user || accountType !== 'urgent') return;
+
+        const fetchAuthorization = async () => {
+            const { data, error } = await supabase
+                .from('UrgentAuthorization')
+                .select('*')
+                .eq('status', 'active')
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+            if (!error && data) {
+                setAuthorization(data);
+            }
+        };
+        fetchAuthorization();
+    }, [user, accountType, authorLoading]);
+
     useEffect(() => {
         const fetchStockIncertainThreshold = async () => {
             const { data, error } = await supabase
@@ -378,14 +418,16 @@ function Cart() {
             .eq("name", "maxCartWeight")
             .maybeSingle();
 
-        // Un colis urgent est soumis à une limite basse spécifique
-        // (urgentWeightMin), plus élevée que celle d'une commande ordinaire :
-        // le déplacement d'un colis en urgence ne se justifie qu'au-delà d'un
-        // certain volume. La limite haute (maxCartWeight) reste commune.
+        // Le poids minimal exigé dépend du motif : un envoi en urgence ne se
+        // justifie qu'au-delà d'un certain volume (urgentWeightMin), tandis
+        // qu'une dépense étalée sur un chèque relève du seuil ordinaire.
+        // La limite haute (maxCartWeight) reste commune.
+        const usesUrgentThreshold = isUrgentOrder || authorization?.type === 'colis_urgent';
+
         const { data: generalMinWeightData, error: generalMinWeightError } = await supabase
             .from('constants')
             .select('value, unit')
-            .eq("name", isUrgentOrder ? "urgentWeightMin" : "minCartWeight")
+            .eq("name", usesUrgentThreshold ? "urgentWeightMin" : "minCartWeight")
             .maybeSingle();
 
         if (generalMaxWeightError || generalMinWeightError) {
@@ -407,8 +449,35 @@ function Cart() {
             return;
         }
 
+        // Contrôle du montant accordé, lorsque c'est le bénéficiaire lui-même
+        // qui commande. Le décompte définitif se fera côté serveur à
+        // l'enregistrement : ce contrôle sert à l'avertir avant qu'il aille
+        // plus loin dans le parcours.
+        if (authorization) {
+            if (new Date(authorization.expiresAt) < new Date()) {
+                displayNotification(
+                    "Votre accès est terminé",
+                    "La date jusqu'à laquelle vous pouviez commander est passée. Rapprochez-vous du service social qui vous accompagne.",
+                    "danger", 0
+                );
+                return;
+            }
+
+            const total = roundTwoDigits(productsPriceTotal + shippingCost);
+            if (total > remainingAmount) {
+                displayNotification(
+                    "Montant dépassé",
+                    `Votre panier revient à ${total.toFixed(2).replace('.', ',')} € (frais de livraison compris), ` +
+                    `alors qu'il vous reste ${remainingAmount.toFixed(2).replace('.', ',')} €. ` +
+                    `Retirez quelques produits pour pouvoir valider.`,
+                    "danger", 0
+                );
+                return;
+            }
+        }
+
         navigate("/chose-pickup-point")
-    }, [cart, productsPriceTotal, productsWeightTotal, productsInCart, user, navigate, isUrgentOrder]);
+    }, [cart, productsPriceTotal, productsWeightTotal, productsInCart, user, navigate, isUrgentOrder, authorization, shippingCost, remainingAmount, roundTwoDigits]);
 
     return (
         <>
@@ -427,6 +496,28 @@ function Cart() {
                                 <p className="mt-2 inline-block bg-[#FF8200] text-white text-sm font-semibold px-3 py-1 rounded-full">
                                     🆘 Colis urgent pour {urgentBeneficiary.firstName} {urgentBeneficiary.lastName}
                                 </p>
+                            )}
+
+                            {authorization && (
+                                <div className="mt-4 inline-block bg-white/95 rounded-xl px-5 py-3">
+                                    <p className="text-xs uppercase tracking-wide text-gray-500">
+                                        Il vous reste
+                                    </p>
+                                    <p className={`text-2xl font-bold ${productsPriceTotal > availableForProducts ? 'text-red-600' : 'text-[#FF8200]'}`}>
+                                        {remainingAmount.toFixed(2).replace('.', ',')} €
+                                    </p>
+                                    <p className="text-xs text-gray-600 mt-1">
+                                        dont {shippingCost.toFixed(2).replace('.', ',')} € de participation aux frais de
+                                        livraison, soit <strong>{availableForProducts.toFixed(2).replace('.', ',')} €</strong> pour vos produits
+                                    </p>
+                                    {productsPriceTotal > availableForProducts && (
+                                        <p className="text-xs font-semibold text-red-600 mt-2">
+                                            Votre panier dépasse de{' '}
+                                            {(productsPriceTotal - availableForProducts).toFixed(2).replace('.', ',')} €.
+                                            Retirez quelques produits pour pouvoir valider.
+                                        </p>
+                                    )}
+                                </div>
                             )}
                         </div>
                     </div>

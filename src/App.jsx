@@ -39,6 +39,8 @@ import Confidentiality from "@pages/Confidentiality";
 import LegalMentions from "./pages/LegalMentions";
 import OperatingCharter from "./pages/OperatingCharter";
 import UrgentBeneficiaryTable from "@pages/dashboard/UrgentBeneficiaryTable.jsx";
+import AccesUrgent from "@pages/AccesUrgent.jsx";
+import DemanderUnLien from "@pages/DemanderUnLien.jsx";
 
 // Importing common components
 import Footer from "@common/Footer.jsx";
@@ -90,6 +92,14 @@ function App() {
             Le contrôle d'accès est fait dans le composant lui-même (il
             redirige si l'utilisateur n'est ni MDS ni admin). */}
         <Route path="/urgent-beneficiaries" element={<UrgentBeneficiaryTable />} />
+        {/* Atterrissage du lien d'accès adressé à un bénéficiaire autorisé à
+            composer lui-même son colis. La session est ouverte par Supabase au
+            chargement ; la page vérifie que l'accès est toujours valable. */}
+        <Route path="/acces-urgent" element={<AccesUrgent />} />
+        {/* Le lien reçu par courriel ne vaut que quelques heures, alors qu'une
+            aide peut courir plusieurs semaines : cette page permet d'en
+            obtenir un nouveau sans repasser par le centre social. */}
+        <Route path="/demander-un-lien" element={<DemanderUnLien />} />
         {/* {/* Redirecting to Error404 page if the route does not exist */}
         {/* <Route path="*" element={<div className="text-center mt-20 text-2xl">Page not found</div>} />  */}
       </Routes>
