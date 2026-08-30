@@ -10,6 +10,9 @@
 // 2026-08-22    Louvel        Étape 2 : octroi d'une autorisation à commander
 //                             (colis urgent ou CAP), suivi du montant restant
 //                             et annulation par le centre social.
+// 2026-08-28    Louvel        Les coordonnées modifiées sur la fiche sont
+//                             reportées sur le compte de connexion, qui
+//                             alimente l'étiquette de transport.
 //
 // =============================================================================
 //
@@ -293,12 +296,53 @@ const UrgentBeneficiaryTable = () => {
 			.update(toPayload(editedForm))
 			.eq('id', id);
 
-		setIsSaving(false);
-
 		if (error) {
+			setIsSaving(false);
 			displayNotification('Erreur lors de la modification', error.message, 'danger');
 			return;
 		}
+
+		// Si la personne dispose d'un accès, le compte doit suivre : c'est lui
+		// qui alimente l'étiquette de transport et la notification du
+		// transporteur. Une adresse restée périmée enverrait le colis au
+		// mauvais endroit.
+		const beneficiary = beneficiaries.find(b => b.id === id);
+		if (beneficiary?.userId) {
+			const { data: syncData, error: syncError } = await supabase.functions.invoke(
+				'sync-urgent-beneficiary',
+				{ body: { urgentBeneficiaryId: id } }
+			);
+
+			if (syncError || syncData?.error) {
+				setIsSaving(false);
+				displayNotification(
+					'Fiche modifiée, mais accès non mis à jour',
+					syncData?.error || syncError?.message ||
+					"Les nouvelles coordonnées n'ont pas pu être reportées sur l'accès de cette personne.",
+					'warning',
+					0
+				);
+				setEditMode(null);
+				setUpdate(!update);
+				return;
+			}
+
+			if (syncData?.emailChanged) {
+				displayNotification(
+					'Fiche mise à jour',
+					"L'adresse électronique a changé : les liens déjà envoyés ne fonctionnent plus. " +
+					"La personne peut en demander un nouveau depuis le site.",
+					'success',
+					0
+				);
+				setIsSaving(false);
+				setEditMode(null);
+				setUpdate(!update);
+				return;
+			}
+		}
+
+		setIsSaving(false);
 		displayNotification('Fiche mise à jour', 'success');
 		setEditMode(null);
 		setUpdate(!update);

@@ -7,6 +7,8 @@
 // 2026-08-26    Louvel       Création : page d'atterrissage du lien d'accès
 //                            adressé à un bénéficiaire autorisé à composer
 //                            lui-même son colis.
+// 2026-08-28    Louvel       Renvoi vers la page de demande d'un nouveau lien
+//                            lorsque celui reçu n'est plus valable.
 //
 // =============================================================================
 //
@@ -153,12 +155,10 @@ function AccesUrgent() {
 					Vous pouvez en demander un nouveau : il vous sera envoyé
 					immédiatement à la même adresse.
 				</p>
-				{/* TODO étape 2 : brancher sur la page de renvoi de lien une fois
-				    celle-ci créée (/demander-un-lien). */}
 				<button
-					onClick={() => navigate('/')}
+					onClick={() => navigate('/demander-un-lien')}
 					className="w-full bg-[#FF8200] hover:opacity-90 text-white font-semibold rounded-lg py-3 transition"
-				>Retour à l'accueil</button>
+				>Recevoir un nouveau lien</button>
 			</Frame>
 		);
 	}
@@ -174,10 +174,16 @@ function AccesUrgent() {
 						? "La date jusqu'à laquelle vous pouviez composer votre colis est passée."
 						: "Vous n'avez pas d'aide en cours pour le moment."}
 				</p>
-				<p className="text-gray-700">
+				<p className="text-gray-700 mb-6">
 					Rapprochez-vous du service social qui vous accompagne : lui seul
 					peut vous ouvrir un nouvel accès.
 				</p>
+				{/* Une nouvelle aide a pu être accordée depuis l'envoi de ce
+				    lien : la personne peut alors en demander un à jour. */}
+				<button
+					onClick={() => navigate('/demander-un-lien')}
+					className="w-full bg-white border-2 border-[#FF8200] text-[#FF8200] hover:bg-orange-50 font-semibold rounded-lg py-3 transition"
+				>J'ai reçu une nouvelle aide, recevoir un lien</button>
 			</Frame>
 		);
 	}
