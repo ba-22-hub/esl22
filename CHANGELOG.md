@@ -1,4 +1,5 @@
 ## [test-4.5.0] - 2026-08-28
+
 ### Ajouté
 - **Colis urgent, seconde étape** : un centre social peut autoriser une personne qu'il accompagne à composer elle-même son colis, plutôt que de commander à sa place.
   - Table `UrgentAuthorization` : autorisation accordée par un centre social, bornée par un plafond de dépense et une échéance. Deux dispositifs partagent le même mécanisme et ne diffèrent que par leurs paramètres — colis urgent (48 h, une commande) et chèque d'accompagnement (durée saisie, 30 jours par défaut, plusieurs commandes jusqu'à épuisement). Les frais de livraison s'imputent sur le montant accordé.
