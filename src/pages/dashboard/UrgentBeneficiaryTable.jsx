@@ -13,6 +13,10 @@
 // 2026-08-28    Louvel        Les coordonnées modifiées sur la fiche sont
 //                             reportées sur le compte de connexion, qui
 //                             alimente l'étiquette de transport.
+// 2026-09-01    Louvel        Signale dès la saisie qu'une adresse correspond
+//                             à un compte de l'épicerie : la délégation est
+//                             alors impossible, seule la commande par le
+//                             centre social reste ouverte.
 //
 // =============================================================================
 //
@@ -114,6 +118,12 @@ const UrgentBeneficiaryTable = () => {
 	const [capDefaultHours, setCapDefaultHours] = useState(720);
 	const [urgentAuthHours, setUrgentAuthHours] = useState(48);
 
+	// Adresses correspondant à un compte de l'épicerie, par identifiant de
+	// fiche. Ces personnes disposent de leur propre compte : le centre social
+	// peut commander pour elles, mais ne peut pas leur déléguer la composition
+	// du panier.
+	const [existingAccountEmails, setExistingAccountEmails] = useState({});
+
 	const { isAdmin, loading } = useAuthor();
 	const { cart, startUrgentOrder } = useCart();
 	const navigate = useNavigate();
@@ -154,6 +164,25 @@ const UrgentBeneficiaryTable = () => {
 			displayNotification('Erreur de chargement des bénéficiaires', error.message, 'danger');
 		} else {
 			setBeneficiaries(data || []);
+
+			// Chaque fiche portant une adresse est confrontée aux comptes
+			// existants : la mention doit être visible sans attendre une
+			// tentative d'autorisation.
+			const withEmail = (data || []).filter(b => b.email);
+			if (withEmail.length > 0) {
+				const checks = await Promise.all(
+					withEmail.map(async (b) => {
+						const { data: taken } = await supabase.rpc(
+							'email_belongs_to_existing_account',
+							{ email_input: b.email }
+						);
+						return [b.id, taken === true];
+					})
+				);
+				setExistingAccountEmails(Object.fromEntries(checks));
+			} else {
+				setExistingAccountEmails({});
+			}
 		}
 
 		// Autorisations non closes. La RLS restreint là aussi à ce que
@@ -265,6 +294,31 @@ const UrgentBeneficiaryTable = () => {
 		return true;
 	};
 
+	// Signale, sans bloquer, qu'une adresse correspond déjà à un compte de
+	// l'épicerie. La fiche reste utile — le centre social pourra commander
+	// pour cette personne — mais il ne pourra pas lui déléguer la composition
+	// du panier, et vaut mieux qu'il le sache tout de suite.
+	const warnIfExistingAccount = async (email) => {
+		const value = (email || '').trim();
+		if (!value) return;
+
+		const { data: taken } = await supabase.rpc(
+			'email_belongs_to_existing_account',
+			{ email_input: value }
+		);
+
+		if (taken === true) {
+			displayNotification(
+				'Personne déjà inscrite à l\'épicerie',
+				"Cette adresse électronique correspond à un compte existant. Vous pourrez " +
+				"commander pour cette personne, mais pas lui donner accès au catalogue : " +
+				"elle dispose déjà de son propre compte.",
+				'warning',
+				0
+			);
+		}
+	};
+
 	const handleCreate = async () => {
 		if (!validate(newForm)) return;
 		setIsSaving(true);
@@ -282,6 +336,7 @@ const UrgentBeneficiaryTable = () => {
 			return;
 		}
 		displayNotification('Fiche bénéficiaire créée', 'success');
+		await warnIfExistingAccount(newForm.email);
 		setNewForm(EMPTY_FORM);
 		setModalOpen(false);
 		setUpdate(!update);
@@ -344,6 +399,7 @@ const UrgentBeneficiaryTable = () => {
 
 		setIsSaving(false);
 		displayNotification('Fiche mise à jour', 'success');
+		await warnIfExistingAccount(editedForm.email);
 		setEditMode(null);
 		setUpdate(!update);
 	};
@@ -575,6 +631,11 @@ const UrgentBeneficiaryTable = () => {
 													✉️ {formatEuros(authorizations[b.id].spendingLimit - authorizations[b.id].spentAmount)} € restants
 												</span>
 											)}
+											{existingAccountEmails[b.id] && (
+												<span className="inline-block mt-1 bg-gray-200 text-gray-700 text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">
+													Inscrit à l'épicerie
+												</span>
+											)}
 										</div>
 									</div>
 
@@ -597,11 +658,15 @@ const UrgentBeneficiaryTable = () => {
 												{!authorizations[b.id] && (
 													<button
 														onClick={() => openAuthModal(b)}
-														disabled={!b.email}
+														disabled={!b.email || existingAccountEmails[b.id]}
 														className="px-3 py-2 bg-emerald-600 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg transition text-sm font-semibold whitespace-nowrap"
-														title={b.email
-															? `Autoriser ${b.firstName} ${b.lastName} à composer son colis`
-															: "Adresse électronique manquante : impossible d'envoyer un lien d'accès"}
+														title={
+															existingAccountEmails[b.id]
+																? "Cette personne est déjà inscrite à l'épicerie et dispose de son propre compte : elle ne peut pas recevoir d'accès par ce dispositif. Vous pouvez en revanche commander pour elle."
+																: b.email
+																	? `Autoriser ${b.firstName} ${b.lastName} à composer son colis`
+																	: "Adresse électronique manquante : impossible d'envoyer un lien d'accès"
+														}
 													>✉️ Autoriser</button>
 												)}
 											</>
@@ -695,6 +760,20 @@ const UrgentBeneficiaryTable = () => {
 										)}
 									</div>
 
+
+									{existingAccountEmails[b.id] && (
+										<div className="mt-4 bg-gray-50 border border-gray-300 rounded-lg p-4">
+											<p className="text-sm font-bold text-gray-700 mb-1">
+												Personne déjà inscrite à l'épicerie solidaire
+											</p>
+											<p className="text-sm text-gray-600">
+												Elle dispose de son propre compte et commande avec son mot de
+												passe habituel. Vous ne pouvez donc pas lui donner accès au
+												catalogue par ce dispositif, mais vous pouvez commander pour
+												elle : la commande sera prise en charge par votre structure.
+											</p>
+										</div>
+									)}
 									{authorizations[b.id] && (
 										<div className="mt-4 bg-emerald-50 border border-emerald-200 rounded-lg p-4">
 											<div className="flex flex-wrap items-start justify-between gap-3">
