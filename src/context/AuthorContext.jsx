@@ -7,6 +7,9 @@
 // 2026-08-12    Louvel       exposition de accountType / isMds ; rechargement
 //                            des rôles sur changement de session (corrige
 //                            hasRights/isAdmin obsolètes après re-connexion)
+// 2026-09-01    Louvel       maybeSingle() sur Admins : single() renvoyait une
+//                            erreur 406 à chaque connexion d'un compte non
+//                            administrateur, sans conséquence mais bruyante.
 //
 // =============================================================================
 import { createContext, useContext, useEffect, useState } from 'react'
@@ -64,10 +67,14 @@ function AuthorProvider({ children }) {
             return;
         }
 
-        // Lancer les deux requêtes en parallèle
+        // Lancer les deux requêtes en parallèle.
+        // maybeSingle() sur Admins : un compte non administrateur n'y a aucune
+        // ligne, ce que single() traite comme une erreur (406). Le résultat
+        // était correct, mais la console se remplissait d'erreurs à chaque
+        // connexion d'un bénéficiaire ou d'un centre social.
         const [rightsRes, adminRes] = await Promise.all([
             supabase.from("User").select("has_right, accountType").eq("id", currentUser.id).single(),
-            supabase.from("Admins").select("id").eq("id", currentUser.id).single(),
+            supabase.from("Admins").select("id").eq("id", currentUser.id).maybeSingle(),
         ]);
 
         // Gestion des droits
@@ -138,7 +145,7 @@ function AuthorProvider({ children }) {
                 .from("Admins")
                 .select("id")
                 .eq("id", userId)
-                .single();
+                .maybeSingle();
 
             if (error || !data) {
                 setIsAdmin(false);
