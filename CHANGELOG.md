@@ -1,3 +1,22 @@
+## [test-4.5.1] - 2026-09-01
+### Ajouté
+
+
+- "colis urgent: signaler une adresse déjà utilisée dès la saisie de la fiche
+
+- Une personne inscrite à l'épicerie dispose de son propre compte : la délégation
+- lui est impossible. Le centre social ne l'apprenait qu'en tentant d'autoriser,
+- après avoir créé la fiche et parfois passé des commandes.
+
+- Fonction email_belongs_to_existing_account : répond par oui ou non, le centre
+  social n'ayant aucun accès à la table User et n'ayant pas à savoir qui est
+  inscrit à l'épicerie
+- Avertissement à la création et à la modification, pastille dans la liste,
+  explication dans le détail, bouton Autoriser désactivé
+- AuthorContext : maybeSingle() sur Admins, single() renvoyant une erreur 406
+  à chaque connexion d'un compte non administrateur"
+
+
 ## [test-4.5.0] - 2026-08-28
 
 ### Ajouté
