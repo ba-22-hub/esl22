@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useAuthor } from "@context/AuthorContext.jsx";
 import esl22Logo from "../assets/esl22/round_Logo_ESL22_circle_bleu.png";
-import banqueLogo from "../assets/esl22/Logo_Banque_Alimentaire.jpg";
+import banqueLogo from "../assets/logos/logo_ba_Côtes_d'Armor.jpg";
 import avatar from "@assets/Assets/avatar2.png"
 
 function ClientNavbar() {
