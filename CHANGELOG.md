@@ -1,3 +1,7 @@
+## v15 - 2026-09-12 (esl22.fr)
+- Merge de l'étape 2 dans la branche main
+- ### Corrigé 
+- **Réinitialisation de mot de passe** : le parcours était inopérant. Le secret `VITE_API_URL`, utilisé par `retrieve-password` pour construire l'adresse de retour, portait l'adresse interne du conteneur en production et n'existait pas sur l'environnement de test — produisant dans ce dernier cas une URL `undefinedreset-password` silencieusement rejetée. Corrigé sur les deux environnements, avec `https://www.esl22.fr/` en production : le domaine ne sert les routes internes qu'avec le préfixe `www`.
 ## [test-4.5.1] - 2026-09-01
 ### Ajouté
 
