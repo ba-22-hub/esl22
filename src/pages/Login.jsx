@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@lib/supabaseClient.js';
 import { useAuthor } from '@context/AuthorContext.jsx';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { displayNotification } from '@lib/displayNotification.jsx';
 
 // Importing common components
@@ -133,6 +133,20 @@ function Login() {
 						buttonText='Admin'
 						page='/admin'
 						className='w-[90vw] lg:w-[400px] h-10 bg-[#FF8200] text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition mt-4' />
+				</div>
+
+				{/* Une personne accompagnée par un service social n'a ni compte ni
+				    mot de passe : elle accède au site par un lien reçu par
+				    courriel. Sans ce renvoi, elle resterait bloquée devant ce
+				    formulaire. */}
+				<div className="lg:w-[65%] w-[90%] mx-auto mt-10 pt-6 border-t border-gray-200 text-center">
+					<p className="text-sm text-gray-600 mb-2">
+						Un service social vous a ouvert un accès pour composer votre colis ?
+					</p>
+					<Link
+						to="/demander-un-lien"
+						className="text-[#2E2EFF] text-sm font-medium underline hover:text-blue-600"
+					>Recevoir mon lien d'accès</Link>
 				</div>
 			</div>
 		</>

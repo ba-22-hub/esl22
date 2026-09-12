@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Commande passée par un bénéficiaire</title>
+</head>
+<body style="margin:0; padding:0; background-color:#FEF7F1; font-family:Arial, Helvetica, sans-serif; color:#333333;">
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#FEF7F1; padding:24px 12px;">
+    <tr>
+      <td align="center">
+
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; background-color:#ffffff; border-radius:12px; overflow:hidden; border-top:4px solid #2E7D32;">
+
+          <!-- En-tête -->
+          <tr>
+            <td align="center" style="padding:28px 24px 12px 24px;">
+              <h1 style="margin:0; font-size:23px; font-weight:bold; color:#3435FF;">
+                Commande passée par un bénéficiaire
+              </h1>
+              <p style="margin:8px 0 0 0; font-size:14px; color:#777777;">
+                Épicerie Solidaire en Ligne 22
+              </p>
+            </td>
+          </tr>
+
+          <!-- Bandeau bénéficiaire -->
+          <tr>
+            <td style="padding:8px 24px 0 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#2E7D32; border-radius:8px;">
+                <tr>
+                  <td align="center" style="padding:14px 16px; color:#ffffff; font-size:16px; font-weight:bold;">
+                    {{ params.BENEFICIARY_NAME }}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Corps -->
+          <tr>
+            <td style="padding:22px 24px 0 24px;">
+              <p style="margin:0 0 16px 0; font-size:15px; line-height:1.6;">
+                Bonjour,
+              </p>
+              <p style="margin:0 0 20px 0; font-size:15px; line-height:1.6;">
+                <strong>{{ params.BENEFICIARY_NAME }}</strong> vient de composer
+                son colis et de valider sa commande. Celle-ci sera préparée par
+                l'épicerie solidaire et expédiée au point relais choisi.
+              </p>
+              <p style="margin:0 0 20px 0; font-size:15px; line-height:1.6;">
+                Numéro de commande :
+                <strong style="color:#3435FF;">{{ params.COMMAND_NUMBER }}</strong>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Solde -->
+          <tr>
+            <td style="padding:0 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F7F7FA; border-radius:8px; border:1px solid #E5E5EF;">
+                <tr>
+                  <td width="50%" align="center" style="padding:16px 12px; border-right:1px solid #E5E5EF;">
+                    <p style="margin:0 0 4px 0; font-size:12px; color:#666666; text-transform:uppercase; letter-spacing:0.5px;">
+                      Cette commande
+                    </p>
+                    <p style="margin:0; font-size:22px; font-weight:bold; color:#333333;">
+                      {{ params.PRICE }} €
+                    </p>
+                  </td>
+                  <td width="50%" align="center" style="padding:16px 12px;">
+                    <p style="margin:0 0 4px 0; font-size:12px; color:#666666; text-transform:uppercase; letter-spacing:0.5px;">
+                      Solde restant
+                    </p>
+                    <p style="margin:0; font-size:22px; font-weight:bold; color:#2E7D32;">
+                      {{ params.REMAINING }} €
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2" align="center" style="padding:0 16px 14px 16px;">
+                    <p style="margin:0; font-size:12px; color:#888888;">
+                      Sur un montant accordé de {{ params.SPENDING_LIMIT }} €,
+                      participation aux frais de livraison comprise.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Contenu -->
+          <tr>
+            <td style="padding:20px 24px 0 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F7F7FA; border-radius:8px; border:1px solid #E5E5EF;">
+                <tr>
+                  <td style="padding:16px 20px;">
+                    <p style="margin:0 0 12px 0; font-size:13px; font-weight:bold; color:#3435FF; text-transform:uppercase; letter-spacing:0.5px;">
+                      Contenu du colis
+                    </p>
+                    <div style="font-size:14px; line-height:1.8; color:#444444;">
+                      {{ params.CONTENT }}
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:18px 24px 0 24px;">
+              <p style="margin:0; font-size:14px; line-height:1.6; color:#555555;">
+                La facture correspondante est établie au nom de votre structure.
+                Si un solde subsiste, la personne peut passer une nouvelle
+                commande jusqu'à la date d'échéance que vous avez fixée.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Pied -->
+          <tr>
+            <td style="padding:20px 24px 28px 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid #EEEEEE;">
+                <tr>
+                  <td style="padding-top:16px;">
+                    <p style="margin:0 0 6px 0; font-size:12px; line-height:1.6; color:#999999;">
+                      Ce message est envoyé automatiquement, merci de ne pas y répondre.
+                      Pour toute question, contactez l'épicerie solidaire.
+                    </p>
+                    <p style="margin:0; font-size:12px; color:#999999;">
+                      ESL22 — Banque Alimentaire des Côtes d'Armor
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>
