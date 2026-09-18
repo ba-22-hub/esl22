@@ -28,9 +28,6 @@
           "text": "Bons gestes, bonne assiette",
           "url": "https://bonsgestes-bonneassiette.org/"
         }
-      },
-      "image": {
-        "alt": "Woman in orange"
       }
     },
     "howToOrder": {
@@ -40,7 +37,7 @@
           "number": "1",
           "title": "Étude de dossier",
           "icon": "avatar",
-          "color": "#3435FF",
+          "color": "#1B62D4",
           "description": "Rendez-vous auprès des services sociaux de votre commune pour vérifier votre éligibilité et leur demander de nous transmettre votre dossier."
         },
         {
@@ -54,7 +51,7 @@
           "number": "3",
           "title": "À vos courses !",
           "icon": "cart",
-          "color": "#3435FF",
+          "color": "#1B62D4",
           "description": "Une fois votre compte activé, connectez-vous pour accéder à l'épicerie en ligne et commander vos produits à petit prix."
         }
       ]
@@ -78,7 +75,7 @@
           "name": "DPD",
           "url": "https://www.dpd.com/fr/fr/",
           "alt": "DPD"
-        } 
+        }
       ]
     }
   }

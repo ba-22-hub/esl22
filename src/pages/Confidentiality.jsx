@@ -5,7 +5,7 @@ function Confidentiality() {
                 <h1 className="text-center text-rayonblue text-5xl lg:text-7xl leading-tight pt-[2%] font-bold">Politique de Confidentialité</h1>
                 <div className="lg:p-32 flex flex-col gap-2 text-justify">
                     <h2 className="text-lg text-rayonorange font-semibold">1. Préambule</h2>
-                    La présente politique a pour objet de vous informer de manière claire et transparente sur l’utilisation des cookies et autres traceurs présents sur le site lerayon22.banquealimentaire.org (ci-après le « Site ») et dans les communications électroniques que vous êtes susceptible de recevoir de notre part.
+                    La présente politique a pour objet de vous informer de manière claire et transparente sur l’utilisation des cookies et autres traceurs présents sur le site www.esl22.fr (ci-après le « Site ») et dans les communications électroniques que vous êtes susceptible de recevoir de notre part.
                     <h2 className="text-lg text-rayonorange font-semibold">2. Qu’est-ce qu’un cookie ?</h2>
                     Les cookies sont de petits fichiers stockés par un serveur dans le terminal (ordinateur, téléphone, tablette, etc.) d’un utilisateur et associés à un domaine web (c’est-à-dire à l’ensemble des pages d’un même site web).  Ces fichiers sont automatiquement renvoyés lors de contacts ultérieurs avec le même domaine.
                     Il existe plusieurs types de cookies :
