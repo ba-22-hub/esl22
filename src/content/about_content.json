@@ -41,28 +41,6 @@
         "text": "Site de la Banque Alimentaire des Côtes d' Armor",
         "url": "https://ba22.banquealimentaire.org/"
       }
-    },
-    "leRayon": {
-      "title": "Le réseau Le RAYON",
-      "paragraphs": [
-        {
-          "text": "C'est un réseau des",
-          "highlight": "Banques Alimentaires",
-          "textAfter": "dédié à la distribution directe via des épiceries sociales, des camions itinérants et des initiatives spécifiquement pensées pour les jeunes et les étudiants."
-        },
-        {
-          "text": "Il offre une aide diversifiée et de qualité aux personnes vulnérables, là où elles en ont le plus besoin."
-        },
-        {
-          "text": "À l'heure actuelle, le nombre d’initiatives",
-          "highlight": "Le Rayon",
-          "textAfter": "s’étoffe de jour en jour partout en France"
-        }
-      ],
-      "button": {
-        "text": "Site national Le RAYON",
-        "url": "https://lerayon.banquealimentaire.org"
-      }
     }
   },
   "mission": {
@@ -87,10 +65,7 @@
   },
   "images": {
     "alt": {
-      "womanShelf": "Woman at shelf",
-      "ticketLogo": "ticket logo",
-      "birdLogo": "Banque Alimentaire logo",
-      "rayonLogo": "RAYON logo"
+      "birdLogo": "Banque Alimentaire logo"
     }
   }
 }

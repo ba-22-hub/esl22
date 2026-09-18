@@ -8,7 +8,7 @@ import ShapeNumber from "@common/ShapeNumber"
 import ProductCarousel from "@common/ProductCarouselHome"
 
 // Importing assets
-import orangeWoman from "@assets/Photos/giletorange2.png"
+import distribution from "@assets/Photos/distribution.jpg"
 import instagram from "@assets/logos/instagram.png"
 import dpd from "@assets/logos/dpd.png"
 import mondialRelay from "@assets/logos/mondialRelay.png"
@@ -114,70 +114,66 @@ function Home() {
     return (
         <>
             {/* Hero section avec design moderne */}
-            {/* Bleu des Côtes-d'Armor. L'orange des Banques Alimentaires est
-                conservé en accent : il tranche là où le vert se confondrait
-                avec la section suivante. */}
+            {/* Bleu des Côtes-d'Armor, l'image en fond du bandeau plutôt qu'en
+                colonne. L'orange des Banques Alimentaires est conservé en
+                accent : il tranche là où le vert se confondrait avec la
+                section suivante. */}
             <div className="relative overflow-hidden bg-gradient-to-br from-[#1B62D4] via-[#1553B8] to-[#0F429A]">
+                <img
+                    src={distribution}
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-luminosity pointer-events-none"
+                />
+
                 {/* Formes géométriques décoratives */}
                 <div className="absolute top-0 right-0 w-96 h-96 bg-[#FF8200] opacity-10 rounded-full blur-3xl"></div>
                 <div className="absolute bottom-0 left-0 w-80 h-80 bg-white opacity-5 rounded-full blur-3xl"></div>
 
                 <div className="max-w-7xl mx-auto px-6 lg:px-12 py-16 lg:py-24 relative z-10">
-                    <div className="flex flex-col lg:flex-row items-center gap-12">
-                        <div className="flex-1">
-                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-6 leading-tight">
-                                {hero.title.main} <span className="text-[#FF8200]">{hero.title.highlight}</span> {hero.title.end}
-                            </h1>
-                            <div className="space-y-6 text-white text-lg leading-relaxed mb-8">
-                                {hero.description.map((para, index) => (
-                                    <p key={index} className={para.isBold ? 'font-semibold' : ''}>
-                                        {para.text && para.text}
-                                        {para.bold && <strong>{` ${para.bold}`}</strong>}
-                                        {para.textAfter && ` ${para.textAfter}`}
-                                    </p>
-                                ))}
-                            </div>
-                            <div className="flex flex-col gap-6">
-                                {/* Bouton Se Connecter */}
-                                <div className="flex flex-col items-center gap-3 max-w-md">
-                                    <p className="text-white font-semibold text-center">
-                                        Afin de pouvoir commander des produits, il faut vous connecter à un compte.
-                                    </p>
-                                    <button
-                                        onClick={() => window.location.href = hero.buttons.primary.link}
-                                        className="bg-[#FF8200] hover:bg-[#ff9800] text-white px-8 py-4 rounded-lg text-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
-                                    >
-                                        {hero.buttons.primary.text}
-                                    </button>
-                                </div>
-                            </div>
+                    <div className="max-w-3xl">
+                        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-6 leading-tight drop-shadow-lg">
+                            {hero.title.main} <span className="text-[#FF8200]">{hero.title.highlight}</span> {hero.title.end}
+                        </h1>
+                        <div className="space-y-6 text-white text-lg leading-relaxed mb-8 drop-shadow">
+                            {hero.description.map((para, index) => (
+                                <p key={index} className={para.isBold ? 'font-semibold' : ''}>
+                                    {para.text && para.text}
+                                    {para.bold && <strong>{` ${para.bold}`}</strong>}
+                                    {para.textAfter && ` ${para.textAfter}`}
+                                </p>
+                            ))}
                         </div>
-                        <div className="hidden lg:flex relative">
-                            <div className="relative z-10 transform hover:scale-105 transition-transform duration-500">
-                                <img
-                                    src={orangeWoman}
-                                    className="w-full h-auto max-w-lg xl:max-w-xl mx-auto drop-shadow-2xl"
-                                    alt={hero.image.alt}
-                                />
-                            </div>
+
+                        {/* Bouton Se Connecter */}
+                        <div className="flex flex-col items-start gap-3 max-w-md">
+                            <p className="text-white font-semibold drop-shadow">
+                                Afin de pouvoir commander des produits, il faut vous connecter à un compte.
+                            </p>
+                            <button
+                                onClick={() => window.location.href = hero.buttons.primary.link}
+                                className="bg-[#FF8200] hover:bg-[#ff9800] text-white px-8 py-4 rounded-lg text-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
+                            >
+                                {hero.buttons.primary.text}
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* Comment commander avec design amélioré */}
-            {/* Vert des Côtes-d'Armor. Les cartes restent blanches : elles
-                assurent la lisibilité et rappellent la ligne claire qui sépare
-                le bleu du vert sur le drapeau. */}
-            <div className="py-20 bg-gradient-to-b from-[#0F8140] to-[#0C6E36]">
+            {/* Dégradé du blanc vers le vert des Côtes-d'Armor : les cartes
+                blanches s'y détachent, et la transition rappelle la ligne
+                claire qui sépare le bleu du vert sur le drapeau. */}
+            <div className="py-20 bg-gradient-to-b from-white via-[#3DA46A] to-[#0F8140]">
                 <div className="max-w-7xl mx-auto px-6 lg:px-12">
-                    <h2 className="text-center text-white text-4xl lg:text-5xl font-bold mb-16">
+                    <h2 className="text-center text-[#1B62D4] text-4xl lg:text-5xl font-bold mb-16">
                         {howToOrder.title}
                     </h2>
 
                     <div className="grid md:grid-cols-3 gap-8 relative">
                         {/* Ligne de connexion décorative */}
-                        <div className="hidden md:block absolute top-16 left-1/4 right-1/4 h-1 bg-white opacity-30"></div>
+                        <div className="hidden md:block absolute top-16 left-1/4 right-1/4 h-1 bg-[#3DA46A] opacity-40"></div>
 
                         {howToOrder.steps.map((step, index) => (
                             <div
