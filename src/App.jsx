@@ -48,6 +48,7 @@ import ClientNavbar from "@common/ClientNavbar";
 import UrgentOrderBanner from "@common/UrgentOrderBanner.jsx";
 import FirstConnection from "./pages/FirstConnection";
 import Cgu from "./pages/Cgu";
+import ScrollToTop from "@common/ScrollToTop.jsx";
 
 /**
  * A component wrapping all the website pages.
@@ -62,7 +63,7 @@ function App() {
 
       <ClientNavbar></ClientNavbar>
       <UrgentOrderBanner />
-
+      <ScrollToTop />
 
       {/* Creating the routes to the website pages */}
       <Routes>

@@ -2,8 +2,8 @@ function Confidentiality() {
     return (
         <>
             <div className="bg-white lg:w-[60%] lg:ml-[20%] mb-[5%]">
-                <h1 className="text-center text-rayonblue text-5xl lg:text-7xl leading-tight pt-[2%] font-bold">Politique de Confidentialité</h1>
-                <div className="lg:p-32 flex flex-col gap-2 text-justify">
+                <h1 className="text-center text-rayonblue text-2xl sm:text-3xl lg:text-5xl leading-tight pt-8 px-4 font-bold">Politique de Confidentialité</h1>
+                <div className="px-6 py-10 lg:p-20 flex flex-col gap-2 text-justify">
                     <h2 className="text-lg text-rayonorange font-semibold">1. Préambule</h2>
                     La présente politique a pour objet de vous informer de manière claire et transparente sur l’utilisation des cookies et autres traceurs présents sur le site www.esl22.fr (ci-après le « Site ») et dans les communications électroniques que vous êtes susceptible de recevoir de notre part.
                     <h2 className="text-lg text-rayonorange font-semibold">2. Qu’est-ce qu’un cookie ?</h2>
