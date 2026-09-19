@@ -2,8 +2,8 @@ export default function Cgu() {
     return (
         <>
             <div className="bg-white lg:w-[60%] lg:ml-[20%] mb-[5%] text-justify">
-                <h1 className="text-center text-rayonblue text-5xl lg:text-7xl leading-tight pt-[2%] font-bold">Condition générales d'utilisation du site esl22</h1>
-                <div className="p-32 flex flex-col gap-2">
+                <h1 className="text-center text-rayonblue text-2xl sm:text-3xl lg:text-5xl leading-tight pt-8 px-4 font-bold">Conditions générales d'utilisation</h1>
+                <div className="px-6 py-10 lg:p-20 flex flex-col gap-2">
                     <h2 className="text-lg text-rayonorange font-semibold">1. Préambule</h2>
                     <p>Les présentes conditions générales d’utilisation régissent l’ensemble des relations entre le site www.esl22.fr (ci-après « Site ») édité par la Banque Alimentaire des Côtes d’Armor (ci-après, la « BA22 ») dont l’identité et les coordonnées sont précisées dans la rubrique <a className="text-blue-400 underline font-semibold" href="/legal-mentions">« Mentions légales »</a> et le Visiteur du Site.
                     Tout Visiteur du Site est réputé avoir pris connaissance des présentes conditions générales d’utilisation. Lors de l’inscription sur le site, le visiteur accepte expressément les présentes CGU en cochant la case précédent le texte suivant « Je reconnais avoir lu et compris les CGU et les accepte »</p>
