@@ -2,13 +2,13 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import esl22Logo from "../assets/esl22/round_Logo_ESL22_circle_bleu.png";
-import banqueLogo from "../assets/logos/banquesAlimentaires.png";
+import banqueLogo from "../assets/logos/logo_ba_Côtes_d'Armor.webp";
 
 const Footer = () => {
     const  navigate  = useNavigate()
 
     return (
-        <footer className="bg-[#3435FF] mt-20">
+        <footer className="bg-[#1B62D4] mt-20">
             <div className="max-w-7xl mx-auto px-6 lg:px-12 py-14">
 
                 <div className="grid md:grid-cols-4 gap-12 items-start">
@@ -32,14 +32,14 @@ const Footer = () => {
                             >
                                 <img
                                     src={banqueLogo}
-                                    alt="Banques Alimentaires"
+                                    alt="Banques Alimentaires des Côtes d'Armor"
                                     className="h-16 w-auto object-contain"
                                 />
                             </a>
                         </div>
 
                         <p className="text-sm text-blue-100 leading-relaxed max-w-xs">
-                            L' <span className="font-semibold text-white">Epicerie en Ligne </span> est une initiative des Banques Alimentaires.
+                            L' <span className="font-semibold text-white">Epicerie en Ligne </span> est une initiative des Banques Alimentaires des Côtes d'Armor.
                         </p>
                     </div>
 
@@ -153,7 +153,7 @@ const Footer = () => {
                         </span>
                         <img
                             src={banqueLogo}
-                            alt="Banques Alimentaires"
+                            alt="Banques Alimentaires des Côtes d'Armor"
                             className="h-7 w-auto object-contain"
                         />
                     </div>

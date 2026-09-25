@@ -105,7 +105,7 @@ function Faq() {
         <div className="min-h-screen bg-white">
             {/* Header */}
             {/* <header className="bg-green-600 text-white py-4 px-8 text-center">
-                <div className="text-3xl font-bold mb-2">Le Rayon 22 – Banque Alimentaire des Côtes-d'Armor</div>
+                <div className="text-3xl font-bold mb-2">Banque Alimentaire des Côtes-d'Armor</div>
                 
                 Sidebar navigation realy needed ?? 
                 <div 

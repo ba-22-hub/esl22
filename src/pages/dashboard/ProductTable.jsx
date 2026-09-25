@@ -529,7 +529,7 @@ function ProductTable() {
                       type="number"
                       step="0.01"
                       value={formData.salePrice ?? ""}
-                      inputText="Prix rayon22 (€)"
+                      inputText="Prix esl22 (€)"
                       className="w-full h-10 px-3 rounded-lg border-2 border-rayonblue focus:ring-2 focus:ring-rayonorange"
                       onChange={handleChangeInForm}
                       isStarred={true}
@@ -792,7 +792,7 @@ function ProductTable() {
                     </div>
 
                     <div className="text-center">
-                      <p className="text-xs text-gray-500 mb-1">Prix rayon22 (€)</p>
+                      <p className="text-xs text-gray-500 mb-1">Prix esl22 (€)</p>
                       {editingProductId === p.id ? (
                         <input
                           name="salePrice"

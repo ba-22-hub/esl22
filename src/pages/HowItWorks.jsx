@@ -3,10 +3,11 @@ import PageButton from "@common/PageButton"
 import ShapeNumber from "@common/ShapeNumber"
 
 // Importing assets
-import mosaique from "@assets/Photos/mosaique.png"
+import mosaique from "@assets/Photos/mosaïque_1.jpg"
 import bigRoundLogo from "@assets/esl22/round_Logo_ESL22_circle_orange.png"
 import holdingApple from "@assets/Photos/holdingApple.jpg"
 import beams from "@assets/Assets/Rayons-traits bleus.png"
+import livraison from "@assets/Photos/livraison.jpg"
 
 /**
  * The How It Works page.
@@ -16,7 +17,17 @@ function HowItWorks() {
     return (
         <>
             {/* Hero section avec design moderne */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-[#3435FF] via-[#2526B7] to-[#1F2099]">
+            {/* La mosaïque passe en fond du bandeau plutôt qu'en colonne : elle
+                se trouvait repoussée très bas par la longueur du texte, et
+                étirait la page d'autant. */}
+            <div className="relative overflow-hidden bg-gradient-to-br from-[#1B62D4] via-[#1553B8] to-[#0F429A]">
+                <img
+                    src={mosaique}
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-luminosity pointer-events-none"
+                />
+
                 {/* Formes géométriques décoratives */}
                 <div className="absolute top-0 right-0 w-96 h-96 bg-[#FF8200] opacity-10 rounded-full blur-3xl"></div>
                 <div className="absolute bottom-0 left-0 w-80 h-80 bg-white opacity-5 rounded-full blur-3xl"></div>
@@ -86,46 +97,36 @@ function HowItWorks() {
                             </div>
                         </div>
 
-                        <div className="flex-1 relative lg:flex-[1.2]">
-                            <div className="relative z-10 transform hover:scale-105 transition-transform duration-500">
-                                <img src={mosaique} className="w-full h-auto max-w-2xl mx-auto drop-shadow-2xl" alt="Mosaique" />
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
 
             {/* Infos livraison avec design moderne */}
-            <div className="py-20 bg-gradient-to-b from-white to-gray-50">
-                <div className="max-w-7xl mx-auto px-6 lg:px-12">
-                    <h2 className="text-center text-[#3435FF] text-4xl lg:text-5xl font-bold mb-4">Infos livraison</h2>
-                    <p className="text-center text-gray-600 text-lg mb-16">Comment récupérer votre commande en 4 étapes simples</p>
+            {/* L'image passe en fond de la section plutôt qu'en colonne : les
+                étapes occupent alors toute la largeur, et la page se resserre. */}
+            <div className="relative overflow-hidden py-20 bg-gradient-to-b from-white via-[#3DA46A] to-[#0F8140]">
+                <img
+                    src={livraison}
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute inset-0 w-full h-full object-cover opacity-15 mix-blend-luminosity pointer-events-none"
+                />
 
-                    <div className="grid lg:grid-cols-2 gap-12 items-center">
-                        {/* Image avec effet */}
-                        <div className="flex justify-center lg:justify-start order-2 lg:order-1">
-                            <div className="relative">
-                                <div className="absolute inset-0 bg-[#3435FF] blur-2xl opacity-20 rounded-full transform scale-110"></div>
-                                <img
-                                    src={holdingApple}
-                                    className="relative z-10 w-full max-w-md h-auto object-cover rounded-2xl shadow-2xl transform -rotate-3 hover:rotate-0 transition-transform duration-500"
-                                    alt="Holding Apple"
-                                />
-                            </div>
-                        </div>
+                <div className="relative z-10 max-w-5xl mx-auto px-6 lg:px-12">
+                    <h2 className="text-center text-[#1B62D4] text-4xl lg:text-5xl font-bold mb-4">Infos livraison</h2>
+                    <p className="text-center text-gray-600 text-lg mb-12">Comment récupérer votre commande en 4 étapes simples</p>
 
-                        {/* Étapes avec cartes */}
-                        <div className="space-y-6 order-1 lg:order-2">
+                    <div className="space-y-6">
                             {/* Step 01 */}
-                            <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 border-l-4 border-[#3435FF]">
+                            <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 border-l-4 border-[#1B62D4]">
                                 <div className="flex items-start gap-4">
                                     <div className="flex-shrink-0">
-                                        <div className="w-12 h-12 bg-[#3435FF] rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                        <div className="w-12 h-12 bg-[#1B62D4] rounded-full flex items-center justify-center text-white font-bold text-lg">
                                             1
                                         </div>
                                     </div>
                                     <div className="flex-1">
-                                        <h3 className="text-[#3435FF] text-xl font-bold mb-2">Confirmation et Notification</h3>
+                                        <h3 className="text-[#1B62D4] text-xl font-bold mb-2">Confirmation et Notification</h3>
                                         <p className="text-gray-700 leading-relaxed">
                                             Une fois la commande effectuée, je suis notifié par e-mail de la disponibilité de mon colis au relais Pickup (il y <span className="font-semibold text-[#FF8200]">sera disponible pendant 9 jours</span>).
                                         </p>
@@ -151,15 +152,15 @@ function HowItWorks() {
                             </div>
 
                             {/* Step 03 */}
-                            <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 border-l-4 border-[#3435FF]">
+                            <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 border-l-4 border-[#1B62D4]">
                                 <div className="flex items-start gap-4">
                                     <div className="flex-shrink-0">
-                                        <div className="w-12 h-12 bg-[#3435FF] rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                        <div className="w-12 h-12 bg-[#1B62D4] rounded-full flex items-center justify-center text-white font-bold text-lg">
                                             3
                                         </div>
                                     </div>
                                     <div className="flex-1">
-                                        <h3 className="text-[#3435FF] text-xl font-bold mb-2">Relance en cas d'oubli</h3>
+                                        <h3 className="text-[#1B62D4] text-xl font-bold mb-2">Relance en cas d'oubli</h3>
                                         <p className="text-gray-700 leading-relaxed">
                                             Je suis relancé à J+3 par SMS et e-mail si je n'ai pas encore retiré mon colis au relais Pickup.
                                         </p>
@@ -184,47 +185,49 @@ function HowItWorks() {
                                 </div>
                             </div>
                         </div>
-                    </div>
                 </div>
             </div>
 
             {/* Section Contact et plus avec design moderne */}
-            <div className="py-20 bg-white">
-                <div className="lg:max-w-7xl mx-auto px-6 lg:px-12">
-                    <div className="grid lg:grid-cols-2 gap-16 items-start">
-                        {/* Colonne gauche - Contenu */}
-                        <div className="space-y-12">
-                            {/* FAQ */}
-                            <div className="bg-gradient-to-br from-blue-50 to-white p-8 rounded-2xl shadow-xl border-t-4 border-[#3435FF]">
-                                <h2 className="text-[#3435FF] text-3xl lg:text-4xl font-bold mb-2">FAQ</h2>
-                                <p className="text-gray-500 italic mb-6">Foire Aux Questions</p>
-                                <div className="space-y-4 text-gray-700 leading-relaxed mb-8">
-                                    <p className="flex items-start gap-3">
-                                        <span className="text-[#FF8200] text-2xl font-bold flex-shrink-0">→</span>
-                                        <span>Retrouvez les réponses aux questions les plus fréquemment posées sur le fonctionnement de l'épicerie solidaire.</span>
-                                    </p>
-                                </div>
-                                <div className="flex-c lg:flex-l">
-                                    <button
-                                        onClick={() => window.location.href = '/Faq'}
-                                        className="w-[225px] bg-[#FF8200] hover:bg-[#ff9800] text-white px-8 py-3 rounded-lg text-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
-                                    >
-                                        Consulter la FAQ
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+            {/* Resserrée : un titre, une phrase et un bouton n'ont pas besoin
+                de deux colonnes pleine hauteur. Tout tient désormais sur une
+                seule bande. */}
+            <div className="py-12 bg-white">
+                <div className="lg:max-w-5xl mx-auto px-6 lg:px-12">
+                    <div className="bg-gradient-to-br from-blue-50 to-white p-6 lg:p-8 rounded-2xl shadow-xl border-t-4 border-[#1B62D4]">
+                        <div className="flex flex-col lg:flex-row items-center gap-6">
 
-                        {/* Colonne droite - Logo */}
-                        <div className="hidden lg:flex justify-center items-center">
-                            <div className="relative">
-                                <div className="absolute inset-0 bg-gradient-to-br from-[#3435FF] to-[#FF8200] blur-3xl opacity-20 rounded-full"></div>
+                            {/* Logo */}
+                            <div className="hidden lg:block relative flex-shrink-0">
+                                <div className="absolute inset-0 bg-gradient-to-br from-[#1B62D4] to-[#FF8200] blur-2xl opacity-20 rounded-full"></div>
                                 <img
                                     src={bigRoundLogo}
-                                    className="relative z-10 w-full max-w-xs h-auto object-contain transform hover:scale-105 transition-transform duration-500"
+                                    className="relative z-10 w-32 h-auto object-contain"
                                     alt="ESL22 en ligne logo"
                                 />
                             </div>
+
+                            {/* Texte */}
+                            <div className="flex-1 text-center lg:text-left">
+                                <h2 className="text-[#1B62D4] text-2xl lg:text-3xl font-bold mb-2">
+                                    Foire Aux Questions
+                                </h2>
+                                <p className="text-gray-700 leading-relaxed">
+                                    Retrouvez les réponses aux questions les plus fréquemment posées
+                                    sur le fonctionnement de l'épicerie solidaire.
+                                </p>
+                            </div>
+
+                            {/* Bouton */}
+                            <div className="flex-shrink-0">
+                                <button
+                                    onClick={() => window.location.href = '/Faq'}
+                                    className="w-[225px] bg-[#FF8200] hover:bg-[#ff9800] text-white px-8 py-3 rounded-lg text-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
+                                >
+                                    Consulter la FAQ
+                                </button>
+                            </div>
+
                         </div>
                     </div>
                 </div>

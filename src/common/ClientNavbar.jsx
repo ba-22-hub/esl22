@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useAuthor } from "@context/AuthorContext.jsx";
 import esl22Logo from "../assets/esl22/round_Logo_ESL22_circle_bleu.png";
-import banqueLogo from "../assets/esl22/Logo_Banque_Alimentaire.jpg";
+import banqueLogo from "../assets/logos/logo_ba_Côtes_d'Armor.jpg";
 import avatar from "@assets/Assets/avatar2.png"
 
 function ClientNavbar() {
@@ -42,30 +42,30 @@ function ClientNavbar() {
 
                     {/* Navigation centrale - visible à partir de lg */}
                     <div className="hidden lg:flex items-center space-x-2">
-                        <Link to="/about" className="text-[#3435FF] hover:text-white hover:bg-[#3435FF] px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                        <Link to="/about" className="text-[#1B62D4] hover:text-white hover:bg-[#1B62D4] px-4 py-2 rounded-lg text-sm font-medium transition-all">
                             Qui sommes-nous ?
                         </Link>
-                        <Link to="/how-it-works" className="text-[#3435FF] hover:text-white hover:bg-[#3435FF] px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                        <Link to="/how-it-works" className="text-[#1B62D4] hover:text-white hover:bg-[#1B62D4] px-4 py-2 rounded-lg text-sm font-medium transition-all">
                             Comment ça marche ?
                         </Link>
-                        <Link to="/more" className="text-[#3435FF] hover:text-white hover:bg-[#3435FF] px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                        <Link to="/more" className="text-[#1B62D4] hover:text-white hover:bg-[#1B62D4] px-4 py-2 rounded-lg text-sm font-medium transition-all">
                             Toujours plus
                         </Link>
-                        <Link to="/catalog" className="text-[#3435FF] hover:text-white hover:bg-[#3435FF] px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                        <Link to="/catalog" className="text-[#1B62D4] hover:text-white hover:bg-[#1B62D4] px-4 py-2 rounded-lg text-sm font-medium transition-all">
                             Nos produits
                         </Link>
-                        <Link to="/cart" className="text-[#3435FF] hover:text-white hover:bg-[#3435FF] px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                        <Link to="/cart" className="text-[#1B62D4] hover:text-white hover:bg-[#1B62D4] px-4 py-2 rounded-lg text-sm font-medium transition-all">
                             🛒 Mon panier
                         </Link>
-                        <Link to="/delivery" className="text-[#3435FF] hover:text-white hover:bg-[#3435FF] px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                        <Link to="/delivery" className="text-[#1B62D4] hover:text-white hover:bg-[#1B62D4] px-4 py-2 rounded-lg text-sm font-medium transition-all">
                             📦 Mes livraisons
                         </Link>
                         {isMds && (
-                            <Link to="/urgent-beneficiaries" className="text-[#3435FF] hover:text-white hover:bg-[#3435FF] px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                            <Link to="/urgent-beneficiaries" className="text-[#1B62D4] hover:text-white hover:bg-[#1B62D4] px-4 py-2 rounded-lg text-sm font-medium transition-all">
                                 🆘 Mes bénéficiaires
                             </Link>
                         )}
-                        <Link to="/contact" className="text-[#3435FF] hover:text-white hover:bg-[#3435FF] px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                        <Link to="/contact" className="text-[#1B62D4] hover:text-white hover:bg-[#1B62D4] px-4 py-2 rounded-lg text-sm font-medium transition-all">
                             ✉️ Nous contacter
                         </Link>
                     </div>
@@ -88,7 +88,7 @@ function ClientNavbar() {
                         </Link>
                         <button
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            className="text-[#3435FF] text-2xl font-bold hover:text-[#5253ff] focus:outline-none transition-colors"
+                            className="text-[#1B62D4] text-2xl font-bold hover:text-[#4A8AE0] focus:outline-none transition-colors"
                         >
                             {isMenuOpen ? "✕" : "☰"}
                         </button>
@@ -105,42 +105,42 @@ function ClientNavbar() {
                     <Link
                         to="/about"
                         onClick={() => setIsMenuOpen(false)}
-                        className="block text-[#3435FF] hover:bg-[#3435FF] hover:text-white px-4 py-3 rounded-lg text-base font-medium transition-all"
+                        className="block text-[#1B62D4] hover:bg-[#1B62D4] hover:text-white px-4 py-3 rounded-lg text-base font-medium transition-all"
                     >
                         Qui sommes-nous ?
                     </Link>
                     <Link
                         to="/how-it-works"
                         onClick={() => setIsMenuOpen(false)}
-                        className="block text-[#3435FF] hover:bg-[#3435FF] hover:text-white px-4 py-3 rounded-lg text-base font-medium transition-all"
+                        className="block text-[#1B62D4] hover:bg-[#1B62D4] hover:text-white px-4 py-3 rounded-lg text-base font-medium transition-all"
                     >
                         Comment ça marche ?
                     </Link>
                     <Link
                         to="/more"
                         onClick={() => setIsMenuOpen(false)}
-                        className="block text-[#3435FF] hover:bg-[#3435FF] hover:text-white px-4 py-3 rounded-lg text-base font-medium transition-all"
+                        className="block text-[#1B62D4] hover:bg-[#1B62D4] hover:text-white px-4 py-3 rounded-lg text-base font-medium transition-all"
                     >
                         Toujours plus
                     </Link>
                     <Link
                         to="/catalog"
                         onClick={() => setIsMenuOpen(false)}
-                        className="block text-[#3435FF] hover:bg-[#3435FF] hover:text-white px-4 py-3 rounded-lg text-base font-medium transition-all"
+                        className="block text-[#1B62D4] hover:bg-[#1B62D4] hover:text-white px-4 py-3 rounded-lg text-base font-medium transition-all"
                     >
                         Nos produits
                     </Link>
                     <Link
                         to="/cart"
                         onClick={() => setIsMenuOpen(false)}
-                        className="block text-[#3435FF] hover:bg-[#3435FF] hover:text-white px-4 py-3 rounded-lg text-base font-medium transition-all"
+                        className="block text-[#1B62D4] hover:bg-[#1B62D4] hover:text-white px-4 py-3 rounded-lg text-base font-medium transition-all"
                     >
                         🛒 Mon panier
                     </Link>
                     <Link
                         to="/delivery"
                         onClick={() => setIsMenuOpen(false)}
-                        className="block text-[#3435FF] hover:bg-[#3435FF] hover:text-white px-4 py-3 rounded-lg text-base font-medium transition-all"
+                        className="block text-[#1B62D4] hover:bg-[#1B62D4] hover:text-white px-4 py-3 rounded-lg text-base font-medium transition-all"
                     >
                         📦 Mes livraisons
                     </Link>
@@ -148,7 +148,7 @@ function ClientNavbar() {
                         <Link
                             to="/urgent-beneficiaries"
                             onClick={() => setIsMenuOpen(false)}
-                            className="block text-[#3435FF] hover:bg-[#3435FF] hover:text-white px-4 py-3 rounded-lg text-base font-medium transition-all"
+                            className="block text-[#1B62D4] hover:bg-[#1B62D4] hover:text-white px-4 py-3 rounded-lg text-base font-medium transition-all"
                         >
                             🆘 Mes bénéficiaires
                         </Link>
@@ -156,7 +156,7 @@ function ClientNavbar() {
                     <Link
                         to="/contact"
                         onClick={() => setIsMenuOpen(false)}
-                        className="block text-[#3435FF] hover:bg-[#3435FF] hover:text-white px-4 py-3 rounded-lg text-base font-medium transition-all"
+                        className="block text-[#1B62D4] hover:bg-[#1B62D4] hover:text-white px-4 py-3 rounded-lg text-base font-medium transition-all"
                     >
                         ✉️ Nous contacter
                     </Link>

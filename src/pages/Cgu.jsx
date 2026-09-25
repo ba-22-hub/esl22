@@ -2,10 +2,10 @@ export default function Cgu() {
     return (
         <>
             <div className="bg-white lg:w-[60%] lg:ml-[20%] mb-[5%] text-justify">
-                <h1 className="text-center text-rayonblue text-5xl lg:text-7xl leading-tight pt-[2%] font-bold">Condition générales d'utilisation du site esl22</h1>
-                <div className="p-32 flex flex-col gap-2">
+                <h1 className="text-center text-rayonblue text-2xl sm:text-3xl lg:text-5xl leading-tight pt-8 px-4 font-bold">Conditions générales d'utilisation</h1>
+                <div className="px-6 py-10 lg:p-20 flex flex-col gap-2">
                     <h2 className="text-lg text-rayonorange font-semibold">1. Préambule</h2>
-                    <p>Les présentes conditions générales d’utilisation régissent l’ensemble des relations entre le site esl22.fr (ci-après « Site ») édité par la Banque Alimentaire des Côtes d’Armor (ci-après, la « BA22 ») dont l’identité et les coordonnées sont précisées dans la rubrique <a className="text-blue-400 underline font-semibold" href="https://rayon22namespaceipzcor69-container-stupefied-moser.functions.fnc.fr-par.scw.cloud/legal-mentions">« Mentions légales »</a> et le Visiteur du Site.
+                    <p>Les présentes conditions générales d’utilisation régissent l’ensemble des relations entre le site www.esl22.fr (ci-après « Site ») édité par la Banque Alimentaire des Côtes d’Armor (ci-après, la « BA22 ») dont l’identité et les coordonnées sont précisées dans la rubrique <a className="text-blue-400 underline font-semibold" href="/legal-mentions">« Mentions légales »</a> et le Visiteur du Site.
                     Tout Visiteur du Site est réputé avoir pris connaissance des présentes conditions générales d’utilisation. Lors de l’inscription sur le site, le visiteur accepte expressément les présentes CGU en cochant la case précédent le texte suivant « Je reconnais avoir lu et compris les CGU et les accepte »</p>
                     <h2 className="text-lg text-rayonorange font-semibold">2.  Objet et description</h2>
                     Les présentes ont pour objet de fixer les conditions d’utilisation du Site et de l’ensemble des pages du Site <h4 className="text-lg font-semibold"> d'épicerie Sociale en Ligne (esl22.fr)</h4>.
@@ -43,7 +43,7 @@ export default function Cgu() {
                     Tout lien pointant vers le Site doit être autorisé par la BA22 pour établir ce lien.
                     En aucun cas, cette autorisation ne pourra être qualifiée de convention implicite d’affiliation. En toute hypothèse, les liens hypertextes renvoyant au Site devront être retirés à première demande de la BA22.
                     <h2 className="text-lg text-rayonorange font-semibold">8.  Données à caractère personnel</h2>
-                    <p>Pour en savoir plus sur le traitement de ses données à caractère personnel et sur l’étendue de ses droits, l’Utilisateur est invité à se reporter à la <a className="text-blue-400 underline font-semibold" href="https://lerayon.banquealimentaire.org/politique-dutilisation-des-cookies/">Politique de protection des données personnelles</a>.</p>
+                    <p>Pour en savoir plus sur le traitement de ses données à caractère personnel et sur l’étendue de ses droits, l’Utilisateur est invité à se reporter à la <a className="text-blue-400 underline font-semibold" href="/confidentiality">Politique de protection des données personnelles</a>.</p>
                     <h2 className="text-lg text-rayonorange font-semibold">9.  Responsabilité de la FFBA</h2>
                     <h3 className="text-md font-semibold text-rayonblue ml-10">9.1 Responsabilité générale</h3>
                     La BA22 ne saurait être tenue responsable :

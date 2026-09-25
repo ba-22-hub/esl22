@@ -107,7 +107,7 @@ const CookiePopup = () => {
                             serviceCounterLabel: 'Service|Services',
                             sections: [
                                 {
-                                    title: 'Cookies Rayon22',
+                                    title: 'Cookies esl22',
                                     description: `Plusieurs catégories de cookies sont utilisées sur ce site, chacune ayant une finalité propre.`,
                                 },
                                 {

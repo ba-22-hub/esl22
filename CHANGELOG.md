@@ -1,3 +1,13 @@
+## [test-4.6.1] - 2026-09-19
+ - merge depuis branche feature/couleurs-cotes-armor
+ - ajustements pour mobile 
+
+
+## [test-4.6.0] - 2026-09-18
+- merge depuis branche feature/couleurs-cotes-armor 
+- retrait de toute notion rayon 
+- changement des couleurs en s'inspirant du drapeau des Côtes d'Armor
+
 ## v15 - 2026-09-12 (esl22.fr)
 - Merge de l'étape 2 dans la branche main
 - ### Corrigé 
