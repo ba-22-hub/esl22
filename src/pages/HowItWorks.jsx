@@ -5,7 +5,6 @@ import ShapeNumber from "@common/ShapeNumber"
 // Importing assets
 import mosaique from "@assets/Photos/mosaïque_1.jpg"
 import bigRoundLogo from "@assets/esl22/round_Logo_ESL22_circle_orange.png"
-import holdingApple from "@assets/Photos/holdingApple.jpg"
 import beams from "@assets/Assets/Rayons-traits bleus.png"
 import livraison from "@assets/Photos/livraison.jpg"
 
