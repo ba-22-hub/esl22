@@ -1,3 +1,7 @@
+## V16 - 2026-09-25
+- merge depuis branche develop (reprise complet du design du site)
+
+
 ## [test-4.6.1] - 2026-09-19
  - merge depuis branche feature/couleurs-cotes-armor
  - ajustements pour mobile 
