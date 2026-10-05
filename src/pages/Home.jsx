@@ -16,7 +16,6 @@ import pickup from "@assets/logos/pickup.png"
 import avatar from "@assets/Assets/avatar.png"
 import file from "@assets/Assets/file.png"
 import cart from "@assets/Assets/cart.png"
-import phoneApp from "@assets/Photos/phoneApp.png"
 import content from "../content/home_content.json"
 import cotesArmor from "@assets/esl22/Logo_Côtes d'Armor.jpeg"
 

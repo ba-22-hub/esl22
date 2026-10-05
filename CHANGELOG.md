@@ -1,5 +1,28 @@
+
+
+## [test-4.6.2] - 2026-10-04
+### Supprimé
+- Références à l'ancien réseau dans les CGU, la politique de confidentialité
+  et le contenu de la page « Qui sommes-nous ».
+- Images non utilisées du dossier `Photos`, dont un doublon de 3,7 Mo.
+
+
+## V16 - 2026-09-25
+- merge depuis branche develop (reprise complet du design du site)
+
+
 ## [test-4.6.1] - 2026-09-19
- - merge depuis branche feature/couleurs-cotes-armor
+### Modifié
+- Palette reprise des couleurs des Côtes-d'Armor : bleu `#1B62D4` et vert `#0F8140`,
+  l'orange des Banques Alimentaires conservé pour les boutons et les actions.
+- Pages d'accueil, « Qui sommes-nous », « Comment ça marche » et « Toujours plus » :
+  les images passent en filigrane du bandeau plutôt qu'en bande pleine, ce qui
+  resserre les pages de plusieurs centaines de pixels. Sections secondaires sur
+  dégradé du blanc vers le vert.
+- Pages légales lisibles sur mobile : titres de taille progressive et marges
+  adaptées, là où `text-5xl` et `p-32` fixes débordaient sur petit écran.
+- Nouveau composant `ScrollToTop` : retour en haut de page à chaque changement
+  d'adresse, pour tout le site.
  - ajustements pour mobile 
 
 
