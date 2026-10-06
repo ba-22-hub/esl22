@@ -1,4 +1,11 @@
+## [test-4.6.3] - 2026-10-06
+### Corrigé
+- **Paiement refusé au-delà d'une dizaine d'articles.** Le panier était transmis à Stripe sous forme d'identifiants et de quantités ; un identifiant UUID occupant 36 caractères, la limite de 500 caractères par métadonnée était dépassée et la transaction échouait. Le panier est désormais déposé dans une nouvelle table `PendingCheckout` avant la redirection, Stripe n'en recevant plus que la référence — taille fixe, quel que soit le nombre d'articles. La ligne est supprimée une fois la commande enregistrée, et un passage quotidien à 3 h élimine les paiements abandonnés.
+- **`create-checkout-session` : paramètre `payment_method_types` retiré**, Stripe ne l'acceptant plus — les moyens de paiement se règlent désormais depuis leur tableau de bord. Le défaut était latent : la fonction tournait encore sur un ancien paquet, et tout redéploiement, même sans rapport, aurait interrompu les paiements.
+- **Version de la bibliothèque Stripe figée à 23.0.0** dans `create-checkout-session` et `retrieve-checkout-session`. L'import en `@latest` faisait évoluer le code au gré des redéploiements, sans modification de notre part — c'est ce qui a provoqué la rupture ci-dessus.
 
+### Sécurité
+- Le montant de la commande est recalculé à partir des tarifs lus en base, et non repris de la valeur transmise par le navigateur.
 
 ## [test-4.6.2] - 2026-10-04
 ### Supprimé
