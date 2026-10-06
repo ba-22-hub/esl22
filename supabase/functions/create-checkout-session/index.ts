@@ -1,4 +1,9 @@
-import Stripe from "npm:stripe@latest";
+// Version figée : « latest » a introduit une rupture lors d'un simple
+// redéploiement, les moyens de paiement n'étant plus déclarés ici mais dans
+// le tableau de bord Stripe.
+import Stripe from "npm:stripe@23.0.0";
+import { createClient } from "npm:@supabase/supabase-js";
+
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY"));
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -27,10 +32,42 @@ Deno.serve(async (req)=>{
         }
       });
     }
+    // Le panier est déposé en base avant la redirection : Stripe limite chaque
+    // valeur de métadonnée à 500 caractères, et une dizaine d'articles suffisait
+    // à dépasser cette limite. Seule la référence de cette ligne lui est
+    // transmise — 36 caractères, quel que soit le nombre d'articles.
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL"),
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+
+    const { data: pending, error: pendingError } = await supabaseAdmin
+      .from("PendingCheckout")
+      .insert({
+        client_id: userId,
+        items: cart.map((p) => ({ id: p.id, qty: p.quantity })),
+        pickupPointId: pickupPointId
+      })
+      .select("id")
+      .single();
+
+    if (pendingError || !pending) {
+      console.error("💥 Dépôt du panier impossible :", pendingError);
+      return new Response(JSON.stringify({
+        error: "Impossible de préparer le paiement"
+      }), {
+        status: 500,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json"
+        }
+      });
+    }
+
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: [
-        "card"
-      ],
+      // payment_method_types n'est plus accepté : les moyens de paiement se
+      // règlent désormais depuis le tableau de bord Stripe.
       allow_promotion_codes: false,
       mode: "payment",
       customer_creation: "if_required",
@@ -69,17 +106,9 @@ Deno.serve(async (req)=>{
       cancel_url: cancelUrl,
       locale: "fr",
       metadata: {
-        // 🔧 VERSION ALLÉGÉE : Stocker moins d'infos
-        cart: JSON.stringify({
-          client_id: userId,
-          pickup_point: pickupPointId,
-          items: cart.map((p)=>({
-              id: p.id,
-              qty: p.quantity
-            })),
-          price: cart.reduce((total, p)=>total + p.salePrice * p.quantity, 0),
-          delivered: false
-        })
+        // Référence du panier déposé en base. Taille fixe, donc jamais de
+        // dépassement de la limite imposée par Stripe.
+        pending_checkout_id: pending.id
       }
     });
     console.log("✅ Session Stripe créée :", session.url);
