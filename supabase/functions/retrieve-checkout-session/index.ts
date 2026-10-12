@@ -1,4 +1,5 @@
-import Stripe from "npm:stripe@latest";
+// Version figée : « latest » expose à une rupture au moindre redéploiement.
+import Stripe from "npm:stripe@23.0.0";
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY"));
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -40,7 +41,12 @@ Deno.serve(async (req)=>{
     }
     const session = await stripe.checkout.sessions.retrieve(session_id);
     console.log("✅ Session Stripe récupérée :", session);
-    const cartToValidate = session.metadata?.cart ? JSON.parse(session.metadata.cart) : null;
+    // Les métadonnées ne portent plus que la référence du panier déposé en
+    // base avant le paiement : Stripe les limite à 500 caractères, ce qu'une
+    // dizaine d'articles suffisait à dépasser.
+    const cartToValidate = session.metadata?.pending_checkout_id
+      ? { pending_checkout_id: session.metadata.pending_checkout_id }
+      : null;
     return new Response(JSON.stringify({
       payment_status: session.payment_status,
       cartToValidate

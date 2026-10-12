@@ -174,7 +174,42 @@ function PaymentSuccess() {
                 if (data?.payment_status === "paid" && data?.cartToValidate) {
                     displayNotification("Paiement validé", "Votre commande est en cours de traitement", "success")
 
-                    const cartMetadata = data.cartToValidate;
+                    // Le panier a été déposé en base avant la redirection vers
+                    // Stripe, qui n'en a reçu que la référence : ses métadonnées
+                    // sont limitées à 500 caractères, ce qu'une dizaine
+                    // d'articles suffisait à dépasser.
+                    const pendingId = data.cartToValidate.pending_checkout_id;
+
+                    if (!pendingId) {
+                        displayNotification("Erreur", "Référence de panier introuvable", "danger");
+                        setIsProcessing(false);
+                        navigate("/cart");
+                        return;
+                    }
+
+                    const { data: pending, error: pendingError } = await supabase
+                        .from("PendingCheckout")
+                        .select("*")
+                        .eq("id", pendingId)
+                        .single();
+
+                    if (pendingError || !pending) {
+                        displayNotification(
+                            "Erreur",
+                            "Votre panier n'a pas pu être retrouvé. Contactez l'épicerie en indiquant votre paiement.",
+                            "danger",
+                            0
+                        );
+                        setIsProcessing(false);
+                        return;
+                    }
+
+                    const cartMetadata = {
+                        client_id: pending.client_id,
+                        pickup_point: pending.pickupPointId,
+                        items: pending.items,
+                        delivered: false
+                    };
 
                     // RECONSTITUER LES DONNÉES COMPLÈTES DES PRODUITS
                     const productIds = cartMetadata.items.map(item => item.id);
@@ -209,11 +244,19 @@ function PaymentSuccess() {
                         };
                     });
 
+                    // Le prix est calculé à partir des tarifs relus en base,
+                    // et non d'un montant transmis par le navigateur.
+                    const cartPrice = roundTwoDigits(
+                        fullCartContent
+                            .map((product) => parseFloat(product.salePrice) * parseFloat(product.quantity))
+                            .reduce((total, price) => total + price, 0)
+                    )
+
                     // Créer l'objet cart complet pour insertion
                     const cartToInsert = {
                         client_id: cartMetadata.client_id,
                         content: fullCartContent,
-                        price: cartMetadata.price + shippingCost,
+                        price: cartPrice + shippingCost,
                         delivered: cartMetadata.delivered,
                         pickupPoint: cartMetadata.pickup_point
                     };
@@ -245,11 +288,6 @@ function PaymentSuccess() {
                         fullCartContent
                             .map((product) => parseFloat(product.quantity))
                             .reduce((total, qty) => total + qty, 0)
-                    )
-                    const cartPrice = roundTwoDigits(
-                        fullCartContent
-                            .map((product) => parseFloat(product.salePrice) * parseFloat(product.quantity))
-                            .reduce((total, price) => total + price, 0)
                     )
 
                     // Insert cart in database
@@ -368,7 +406,7 @@ function PaymentSuccess() {
                                 },
                                 items: fullCartContent,
                                 shippingCost,
-                                totalPrice: cartMetadata.price + shippingCost,
+                                totalPrice: cartPrice + shippingCost,
                             },
                         }).then(({ error }) => {
                             if (error) {
@@ -394,7 +432,7 @@ function PaymentSuccess() {
                                 FIRSTNAME: name || "Client",
                                 COMMAND_NUMBER: dataInsertedCart.id.slice(0, 8),
                                 CONTENT: fullCartContent.map(item => `- ${item.name} x ${item.quantity}<br>`).join(""),
-                                PRICE: (cartMetadata.price + shippingCost).toFixed(2).replace('.', ','),
+                                PRICE: (cartPrice + shippingCost).toFixed(2).replace('.', ','),
                                 PICKUP_POINT_NAME: pickupPoint.name,
                                 PICKUP_POINT_ADDRESS: `${pickupPoint.address1} ${pickupPoint.address2}, ${pickupPoint.zipCode} ${pickupPoint.city}`
                             },
@@ -404,6 +442,10 @@ function PaymentSuccess() {
                     } catch (error) {
                         displayNotification("Erreur d'envoi de l'e-mail", error.message, "danger")
                     }
+
+                    // La commande est enregistrée : le panier déposé avant le
+                    // paiement n'a plus d'objet.
+                    await supabase.from("PendingCheckout").delete().eq("id", pendingId);
 
                     // Empty the cart
                     setCart({ content: {} });
