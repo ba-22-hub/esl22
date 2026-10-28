@@ -190,7 +190,7 @@ function ProductCarousel({ data }) {
 
   function DisplayProduct({ product }) {
     return (
-      <div className="bg-white shadow-lg rounded-2xl overflow-hidden w-64 lg:w-72 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 border border-gray-100">
+      <div className="bg-white shadow-lg rounded-2xl overflow-hidden w-60 sm:w-64 lg:w-72 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 border border-gray-100">
         <div className="bg-gradient-to-br from-blue-50 to-white p-4 border-b-2 border-[#3435FF]">
           <div className="flex justify-between items-center mb-2">
             <div>
@@ -237,10 +237,10 @@ function ProductCarousel({ data }) {
   }
 
   return (
-    <div className="px-8 mx-auto mb-12">
+    <div className="px-8 mx-auto mb-12  overflow-hidden">
       <Slider {...settings}>
         {data.map(product => (
-          <div key={product.id} className="p-4">
+          <div key={product.id} className="p-2 sm:p-4">
             <DisplayProduct product={product} />
           </div>
         ))}

@@ -123,7 +123,7 @@ const Footer = () => {
                         </h4>
 
                         <a
-                            href="mailto:ba220@banquealimentaire.org"
+                            href="mailto:ba220.epicerie@banquealimentaire.org"
                             className="block text-sm text-blue-100 hover:text-rayonorange transition-colors duration-200"
                         >
                             ba220.epicerie@banquealimentaire.org

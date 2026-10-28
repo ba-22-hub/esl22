@@ -39,6 +39,7 @@ import Confidentiality from "@pages/Confidentiality";
 import LegalMentions from "./pages/LegalMentions";
 import OperatingCharter from "./pages/OperatingCharter";
 import UrgentBeneficiaryTable from "@pages/dashboard/UrgentBeneficiaryTable.jsx";
+import CartSummaryBar from "@common/CartSummaryBar.jsx";
 import AccesUrgent from "@pages/AccesUrgent.jsx";
 import DemanderUnLien from "@pages/DemanderUnLien.jsx";
 
@@ -63,6 +64,7 @@ function App() {
 
       <ClientNavbar></ClientNavbar>
       <UrgentOrderBanner />
+      <CartSummaryBar />
       <ScrollToTop />
 
       {/* Creating the routes to the website pages */}

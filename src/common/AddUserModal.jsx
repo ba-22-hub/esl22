@@ -139,7 +139,7 @@ function AddUserModal({ isOpen, onClose }) {
                     <FormInput labelClassName="ml-[8%]" className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Adresse mail" name="email" value={formData.email} onChange={handleChange} isStarred={true} />
                     {/* Street */}
                     <FormInput labelClassName="ml-[8%]" className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Rue :" name="address" value={formData.address} onChange={handleChange} isStarred={true} />
-                    {/* add addresse */}
+                    {/* add adresse */}
                     <FormInput labelClassName="ml-[8%]" className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Complément d'adresse :" name="addAddress" value={formData.addAddress} onChange={handleChange} />
                     {/* City  */}
                     <FormInput labelClassName="ml-[8%]" className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Commune :" name="city" value={formData.city} onChange={handleChange} isStarred={true} />

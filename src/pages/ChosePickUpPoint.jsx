@@ -10,6 +10,11 @@
 // 2026-08-26    Louvel       étape 2 : commande passée par le bénéficiaire
 //                            lui-même, enregistrée via create-authorized-order
 //                            avec décompte du montant accordé
+// 2026-10-28    Louvel       mobile : barre de validation fixée en bas de
+//                            l'écran dès qu'un relais est choisi, liste
+//                            limitée aux 5 relais les plus proches, plus de
+//                            défilement imbriqué, protection contre le double
+//                            appui sur « Valider »
 //
 // =============================================================================
 // Importing dependencies
@@ -22,6 +27,7 @@ import { displayNotification } from '@lib/displayNotification.jsx';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from "leaflet";
+import { createPortal } from 'react-dom';
 
 // Importing common components
 import Loading from "@common/Loading.jsx"
@@ -62,6 +68,16 @@ function ChosePickUpPoint() {
     const [pickupPoints, setPickupPoints] = useState([]);
     const [loadingPickup, setLoadingPickup] = useState(false);
     const [errorPickup, setErrorPickup] = useState(null);
+
+    // Seuls les relais les plus proches sont affichés d'abord : une liste
+    // courte est plus facile à parcourir, surtout sur téléphone.
+    const MAX_POINTS_SHOWN = 5;
+    const [showAllPoints, setShowAllPoints] = useState(false);
+    const visiblePoints = showAllPoints ? pickupPoints : pickupPoints.slice(0, MAX_POINTS_SHOWN);
+
+    // Empêche un second appui sur « Valider » pendant l'enregistrement, qui
+    // pourrait créer deux commandes (colis urgent, autorisation).
+    const [validating, setValidating] = useState(false);
 
     const { user, accountType } = useAuthor();
     const { cart, setCart, isUrgentOrder, urgentBeneficiary, clearUrgentOrder } = useCart()
@@ -201,6 +217,7 @@ function ChosePickUpPoint() {
                 }).sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
 
                 setPickupPoints(pointsWithRealDistance);
+                setShowAllPoints(false);
             }
         } catch (e) {
             setErrorPickup(e.message);
@@ -290,6 +307,16 @@ function ChosePickUpPoint() {
         }
 
         setProductsInCart(data || [])
+    }
+
+    async function onValidateClick() {
+        if (validating) return;
+        setValidating(true);
+        try {
+            await handleValidate();
+        } finally {
+            setValidating(false);
+        }
     }
 
     async function handleValidate() {
@@ -433,6 +460,16 @@ function ChosePickUpPoint() {
                     <div className="bg-gradient-to-br from-[#3435FF] via-[#2526B7] to-[#1F2099] relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-96 h-96 bg-[#FF8200] opacity-10 rounded-full blur-3xl"></div>
                         <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12 relative z-10">
+                            <button
+                                type="button"
+                                onClick={() => navigate("/cart")}
+                                className="mb-4 inline-flex items-center gap-2 text-white/90 hover:text-white text-base font-semibold"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                </svg>
+                                Retour au panier
+                            </button>
                             <h1 className="text-4xl lg:text-6xl font-bold text-white mb-2">Point de livraison</h1>
                             <p className="text-blue-100 text-lg">
                                 Choisissez un point relais pour récupérer votre commande
@@ -440,7 +477,8 @@ function ChosePickUpPoint() {
                         </div>
                     </div>
 
-                    <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12">
+                    {/* pb-48 sur mobile : réserve la place de la barre de validation fixe */}
+                    <div className="max-w-7xl mx-auto px-6 lg:px-12 pt-12 pb-48 lg:pb-12">
                         <div className="flex flex-col lg:flex-row gap-6">
 
                             {/* Panneau gauche */}
@@ -458,16 +496,17 @@ function ChosePickUpPoint() {
                                     <div className="flex gap-2 mb-3">
                                         <input
                                             type="text"
+                                            inputMode="numeric"
                                             placeholder="Code postal (ex. 75001)"
                                             value={chosenPostalCode}
                                             onChange={(e) => setChosenPostalCode(e.target.value)}
                                             onKeyDown={(e) => e.key === "Enter" && chosenPostalCode.trim() && fetchPickupPoints(chosenPostalCode)}
-                                            className="flex-1 px-4 py-2 text-base border border-gray-200 rounded-lg focus:outline-none focus:border-[#3435FF]"
+                                            className="flex-1 min-w-0 px-4 py-2 text-base border border-gray-200 rounded-lg focus:outline-none focus:border-[#3435FF]"
                                         />
                                         <button
                                             onClick={() => chosenPostalCode.trim() && fetchPickupPoints(chosenPostalCode)}
                                             disabled={loadingPickup || !chosenPostalCode.trim()}
-                                            className="px-5 py-2 text-base font-semibold bg-[#3435FF] hover:bg-[#5253ff] text-white rounded-lg shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                                            className="shrink-0 px-5 py-2 text-base font-semibold bg-[#3435FF] hover:bg-[#5253ff] text-white rounded-lg shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                                         >
                                             {loadingPickup ? "..." : "Rechercher"}
                                         </button>
@@ -533,8 +572,10 @@ function ChosePickUpPoint() {
                                             <p className="text-gray-500 text-base">Entrez un code postal pour voir les points proches</p>
                                         </div>
                                     ) : (
-                                        <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
-                                            {pickupPoints.map((p) => (
+                                        // Défilement interne réservé à l'ordinateur : sur mobile, une
+                                        // liste qui défile dans la page qui défile est déroutante.
+                                        <div className="space-y-3 lg:max-h-96 lg:overflow-y-auto pr-1">
+                                            {visiblePoints.map((p) => (
                                                 <React.Fragment key={p.id}>
                                                     <div
                                                         onClick={() => selectPoint(p)}
@@ -595,12 +636,24 @@ function ChosePickUpPoint() {
                                                     )}
                                                 </React.Fragment>
                                             ))}
+
+                                            {pickupPoints.length > MAX_POINTS_SHOWN && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowAllPoints(v => !v)}
+                                                    className="w-full py-3 text-base font-semibold text-[#3435FF] border border-[#3435FF]/30 rounded-lg hover:bg-blue-50 transition-all"
+                                                >
+                                                    {showAllPoints
+                                                        ? "Afficher seulement les plus proches"
+                                                        : `Voir d'autres points relais (${pickupPoints.length - MAX_POINTS_SHOWN})`}
+                                                </button>
+                                            )}
                                         </div>
                                     )}
                                 </div>
 
-                                {/* Barre de validation */}
-                                <div className="px-6 pb-6">
+                                {/* Barre de validation (ordinateur ; sur mobile, voir la barre fixe plus bas) */}
+                                <div className="hidden lg:block px-6 pb-6">
                                     <div className={`rounded-xl p-4 mb-3 border ${currPoint.id !== 0
                                         ? "bg-green-50 border-green-200"
                                         : "bg-gray-50 border-gray-100"
@@ -619,8 +672,9 @@ function ChosePickUpPoint() {
                                         </p>
                                     </div>
                                     <button
-                                        onClick={handleValidate}
-                                        disabled={currPoint.id === 0}
+                                        type="button"
+                                        onClick={onValidateClick}
+                                        disabled={currPoint.id === 0 || validating}
                                         className="w-full py-3 font-semibold rounded-lg text-base transition-all shadow-md flex items-center justify-center gap-2
                     bg-[#FF8200] hover:bg-[#ff9800] text-white
                     disabled:bg-gray-100 disabled:text-gray-300 disabled:shadow-none disabled:cursor-not-allowed"
@@ -628,7 +682,7 @@ function ChosePickUpPoint() {
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                         </svg>
-                                        Valider ce point relais
+                                        {validating ? "Enregistrement…" : "Valider ce point relais"}
                                     </button>
                                 </div>
                             </div>
@@ -683,6 +737,46 @@ function ChosePickUpPoint() {
 
                         </div>
                     </div>
+
+                    {/* Barre de validation fixe, mobile uniquement : elle apparaît dès
+                        qu'un relais est choisi (dans la liste ou sur la carte), pour
+                        que le bouton soit toujours sous le pouce. z-index supérieur
+                        aux contrôles Leaflet (1000) pour passer au-dessus de la carte. */}
+                        {createPortal(
+                            <div
+                                className="lg:hidden fixed bottom-0 inset-x-0 bg-white border-t-2 border-[#FF8200] px-4 pt-3"
+                                style={{
+                                    zIndex: 1100,
+                                    boxShadow: "0 -4px 12px rgba(0,0,0,0.08)",
+                                    paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))",
+                                }}
+                            >
+                                {currPoint.id !== 0 ? (
+                                    <>
+                                        <p className="font-semibold text-gray-800 truncate">✓ {currPoint.name}</p>
+                                        <p className="text-sm text-gray-500 truncate mb-2">
+                                            {currPoint.address1?.toLowerCase()}, {currPoint.zipCode} {currPoint.city}
+                                        </p>
+                                    </>
+                                ) : (
+                                    <p className="text-sm text-gray-500 mb-2">
+                                        Touchez un point relais dans la liste ou sur la carte
+                                    </p>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={onValidateClick}
+                                    disabled={currPoint.id === 0 || validating}
+                                    className="w-full py-3 font-semibold rounded-lg text-base shadow-md flex items-center justify-center gap-2 bg-[#FF8200] hover:bg-[#ff9800] text-white disabled:bg-gray-100 disabled:text-gray-400 disabled:shadow-none"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    {validating ? "Enregistrement…" : "Valider ce point relais"}
+                                </button>
+                            </div>,
+                            document.body
+                        )}
                 </div>
             )}
         </>
