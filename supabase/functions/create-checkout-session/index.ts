@@ -65,11 +65,26 @@ Deno.serve(async (req)=>{
       });
     }
 
+    // Stripe Checkout exige toujours une adresse email. Celle du compte est
+    // transmise quand elle existe ; pour les bénéficiaires qui n'en ont pas,
+    // on fournit celle de l'épicerie. Stripe affiche alors le champ déjà
+    // rempli et ne demande plus rien.
+    const FALLBACK_EMAIL = "ba220.epicerie@banquealimentaire.org";
+    let customerEmail = FALLBACK_EMAIL;
+    if (userId) {
+      const { data: authData } = await supabaseAdmin.auth.admin.getUserById(userId);
+      const email = authData?.user?.email?.trim();
+      if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        customerEmail = email;
+      }
+    }
+
     const session = await stripe.checkout.sessions.create({
       // payment_method_types n'est plus accepté : les moyens de paiement se
       // règlent désormais depuis le tableau de bord Stripe.
       allow_promotion_codes: false,
       mode: "payment",
+      customer_email: customerEmail,
       customer_creation: "if_required",
       line_items: cart.map((item)=>({
           price_data: {
@@ -97,9 +112,11 @@ Deno.serve(async (req)=>{
         setup_future_usage: undefined
       },
       // 3. Désactiver les options de sauvegarde automatique comme Link (si activées par défaut)
+      // "automatic" laisse Stripe ne la demander que lorsque c’est nécessaire.
+      // remplace "any"
       payment_method_options: {
         card: {
-          request_three_d_secure: "any"
+          request_three_d_secure: "automatic"
         }
       },
       success_url: successUrl,

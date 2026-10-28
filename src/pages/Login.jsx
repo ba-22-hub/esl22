@@ -96,6 +96,9 @@ function Login() {
 						<FormInput
 							inputText={<span className="text-rayonblue">Adresse email</span>}
 							name={'mail'}
+							type="email"
+							inputMode="email"
+							autoComplete="username"
 							value={formData.mail}
 							onChange={handleChange}
 							isStarred={true}
@@ -106,18 +109,20 @@ function Login() {
 						<PasswrdInput
 							inputText={<span className="text-rayonblue">Mot de passe</span>}
 							name={'password'}
+							autoComplete="current-password"
 							value={formData.password}
 							onChange={handleChange}
 							isStarred={true}
 							className="border border-[#2E2EFF] rounded-md text-sm px-4 py-2 w-full"
 						/>
 					</div>
-					<div className="text-right w-[65%] mx-auto">
-						<PageButton
-							buttonText={'Mot de passe oublié ?'}
-							page={'/forgot-password'}
+					<div className="text-right lg:w-[65%] w-[90%] mx-auto">
+						<Link
+							to="/forgot-password"
 							className="text-[#2E2EFF] text-sm font-medium underline hover:text-blue-600"
-						/>
+						>
+							Mot de passe oublié ?
+						</Link>
 					</div>
 					<div className="w-full flex justify-center">
 						<PageButton

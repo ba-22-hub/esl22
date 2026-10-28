@@ -12,6 +12,12 @@ import ProductCarousel from '@common/ProductCarouselCatalog.jsx'
  * @returns {React.ReactElement} Catalog component.
  */
 
+
+// Met en minuscules et retire les accents : « Café » et « cafe » deviennent
+// identiques, ce qui évite les recherches sans résultat sur mobile.
+const normalize = (s) =>
+  (s || "").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+
 const SearchBar = () => {
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState('');
@@ -71,10 +77,8 @@ const SearchBar = () => {
     }
   }, [authorLoading])
 
-  const filteredProducts = products.filter(product =>
-    `${product.name} ${product.category}`
-      .toLowerCase()
-      .includes(search.toLowerCase())
+ const filteredProducts = products.filter(product =>
+    normalize(`${product.name} ${product.category}`).includes(normalize(search))
   );
 
   return (

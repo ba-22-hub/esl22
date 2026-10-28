@@ -11,6 +11,9 @@
 //                            bénéficiaire, contrôle du plafond à la validation
 //                            et seuil de poids selon le motif de l'aide
 //
+// 2026-10-28    Louvel       mobile : erreurs de poids affichées près du
+//                            bouton, poids en kg, avertissement de reliquat
+//                            de quota inutilisable, prix minimum à 0,50 €
 // =============================================================================
 // Importing dependencies
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
@@ -19,6 +22,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from "@context/CartContext.jsx";
 import { supabase } from "@lib/supabaseClient";
 import { displayNotification } from '@lib/displayNotification.jsx';
+import { formatKg } from "@lib/format";
 
 // Importing common components
 import Loading from "@common/Loading.jsx";
@@ -29,9 +33,9 @@ import roundLogo from "@assets/logos/roundLogo.png"
 // Composant mémoïsé pour éviter les re-renders inutiles
 const DisplayProductCard = memo(({ product, quantity, onAdd, onRemove, roundTwoDigits }) => {
     return (
-        <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all p-4 border border-gray-100">
-            <div className="flex items-center gap-4">
-                <div className="w-20 h-20 flex-shrink-0 bg-gray-50 rounded-lg p-2">
+        <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all p-3 sm:p-4 border border-gray-100">
+            <div className="flex items-center gap-3 sm:gap-4">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 bg-gray-50 rounded-lg p-2">
                     <img
                         src={product.imageUrl || roundLogo}
                         alt={product.name}
@@ -44,7 +48,7 @@ const DisplayProductCard = memo(({ product, quantity, onAdd, onRemove, roundTwoD
                         {product.name}
                     </h3>
                     <p className="text-sm text-gray-600">
-                        {product.weight}g • {product.category}
+                        {formatKg(product.weight)} • {product.category}
                     </p>
 
                     <div className="flex items-center gap-2 mt-2">
@@ -77,11 +81,11 @@ const DisplayProductCard = memo(({ product, quantity, onAdd, onRemove, roundTwoD
                     </div>
                 </div>
 
-                <div className="text-right">
+                <div className="text-right flex-shrink-0">
                     <div className="text-sm text-gray-500 hidden lg:block">
                         {quantity} × {product.salePrice}€
                     </div>
-                    <div className="text-[#FF8200] text-2xl font-bold">
+                    <div className="text-[#FF8200] text-xl sm:text-2xl font-bold">
                         {roundTwoDigits(quantity * product.salePrice)}€
                     </div>
                 </div>
@@ -166,6 +170,30 @@ function Cart() {
             productsNumberTotal: numberTotal
         };
     }, [productsInCart, cart?.content, roundTwoDigits, packagingWeight]);
+
+    const [validationError, setValidationError] = useState(null);
+    const errorRef = useRef(null);
+
+    const [quotaWarning, setQuotaWarning] = useState(null);
+    const warningRef = useRef(null);
+
+    useEffect(() => {
+        if (quotaWarning) {
+            warningRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    }, [quotaWarning]);
+
+    useEffect(() => {
+        setValidationError(null);
+        setQuotaWarning(null);
+    }, [cart?.content]);
+
+    // Fait défiler jusqu'au message quand une erreur apparaît
+    useEffect(() => {
+        if (validationError) {
+            errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    }, [validationError]);
 
     // Charger le threshold
     // Autorisation en cours du bénéficiaire connecté. Relue à chaque passage
@@ -383,13 +411,13 @@ function Cart() {
         setCart(prev => ({ ...prev, content: {} }));
     }, [setCart]);
 
-    const handleValidate = useCallback(async () => {
+    const handleValidate = useCallback(async (skipQuotaWarning = false) => {
         if (!cart?.content || Object.keys(cart.content).length === 0) {
             displayNotification("Échec de validation du panier", "Le panier est vide", "danger")
             return;
         }
 
-        if (productsPriceTotal < 0.1) {
+        if (productsPriceTotal < 0.5) {
             displayNotification("Échec de validation du panier", "Le total produits doit être d'au moins 0.5€ pour pouvoir procéder au payement en ligne", "danger")
             return;
         }
@@ -408,7 +436,11 @@ function Cart() {
         const userLimits = userData;
 
         if (userLimits.weight_limit && (userLimits.current_weight + productsWeightTotal) > userLimits.weight_limit) {
-            displayNotification("Échec de validation du panier", "Conditions de poids liées à votre compte non respectées", "danger", 0)
+            setValidationError(
+                "Ce panier dépasse votre quota du mois : il vous reste " +
+                formatKg(Math.max(0, userLimits.weight_limit - (userLimits.current_weight || 0))) +
+                " et votre panier pèse " + formatKg(productsWeightTotal) + "."
+            );
             return;
         }
 
@@ -431,7 +463,7 @@ function Cart() {
             .maybeSingle();
 
         if (generalMaxWeightError || generalMinWeightError) {
-            displayNotification("Échec de validation du panier", "Erreur lors du chargement des limites générales de poids : " + userError.message, "danger")
+            displayNotification("Échec de validation du panier", "Erreur lors du chargement des limites générales de poids : " + (generalMaxWeightError || generalMinWeightError).message, "danger")
             return;
         }
 
@@ -439,7 +471,11 @@ function Cart() {
         const generalMinWeightLimit = generalMinWeightData;
 
         if (generalMaxWeightLimit.value && generalMinWeightLimit.value && ((generalMinWeightLimit.value > productsWeightTotal) || (productsWeightTotal > generalMaxWeightLimit.value))) {
-            displayNotification("Échec de validation du panier", "Le poids du panier doit être compris entre " + generalMinWeightLimit.value + " " + generalMinWeightLimit.unit + " et " + generalMaxWeightLimit.value + " " + generalMaxWeightLimit.unit, "danger", 0)
+            setValidationError(
+                "Votre panier pèse " + formatKg(productsWeightTotal) +
+                ". Son poids doit être compris entre " + formatKg(generalMinWeightLimit.value) +
+                " et " + formatKg(generalMaxWeightLimit.value) + "."
+            );
             return;
         }
 
@@ -475,7 +511,19 @@ function Cart() {
                 return;
             }
         }
-
+        // Reliquat de quota trop petit pour une future commande : on prévient,
+        // sans bloquer, tant qu'il est encore possible de compléter le panier
+        // sans dépasser le poids maximum.
+        if (!skipQuotaWarning && userLimits.weight_limit) {
+            const remainingAfter = userLimits.weight_limit - (userLimits.current_weight || 0) - productsWeightTotal;
+            const minW = generalMinWeightLimit.value;
+            const maxW = generalMaxWeightLimit.value;
+            if (minW && remainingAfter > 0 && remainingAfter < minW
+                && (!maxW || productsWeightTotal + remainingAfter <= maxW)) {
+                setQuotaWarning({ remaining: remainingAfter, minWeight: minW });
+                return;
+            }
+        }
         navigate("/chose-pickup-point")
     }, [cart, productsPriceTotal, productsWeightTotal, productsInCart, user, navigate, isUrgentOrder, authorization, shippingCost, remainingAmount, roundTwoDigits]);
 
@@ -490,7 +538,7 @@ function Cart() {
                         <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12 relative z-10">
                             <h1 className="text-4xl lg:text-6xl font-bold text-white mb-2">Mon Panier</h1>
                             <p className="text-blue-100 text-lg">
-                                {productsNumberTotal} {productsNumberTotal > 1 ? 'produits' : 'produit'} • {productsWeightTotal / 1000}kg
+                                {productsNumberTotal} {productsNumberTotal > 1 ? 'produits' : 'produit'} •  {formatKg(productsWeightTotal)}
                             </p>
                             {isUrgentOrder && urgentBeneficiary && (
                                 <p className="mt-2 inline-block bg-[#FF8200] text-white text-sm font-semibold px-3 py-1 rounded-full">
@@ -522,17 +570,17 @@ function Cart() {
                         </div>
                     </div>
 
-                    <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-12">
                         <div className="grid lg:grid-cols-3 gap-8">
                             <div className="lg:col-span-2 space-y-4">
-                                <div className="flex justify-between items-center mb-4">
+                                <div className="flex flex-wrap justify-between items-center gap-2 mb-4">
                                     <h2 className="text-2xl font-bold text-[#3435FF]">
                                         Produits ({productsNumberTotal})
                                     </h2>
                                     <div className="flex items-center gap-3">
                                         {productsInCart.length > 0 && (
                                             <button
-                                                onClick={handleClearCart}
+                                               onClick={handleClearCart}
                                                 className="text-red-400 hover:text-red-600 font-semibold text-sm transition-colors flex items-center gap-1"
                                             >
                                                 <svg viewBox="0 0 32 32" fill="currentColor" className="h-4 w-4">
@@ -607,7 +655,7 @@ function Cart() {
                                                     <span className="absolute top-full left-4 border-4 border-transparent border-t-gray-800" />
                                                 </span>
                                             </span>
-                                            <span className="font-semibold">{productsWeightTotal / 1000}kg</span>
+                                            <span className="font-semibold">{formatKg(productsWeightTotal)}</span>
                                         </div>
 
                                         <div className="flex justify-between text-gray-700">
@@ -630,8 +678,52 @@ function Cart() {
                                         </div>
                                     </div>
 
+                                    {quotaWarning && (
+                                        <div
+                                            ref={warningRef}
+                                            role="alert"
+                                            className="mb-4 p-4 rounded-lg bg-orange-50 border border-[#FF8200] text-sm text-gray-800"
+                                        >
+                                            <p className="font-bold text-[#c25e00] mb-2">
+                                                Attention : après cette commande, il ne vous restera que {formatKg(quotaWarning.remaining)} sur votre quota du mois !
+                                            </p>
+                                            <p className="mb-2">
+                                                Une commande devant peser au moins {formatKg(quotaWarning.minWeight)}, ce reliquat ne pourra plus être utilisé.
+                                            </p>
+                                            <p className="mb-3">
+                                                Vous pouvez ajouter jusqu'à {formatKg(quotaWarning.remaining)} de produits maintenant pour profiter de la totalité de votre quota mensuel.
+                                            </p>
+                                            <div className="flex flex-col sm:flex-row gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => navigate("/catalog")}
+                                                    className="flex-1 py-2 rounded-lg font-semibold bg-[#3435FF] text-white"
+                                                >
+                                                    Ajouter des produits
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { setQuotaWarning(null); handleValidate(true); }}
+                                                    className="flex-1 py-2 rounded-lg font-semibold border border-gray-300 text-gray-700 bg-white"
+                                                >
+                                                    Commander quand même
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {validationError && (
+                                        <div
+                                            ref={errorRef}
+                                            role="alert"
+                                            className="mb-4 p-3 rounded-lg bg-red-50 border border-red-300 text-red-700 text-sm font-medium"
+                                        >
+                                            {validationError}
+                                        </div>
+                                    )}
+
                                     <button
-                                        onClick={handleValidate}
+                                        onClick={() => handleValidate()}
                                         disabled={!cart?.content || Object.keys(cart.content).length === 0}
                                         className={`w-full py-4 rounded-lg font-bold text-lg transition-all shadow-lg ${!cart?.content || Object.keys(cart.content).length === 0
                                             ? 'bg-gray-300 text-gray-500 cursor-not-allowed'

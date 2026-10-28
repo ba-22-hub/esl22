@@ -1,3 +1,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* Les adresses email sont des « mots » très longs : on autorise la coupure
+   pour qu'elles ne débordent pas de l'écran sur mobile. */
+a[href^="mailto:"] {
+  overflow-wrap: anywhere;
+}

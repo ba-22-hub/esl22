@@ -1,3 +1,4 @@
+import { useId } from "react";
 /**
  * A basic string input.
  * @param {Object} props - The component props.
@@ -11,20 +12,34 @@
  * @returns {React.ReactElement} FormInput component.
  */
 
-function FormInput({ labelClassName = "", className, inputText, name, value, onChange, isStarred = false, type = "text" }) {
+function FormInput({ labelClassName = "", className, inputText, name, value, onChange, isStarred = false, type = "text", id, ...rest }) {
+    // Relie le libellé au champ : toucher le libellé place le curseur dans le
+    // champ, et les gestionnaires de mots de passe identifient mieux le champ.
+    const autoId = useId();
+    const inputId = id || `${name}-${autoId}`;
 
     return (
         <div>
-            <div><label className={"text-rayonblue "+labelClassName}>{inputText}{isStarred &&( <a className="text-red"> *</a>)}</label></div>
-            {isStarred ? 
-                (
-                <div><input className={className} type={type} name={name} value={value} onChange={onChange} required/></div>
-                ) : (
-                <div><input className={className} type={type} name={name} value={value} onChange={onChange} /></div>
-                )
-            }
+            <div>
+                <label htmlFor={inputId} className={"text-rayonblue " + labelClassName}>
+                    {inputText}{isStarred && <span className="text-red"> *</span>}
+                </label>
+            </div>
+            <div>
+                <input
+                    id={inputId}
+                    className={className}
+                    type={type}
+                    name={name}
+                    value={value}
+                    onChange={onChange}
+                    required={isStarred}
+                    {...rest}
+                />
+            </div>
         </div>
-)}
+    );
+}
 
 
 
