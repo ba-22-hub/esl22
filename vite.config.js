@@ -5,6 +5,10 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  server: {
+    // Autorise les tunnels Pinggy, pour tester sur téléphone en développement
+    allowedHosts: true,
+  },
   resolve: {
     alias: {
       '@lib': path.resolve(__dirname, 'src/lib'),
