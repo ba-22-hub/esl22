@@ -10,6 +10,8 @@
 // 2026-08-26    Louvel       étape 2 : commande passée par le bénéficiaire
 //                            lui-même, enregistrée via create-authorized-order
 //                            avec décompte du montant accordé
+// 2026-10-30    Louvel       cancelUrl marqué, pour que le panier puisse
+//                            expliquer un paiement interrompu
 // 2026-10-28    Louvel       mobile : barre de validation fixée en bas de
 //                            l'écran dès qu'un relais est choisi, liste
 //                            limitée aux 5 relais les plus proches, plus de
@@ -429,7 +431,11 @@ function ChosePickUpPoint() {
                     shippingCost: parseFloat(shippingCost),
                     userId: user.id,
                     successUrl: `${window.location.origin}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-                    cancelUrl: `${window.location.origin}/cart`,
+                    // Le marqueur permet au panier de distinguer un retour de
+                    // paiement interrompu d'une visite ordinaire : sans lui, la
+                    // personne retombe sur son panier sans explication et croit
+                    // à un dysfonctionnement du site.
+                    cancelUrl: `${window.location.origin}/cart?paiement=interrompu`,
                 }
             });
 
