@@ -7,6 +7,9 @@
 // 2026-08-12    Louvel       colis urgent : limite de poids basse spécifique
 //                            (urgentWeightMin) et rappel du bénéficiaire dans
 //                            l'en-tête du panier
+// 2026-10-30    Louvel       message explicite au retour d'un paiement
+//                            refusé ou interrompu : la personne retombait
+//                            sur son panier sans explication
 // 2026-08-26    Louvel       étape 2 : affichage du montant restant au
 //                            bénéficiaire, contrôle du plafond à la validation
 //                            et seuil de poids selon le motif de l'aide
@@ -120,6 +123,11 @@ function Cart() {
     // sa place (isUrgentOrder), qui relève du contexte de panier.
     const [authorization, setAuthorization] = useState(null);
 
+    // Retour d'un paiement interrompu : refus de la banque, ou abandon sur la
+    // page de paiement. Sans ce repère, la personne retombe sur son panier
+    // sans explication et croit à un dysfonctionnement du site.
+    const [paiementInterrompu, setPaiementInterrompu] = useState(false);
+
     let navigate = useNavigate()
 
     // Fonction utilitaire mémoïsée
@@ -217,6 +225,16 @@ function Cart() {
         };
         fetchAuthorization();
     }, [user, accountType, authorLoading]);
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('paiement') === 'interrompu') {
+            setPaiementInterrompu(true);
+            // L'adresse est nettoyée pour que le message ne réapparaisse pas
+            // au moindre rafraîchissement.
+            window.history.replaceState({}, '', '/cart');
+        }
+    }, []);
 
     useEffect(() => {
         const fetchStockIncertainThreshold = async () => {
@@ -533,6 +551,36 @@ function Cart() {
                 <Loading />
             ) : (
                 <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+
+                    {paiementInterrompu && (
+                        <div className="bg-orange-50 border-b-2 border-[#FF8200]">
+                            <div className="max-w-7xl mx-auto px-6 lg:px-12 py-5">
+                                <div className="flex items-start gap-4">
+                                    <span className="text-3xl flex-shrink-0">💳</span>
+                                    <div className="flex-1">
+                                        <p className="font-bold text-[#C25E00] mb-1">
+                                            Le paiement n'a pas abouti
+                                        </p>
+                                        <p className="text-gray-700 text-sm leading-relaxed mb-2">
+                                            Votre banque a refusé l'opération, ou celle-ci a été interrompue.
+                                            Votre panier est conservé : vous pouvez réessayer, avec la même
+                                            carte ou une autre.
+                                        </p>
+                                        <p className="text-gray-600 text-sm leading-relaxed">
+                                            Si le refus se répète, rapprochez-vous de votre banque :
+                                            elle seule peut vous en indiquer la raison.
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => setPaiementInterrompu(false)}
+                                        className="text-gray-400 hover:text-gray-600 text-xl flex-shrink-0"
+                                        title="Fermer"
+                                    >✕</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="bg-gradient-to-br from-[#3435FF] via-[#2526B7] to-[#1F2099] relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-96 h-96 bg-[#FF8200] opacity-10 rounded-full blur-3xl"></div>
                         <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12 relative z-10">
