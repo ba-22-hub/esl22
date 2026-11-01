@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom";
 import { supabase } from '@lib/supabaseClient.js';
 import { useAuthor } from "@context/AuthorContext.jsx";
-import { uploadPDF } from '@lib/sendPDF.js'
 import { displayNotification } from '@lib/displayNotification.jsx';
 
 // Importing common components
@@ -133,9 +132,9 @@ function Account() {
 
     // on factorise l'élément le plus volumineux 
     const renderField = (label, fieldName, minWidth = 180) => (
-        <div className="flex flex-row items-center text-rayonblue mb-2 text-sm lg:text-base">
-            <label className="font-semibold min-w-[180px] whitespace-nowrap lg:mr-4 mr-0">{label} :</label>
-            <div className="flex-1">
+        <div className="flex flex-col sm:flex-row sm:items-center text-rayonblue mb-2 text-sm lg:text-base">
+            <label className="font-semibold sm:min-w-[180px] sm:whitespace-nowrap lg:mr-4 mr-0">{label} :</label>
+            <div className="flex-1 min-w-0">
                 {editing ? (
                     <input
                         className="border border-rayonorange rounded-lg w-full text-rayonorange pl-2 h-[1.8rem]"
@@ -151,19 +150,19 @@ function Account() {
     );
     // même élément mais en lecture seule
     const renderReadOnly = (label, fieldName) => (
-        <div className="flex flex-row items-center text-rayonblue mb-2 text-sm lg:text-base">
-            <label className="font-semibold min-w-[180px] whitespace-nowrap lg:mr-4 mr-0">{label} :</label>
-            <div className="flex-1">
-                <p className="text-rayonblue">{clientEdit[fieldName]}</p>
+        <div className="flex flex-col sm:flex-row sm:items-center text-rayonblue mb-2 text-sm lg:text-base">
+            <label className="font-semibold sm:min-w-[180px] sm:whitespace-nowrap lg:mr-4 mr-0">{label} :</label>
+            <div className="flex-1 min-w-0">
+                <p className="text-rayonblue [overflow-wrap:anywhere]">{clientEdit[fieldName]}</p>
             </div>
         </div>
     );
 
 
     const renderSelect = (label, fieldName, options) => (
-        <div className="flex flex-row items-center text-rayonblue mb-2 text-sm lg:text-base">
-            <label className="font-semibold min-w-[180px] whitespace-nowrap lg:mr-4 mr-0">{label} :</label>
-            <div className="flex-1">
+        <div className="flex flex-col sm:flex-row sm:items-center text-rayonblue mb-2 text-sm lg:text-base">
+            <label className="font-semibold sm:min-w-[180px] sm:whitespace-nowrap lg:mr-4 mr-0">{label} :</label>
+            <div className="flex-1 min-w-0">
                 {editing ? (
                     <select
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-rayonorange bg-white focus:outline-none focus:ring-2 focus:ring-rayonorange"

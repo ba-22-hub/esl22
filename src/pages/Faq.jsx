@@ -5,6 +5,8 @@
 // Date          Auteur        Description
 // ----------    ----------    -------------------------------------------------
 // 2026-06-15    Louvel       coquille dans texte item 17
+// 2026-10-31    Louvel       item 22 : paiement avec Wero ; hauteur maximale
+//                            des réponses augmentée (texte coupé sur mobile)
 //
 // =============================================================================
 import { useEffect, useState } from 'react';
@@ -73,7 +75,8 @@ function Faq() {
     }, []);
 
     const FaqItem = ({ id, question, children }) => {
-        const [isOpen, setIsOpen] = useState(false);
+        // Ouverte d'office si on arrive sur la FAQ par un lien vers cette question
+        const [isOpen, setIsOpen] = useState(() => window.location.hash === `#${id}`);
         return (
             <div
                 className="bg-gray-50 rounded-lg border border-rayonorange border-600 p-3 lg:p-6 transition-all duration-300 hover:shadow-lg mb-2"
@@ -91,7 +94,7 @@ function Faq() {
 
                 <div className={`
                 overflow-hidden transition-all duration-300 ease-in-out
-                ${isOpen ? 'max-h-[500px] mt-4 opacity-100' : 'max-h-0 opacity-0'}
+                ${isOpen ? 'max-h-[2000px] mt-4 opacity-100' : 'max-h-0 opacity-0'}
             `}>
                     <div className="text-gray-800 leading-relaxed pl-5 border-l-2 border-orange-200">
                         {children}
@@ -250,6 +253,50 @@ function Faq() {
                     <FaqItem id="q21" question="21 J'ai refusé par erreur, comment réactiver la géolocalisation ?">
                         <p>Le plus simple est de saisir votre code postal manuellement pour trouver un point relais, sans avoir besoin de la géolocalisation. Si vous préférez réactiver la position, vous pouvez le faire dans les réglages de votre navigateur, dans la rubrique consacrée aux autorisations du site.</p>
                     </FaqItem>
+
+                    <FaqItem id="googlepay" question="22 Comment payer avec mon téléphone, sans saisir ma carte bancaire ?">
+                        <p className="mb-4">Si votre carte bancaire est enregistrée dans votre téléphone, vous pouvez payer en un seul geste, sans taper les numéros de votre carte. C'est plus simple et plus rapide.</p>
+
+                        <p className="mb-2 font-bold text-orange-500">Enregistrer votre carte (une seule fois) :</p>
+                        <ol className="list-decimal pl-6 mb-4 space-y-2">
+                            <li>Ouvrez l'application <span className="font-bold">Google Wallet</span> (installez-la depuis le Play Store si besoin).</li>
+                            <li>Touchez « Ajouter à Wallet », puis « Carte de paiement ».</li>
+                            <li>Photographiez votre carte ou saisissez ses numéros.</li>
+                            <li>Validez avec le code reçu par SMS ou dans l'application de votre banque.</li>
+                        </ol>
+                        <p className="mb-4">Astuce : beaucoup de banques proposent un bouton « Ajouter à Google Pay » directement dans leur application.</p>
+
+                        <p className="mb-2 font-bold text-orange-500">Payer sur ESL22 :</p>
+                        <ol className="list-decimal pl-6 mb-4 space-y-2">
+                            <li>Ouvrez le site avec <span className="font-bold">Chrome</span> (le navigateur de Google).</li>
+                            <li>Sur la page de paiement, touchez le bouton <span className="font-bold">Google Pay</span>.</li>
+                            <li>Validez avec votre empreinte, votre visage ou le code de votre téléphone.</li>
+                            <li>Vous revenez automatiquement sur ESL22 : votre commande est enregistrée.</li>
+                        </ol>
+
+                        <p className="mb-2 font-bold text-orange-500">Vous avez un iPhone ?</p>
+                        <p className="mb-4">C'est le même principe avec <span className="font-bold">Apple Pay</span> : ajoutez votre carte dans l'application Cartes (Wallet), ouvrez le site avec Safari, et touchez le bouton Apple Pay au moment du paiement.</p>
+
+                        <p>Vous ne voyez pas le bouton ? Vérifiez que vous utilisez Chrome (ou Safari sur iPhone) et que votre carte est bien enregistrée dans votre téléphone. Vous pouvez toujours payer en saisissant votre carte bancaire.</p>
+                    </FaqItem>
+
+                    {/* En attente : Wero est en bêta chez Stripe, parcours pas encore assez simple (essai du 31/10/2026)
+                    <FaqItem id="wero" question="23 Comment payer avec Wero, sans carte bancaire ?">
+                        <p className="mb-4">Wero permet de payer directement depuis votre compte bancaire, sans saisir de numéro de carte. Une fois activé, c'est plus simple et plus rapide.</p>
+                        <p className="mb-2 font-bold text-orange-500">Activer Wero (une seule fois) :</p>
+                        <p className="mb-4">Ouvrez l'application de votre banque et cherchez le menu « Wero » (parfois dans « Paiements » ou « Virements »). Suivez les étapes : il suffit en général d'indiquer votre numéro de téléphone. Si votre banque ne le propose pas dans son application, installez l'application Wero et choisissez-y votre banque.</p>
+                        <p className="mb-2 font-bold text-orange-500">Payer depuis votre téléphone :</p>
+                        <p className="mb-4">Si la page Wero vous propose d'ouvrir l'application de votre banque, touchez ce bouton et validez le paiement avec votre code. Si elle n'affiche qu'un QR code, revenez en arrière et payez plutôt par carte bancaire : le QR code est prévu pour un paiement depuis un ordinateur.</p>
+                        <p className="mb-2 font-bold text-orange-500">Payer depuis un ordinateur :</p>
+                        <ol className="list-decimal pl-6 mb-4 space-y-2">
+                            <li>Sur la page de paiement, choisissez « Wero » : un QR code (un carré noir et blanc) s'affiche.</li>
+                            <li>Sur votre téléphone, ouvrez l'application de votre banque, menu « Wero », et touchez « Scanner ».</li>
+                            <li>Visez le QR code de l'écran avec le téléphone, puis validez le paiement avec votre code.</li>
+                            <li>L'ordinateur revient automatiquement sur ESL22 : votre commande est enregistrée.</li>
+                        </ol>
+                        <p>Toutes les banques ne proposent pas encore Wero. Si ce n'est pas le cas de la vôtre, vous pouvez toujours payer par carte bancaire.</p>
+                    </FaqItem>
+                    */}
 
                 </div>
 
