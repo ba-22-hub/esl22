@@ -76,7 +76,7 @@ function Delivery() {
             checkHasRights(user.id)
                 .then((rights) => {
                     if (!rights) {
-                        notify("Vous n'avez pas (encore ?) les droits. Pour passer une commande, veuillez déposer un fichier dans votre espace compte")
+                        notify("Votre compte n'est pas encore activé. Le service social qui vous accompagne doit nous transmettre vos droits ; en cas de question, contactez-le.")
                         navigate('/account')
                     }
                 })

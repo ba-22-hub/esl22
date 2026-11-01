@@ -70,7 +70,7 @@ const SearchBar = () => {
       checkHasRights(user.id)
         .then((rights) => {
           if (!rights) {
-            displayNotification("Vous n'avez pas (encore ?) les droits. Pour passer une commande, veuillez déposer un fichier dans votre espace compte")
+            displayNotification("Votre compte n'est pas encore activé. Le service social qui vous accompagne doit nous transmettre vos droits ; en cas de question, contactez-le.")
             navigate('/account')
           }
         })

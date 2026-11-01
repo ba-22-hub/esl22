@@ -259,7 +259,7 @@ function Cart() {
             checkHasRights(user.id)
                 .then((rights) => {
                     if (!rights) {
-                        notify("Vous n'avez pas (encore ?) les droits. Pour passer une commande, veuillez déposer un fichier dans votre espace compte")
+                        notify("Votre compte n'est pas encore activé. Le service social qui vous accompagne doit nous transmettre vos droits ; en cas de question, contactez-le.")
                         navigate('/account')
                     }
                 })
@@ -583,11 +583,13 @@ function Cart() {
 
                     <div className="bg-gradient-to-br from-[#3435FF] via-[#2526B7] to-[#1F2099] relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-96 h-96 bg-[#FF8200] opacity-10 rounded-full blur-3xl"></div>
-                        <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12 relative z-10">
-                            <h1 className="text-4xl lg:text-6xl font-bold text-white mb-2">Mon Panier</h1>
-                            <p className="text-blue-100 text-lg">
-                                {productsNumberTotal} {productsNumberTotal > 1 ? 'produits' : 'produit'} •  {formatKg(productsWeightTotal)}
-                            </p>
+                        <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12 relative z-10 text-center">
+                            <div className="flex flex-wrap items-baseline justify-center gap-x-3 gap-y-1">
+                                <h1 className="text-3xl lg:text-6xl font-bold text-white">Mon Panier</h1>
+                                <p className="text-blue-100 text-base lg:text-lg whitespace-nowrap">
+                                    {productsNumberTotal} {productsNumberTotal > 1 ? 'produits' : 'produit'} • {formatKg(productsWeightTotal)}
+                                </p>
+                            </div>
                             {isUrgentOrder && urgentBeneficiary && (
                                 <p className="mt-2 inline-block bg-[#FF8200] text-white text-sm font-semibold px-3 py-1 rounded-full">
                                     🆘 Colis urgent pour {urgentBeneficiary.firstName} {urgentBeneficiary.lastName}
@@ -619,8 +621,8 @@ function Cart() {
                     </div>
 
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-12">
-                        <div className="grid lg:grid-cols-3 gap-8">
-                            <div className="lg:col-span-2 space-y-4">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div className="lg:col-span-2 space-y-4 min-w-0">
                                 <div className="flex flex-wrap justify-between items-center gap-2 mb-4">
                                     <h2 className="text-2xl font-bold text-[#3435FF]">
                                         Produits ({productsNumberTotal})
@@ -681,7 +683,7 @@ function Cart() {
                                 )}
                             </div>
 
-                            <div className="lg:col-span-1">
+                            <div className="lg:col-span-1  min-w-0">
                                 <div className="bg-white rounded-2xl shadow-xl p-6 sticky top-6 border-t-4 border-[#FF8200]">
                                     <h2 className="text-2xl font-bold text-[#3435FF] mb-6">
                                         Récapitulatif
@@ -786,6 +788,22 @@ function Cart() {
 
                                     <div className="mt-4 text-xs text-center text-gray-500">
                                         <p>🔒 Paiement sécurisé</p>
+                                        {/* Conseil paiement par téléphone : uniquement quand la personne paie
+                                            elle-même (pas pour un colis urgent ni une commande sur autorisation) */}
+                                        {!isUrgentOrder && !authorization && (
+                                            <div className="mt-4 p-3 rounded-lg bg-blue-50 border border-blue-200 text-sm text-gray-700">
+                                                <p className="font-semibold text-[#3435FF] mb-1">💡 Payez avec votre téléphone</p>
+                                                <p>
+                                                    Votre carte est enregistrée dans Google Wallet ou Apple Pay ?
+                                                    Sur la page de paiement, touchez simplement le bouton
+                                                    Google Pay ou Apple Pay : pas de numéro de carte à saisir.
+                                                </p>
+                                                <a href="/Faq#googlepay" className="inline-block mt-2 text-[#3435FF] font-semibold underline">
+                                                    Comment enregistrer ma carte ?
+                                                </a>
+                                            </div>
+                                        )}
+
                                     </div>
                                 </div>
                             </div>

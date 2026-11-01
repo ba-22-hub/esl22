@@ -6,7 +6,9 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    // Autorise les tunnels Pinggy, pour tester sur téléphone en développement
+    // Serveur de développement uniquement (npm run dev) : accepte les adresses
+    // du tunnel Pinggy, pour tester sur un vrai téléphone. Sans effet sur le
+    // site construit par npm run build.
     allowedHosts: true,
   },
   resolve: {

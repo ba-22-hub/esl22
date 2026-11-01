@@ -1,5 +1,19 @@
+// =============================================================================
+// HISTORIQUE DES MODIFICATIONS
+// =============================================================================
+//
+// Date          Auteur        Description
+// ----------    ----------    -------------------------------------------------
+// 2026-10-31    Louvel       formulaire réservé aux personnes connectées (la
+//                            colonne Messages.user_id est un uuid obligatoire,
+//                            l'ancien user_id: 0 provoquait une erreur) ;
+//                            visiteur non connecté orienté vers la connexion
+//                            ou l'adresse email de l'épicerie
+//
+// =============================================================================
 // Importing dependencies
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '@lib/supabaseClient.js';
 import { uploadPDF } from '@lib/sendPDF.js';
 import { useAuthor } from '@context/AuthorContext.jsx';
@@ -7,14 +21,11 @@ import { displayNotification } from '@lib/displayNotification.jsx';
 
 // Importing common components
 import Loading from '@common/Loading';
-import LoremIpsum from "../common/LoremIpsum"
-import FormInput from "../common/FormInput"
-import FormTextArea from "../common/FormTextArea"
-
-// Styles converted to Tailwind classes
 
 // Importing assets
 import roundLogo from "@assets/esl22/round_Logo_ESL22_circle_orange.png"
+
+const CONTACT_EMAIL = "ba220.epicerie@banquealimentaire.org";
 
 function Contact() {
 	const { user, loading } = useAuthor()
@@ -25,18 +36,7 @@ function Contact() {
 	});
 
 	const [submitting, setSubmitting] = useState(false);
-	const isNotified = useRef(false)
 	const fileInputRef = useRef(null);
-
-	useEffect(() => {
-		if (loading) return;
-	}, [loading, user])
-
-	function notify(message) {
-		if (isNotified.current) return;
-		isNotified.current = true
-		displayNotification("Connexion requise", message, "warning")
-	}
 
 	function handleChange(e) {
 		setFormData({
@@ -56,6 +56,13 @@ function Contact() {
 	async function handleSubmit(e) {
 		e.preventDefault();
 
+		// Sécurité : le formulaire n'est affiché qu'aux personnes connectées,
+		// mais la session peut avoir expiré entre-temps.
+		if (!user) {
+			displayNotification("Connexion nécessaire", "Connectez-vous pour nous envoyer un message, afin que nous puissions vous recontacter.", "warning");
+			return;
+		}
+
 		if (!formData.message.trim()) {
 			displayNotification("Message requis", "Veuillez saisir un message", "warning");
 			return;
@@ -64,38 +71,23 @@ function Contact() {
 		setSubmitting(true);
 
 		const name = formData.file ? `${Date.now()}_${formData.file.name}` : null;
-		let uploadSuccess = true;
 
 		// Upload the PDF file if it exists
 		if (formData.file) {
 			const { success, error } = await uploadPDF(formData.file, name, "messages")
 			if (!success) {
 				displayNotification("Échec de l'upload du fichier PDF", error.message, "danger")
-				uploadSuccess = false;
+				setSubmitting(false);
+				return;
 			}
 		}
 
-		if (!uploadSuccess) {
-			setSubmitting(false);
-			return;
-		}
-
 		// Message insertion in the db
-		let newMessage
-		if (user) {
-			newMessage = {
-				user_id: user.id,
-				message: formData.message,
-				pdf_name: name,
-			};
-		} else {
-			newMessage = {
-				user_id: 0,
-				message: formData.message,
-				pdf_name: name,
-			};
-		}
-
+		const newMessage = {
+			user_id: user.id,
+			message: formData.message,
+			pdf_name: name,
+		};
 
 		const { error: insertError } = await supabase
 			.from('Messages')
@@ -138,7 +130,7 @@ function Contact() {
 						</div>
 					</div>
 
-					<div className="max-w-7xl mx-auto px-6 lg:px-12 py-12">
+					<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-12">
 						<div className="grid lg:grid-cols-2 gap-12 items-start">
 							{/* Left Information Section */}
 							<div className="space-y-8">
@@ -208,7 +200,7 @@ function Contact() {
 
 							{/* Right Form Section */}
 							<div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-								<div className="bg-gradient-to-r from-[#3435FF] to-[#5253ff] px-8 py-6">
+								<div className="bg-gradient-to-r from-[#3435FF] to-[#5253ff] px-6 sm:px-8 py-6">
 									<h2 className="text-2xl font-bold text-white flex items-center gap-3">
 										<svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -217,109 +209,139 @@ function Contact() {
 									</h2>
 								</div>
 
-								<form onSubmit={handleSubmit} className="px-8 py-8 space-y-6">
-									{/* Message Field */}
-									<div>
-										<label className="block text-sm font-semibold text-gray-700 mb-2">
-											Votre message <span className="text-red-500">*</span>
-										</label>
-										<textarea
-											name="message"
-											value={formData.message}
-											onChange={handleChange}
-											required
-											rows={8}
-											placeholder="Décrivez votre demande en détail..."
-											className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3435FF] focus:border-transparent transition-all resize-none"
-										/>
-										<p className="text-xs text-gray-500 mt-2">
-											{formData.message.length} caractères
+								{user ? (
+									<form onSubmit={handleSubmit} className="px-6 sm:px-8 py-8 space-y-6">
+										{/* Message Field */}
+										<div>
+											<label htmlFor="contact-message" className="block text-sm font-semibold text-gray-700 mb-2">
+												Votre message <span className="text-red-500">*</span>
+											</label>
+											<textarea
+												id="contact-message"
+												name="message"
+												value={formData.message}
+												onChange={handleChange}
+												required
+												rows={8}
+												placeholder="Décrivez votre demande en détail..."
+												className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3435FF] focus:border-transparent transition-all resize-none"
+											/>
+											<p className="text-xs text-gray-500 mt-2">
+												{formData.message.length} caractères
+											</p>
+										</div>
+
+										{/* File Upload */}
+										<div>
+											<label className="block text-sm font-semibold text-gray-700 mb-2">
+												Document joint (optionnel)
+											</label>
+											<div className="relative">
+												<input
+													type='file'
+													accept='.pdf'
+													name='file'
+													onChange={(e) => {
+														if (e.target.files[0]) {
+															displayNotification("Fichier sélectionné", e.target.files[0].name, "info")
+															handleFileChange(e);
+														}
+													}}
+													ref={fileInputRef}
+													className="hidden"
+													id="file-upload"
+												/>
+												<label
+													htmlFor="file-upload"
+													className="flex items-center justify-center w-full px-4 py-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#3435FF] hover:bg-blue-50 transition-all cursor-pointer group"
+												>
+													<div className="text-center">
+														<svg className="w-10 h-10 text-gray-400 group-hover:text-[#3435FF] mx-auto mb-2 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+															<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+														</svg>
+														{formData.file ? (
+															<>
+																<p className="text-sm font-medium text-[#3435FF] break-all">
+																	📄 {formData.file.name}
+																</p>
+																<p className="text-xs text-gray-500 mt-1">
+																	Touchez pour changer le fichier
+																</p>
+															</>
+														) : (
+															<>
+																<p className="text-sm font-medium text-gray-700">
+																	Touchez pour sélectionner un fichier PDF
+																</p>
+																<p className="text-xs text-gray-500 mt-1">
+																	Format accepté : PDF uniquement
+																</p>
+															</>
+														)}
+													</div>
+												</label>
+											</div>
+										</div>
+
+										{/* Submit Button */}
+										<button
+											type="submit"
+											disabled={submitting || !formData.message.trim()}
+											className={`w-full py-4 rounded-lg font-bold text-lg transition-all shadow-lg ${submitting || !formData.message.trim()
+												? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+												: 'bg-gradient-to-r from-[#FF8200] to-[#ff9800] hover:from-[#ff9800] hover:to-[#FF8200] text-white hover:shadow-xl transform hover:-translate-y-1'
+												}`}
+										>
+											{submitting ? (
+												<span className="flex items-center justify-center gap-2">
+													<svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+														<circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+														<path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+													</svg>
+													Envoi en cours...
+												</span>
+											) : (
+												<span className="flex items-center justify-center gap-2">
+													<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+														<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+													</svg>
+													Envoyer le message
+												</span>
+											)}
+										</button>
+
+										<p className="text-xs text-center text-gray-500">
+											En soumettant ce formulaire, vous acceptez que nous traitions vos données pour répondre à votre demande.
+										</p>
+									</form>
+								) : (
+									/* Visiteur non connecté : le message doit être rattaché à un
+									   compte pour que l'épicerie puisse répondre. On l'oriente
+									   vers la connexion ou vers l'adresse email de l'épicerie. */
+									<div className="px-6 sm:px-8 py-8 space-y-6 text-center">
+										<p className="text-gray-700">
+											Le formulaire de contact est réservé aux personnes inscrites,
+											afin que nous puissions vous répondre.
+										</p>
+										<Link
+											to="/login"
+											className="inline-block w-full sm:w-auto bg-[#FF8200] hover:bg-orange-600 text-white px-8 py-3 rounded-lg font-bold text-lg shadow-md transition-all"
+										>
+											Me connecter
+										</Link>
+										<p className="text-gray-700">
+											Pas encore de compte, ou un problème pour vous connecter ?
+											<br />
+											Écrivez-nous à{" "}
+											<a
+												href={`mailto:${CONTACT_EMAIL}`}
+												className="text-[#2E2EFF] font-semibold underline"
+											>
+												{CONTACT_EMAIL}
+											</a>
 										</p>
 									</div>
-
-									{/* File Upload */}
-									<div>
-										<label className="block text-sm font-semibold text-gray-700 mb-2">
-											Document joint (optionnel)
-										</label>
-										<div className="relative">
-											<input
-												type='file'
-												accept='.pdf'
-												name='file'
-												onChange={(e) => {
-													if (e.target.files[0]) {
-														displayNotification("Fichier sélectionné", e.target.files[0].name, "info")
-														handleFileChange(e);
-													}
-												}}
-												ref={fileInputRef}
-												className="hidden"
-												id="file-upload"
-											/>
-											<label
-												htmlFor="file-upload"
-												className="flex items-center justify-center w-full px-4 py-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#3435FF] hover:bg-blue-50 transition-all cursor-pointer group"
-											>
-												<div className="text-center">
-													<svg className="w-10 h-10 text-gray-400 group-hover:text-[#3435FF] mx-auto mb-2 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-														<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-													</svg>
-													{formData.file ? (
-														<>
-															<p className="text-sm font-medium text-[#3435FF]">
-																📄 {formData.file.name}
-															</p>
-															<p className="text-xs text-gray-500 mt-1">
-																Cliquez pour changer le fichier
-															</p>
-														</>
-													) : (
-														<>
-															<p className="text-sm font-medium text-gray-700">
-																Cliquez pour sélectionner un fichier PDF
-															</p>
-															<p className="text-xs text-gray-500 mt-1">
-																Format accepté : PDF uniquement
-															</p>
-														</>
-													)}
-												</div>
-											</label>
-										</div>
-									</div>
-
-									{/* Submit Button */}
-									<button
-										type="submit"
-										disabled={submitting || !formData.message.trim()}
-										className={`w-full py-4 rounded-lg font-bold text-lg transition-all shadow-lg ${submitting || !formData.message.trim()
-											? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-											: 'bg-gradient-to-r from-[#FF8200] to-[#ff9800] hover:from-[#ff9800] hover:to-[#FF8200] text-white hover:shadow-xl transform hover:-translate-y-1'
-											}`}
-									>
-										{submitting ? (
-											<span className="flex items-center justify-center gap-2">
-												<svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-													<circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-													<path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-												</svg>
-												Envoi en cours...
-											</span>
-										) : (
-											<span className="flex items-center justify-center gap-2">
-												<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-													<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-												</svg>
-												Envoyer le message
-											</span>
-										)}
-									</button>
-
-									<p className="text-xs text-center text-gray-500">
-										En soumettant ce formulaire, vous acceptez que nous traitions vos données pour répondre à votre demande.
-									</p>
-								</form>
+								)}
 							</div>
 						</div>
 					</div>
