@@ -1,5 +1,23 @@
+// =============================================================================
+// HISTORIQUE DES MODIFICATIONS
+// =============================================================================
+//
+// Date          Auteur        Description
+// ----------    ----------    -------------------------------------------------
+// 2026-11-02    Louvel       Messages d'erreur lisibles (adresse déjà utilisée,
+//                            doublon en base) ; mot de passe généré avec
+//                            crypto.getRandomValues au lieu de Math.random
+//
+// =============================================================================
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js";
+const jsonResponse = (payload, status)=>new Response(JSON.stringify(payload), {
+    status,
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "application/json"
+    }
+  });
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -62,9 +80,9 @@ serve(async (req)=>{
     });
     // Generate password
     const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%(){}[]=+-&";
-    const pass = Array.from({
-      length: 12
-    }, ()=>charset.charAt(Math.floor(Math.random() * charset.length))).join("");
+    // crypto.getRandomValues : aléatoire cryptographique (Math.random est prévisible)
+    const randomValues = crypto.getRandomValues(new Uint32Array(12));
+    const pass = Array.from(randomValues, (v)=>charset.charAt(v % charset.length)).join("");
     // 1. Créer le user dans auth
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: newUser.email,
@@ -72,17 +90,24 @@ serve(async (req)=>{
       email_confirm: true
     });
     if (authError) {
-      console.error("Auth error:", authError.message);
-      return new Response(JSON.stringify({
-        error: "Erreur Auth",
+      console.error("Auth error:", authError.code, authError.message);
+      // Adresse déjà utilisée par un compte existant
+      if (authError.code === "email_exists" || /already (been )?registered/i.test(authError.message)) {
+        return jsonResponse({
+          error: `L'adresse ${newUser.email} est déjà utilisée par un autre compte.`,
+          details: authError.message
+        }, 409);
+      }
+      if (authError.code === "email_address_invalid" || /invalid.*email|email.*invalid/i.test(authError.message)) {
+        return jsonResponse({
+          error: `L'adresse ${newUser.email} n'est pas valide.`,
+          details: authError.message
+        }, 400);
+      }
+      return jsonResponse({
+        error: `Erreur lors de la création du compte : ${authError.message}`,
         details: authError.message
-      }), {
-        status: 500,
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json"
-        }
-      });
+      }, authError.status && authError.status >= 400 ? authError.status : 500);
     }
     // 2. Insérer dans la table User
     const { error: dbError } = await supabaseAdmin.from("User").insert([
@@ -95,16 +120,17 @@ serve(async (req)=>{
       console.error("DB error:", dbError.message);
       // Rollback : supprimer le ghost user auth
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id).catch((e)=>console.warn("Rollback deleteUser failed:", e));
-      return new Response(JSON.stringify({
-        error: "Erreur DB",
+      // 23505 = violation d'unicité (doublon)
+      if (dbError.code === "23505") {
+        return jsonResponse({
+          error: "Un utilisateur existe déjà avec ces informations.",
+          details: dbError.message
+        }, 409);
+      }
+      return jsonResponse({
+        error: `Erreur lors de l'enregistrement de l'utilisateur : ${dbError.message}`,
         details: dbError.message
-      }), {
-        status: 500,
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json"
-        }
-      });
+      }, 500);
     }
     // 3. Envoyer le mail de bienvenue via fetch direct (évite l'EarlyDrop causé par functions.invoke)
     const mailController = new AbortController();
