@@ -23,6 +23,7 @@ import { displayNotification } from '@lib/displayNotification.jsx';
 
 // Importing common components
 import Loading from '@common/Loading.jsx';
+import PostalCodeCityInput from '@common/PostalCodeCityInput.jsx';
 import AddUserModal from '@common/AddUserModal';
 
 
@@ -32,6 +33,7 @@ const UserTable = () => {
 	const [expanded, setExpanded] = useState(null);
 	const [editMode, setEditMode] = useState(null);
 	const [editedUser, setEditedUser] = useState({});
+	const [editAddrValid, setEditAddrValid] = useState(false);
 	const [update, setUpdate] = useState(true)
 	const [isLoading, setIsLoading] = useState(true);
 	const [modalOpen, setModalOpen] = useState(false)
@@ -83,6 +85,7 @@ const UserTable = () => {
 	const handleEdit = (user) => {
 		setEditMode(user.id);
 		setEditedUser(user);
+		setEditAddrValid(false);
 		setExpanded(user.id);
 	};
 
@@ -122,6 +125,15 @@ const UserTable = () => {
 	}
 
 	const handleValidate = () => {
+		// DPD refuse tout couple code postal / commune inconnu
+		if (!editAddrValid) {
+			displayNotification(
+				'Adresse incomplète',
+				'Saisissez un code postal valide et choisissez la commune : DPD refuse les adresses inconnues.',
+				'warning'
+			);
+			return;
+		}
 		patchUser(editMode, editedUser)
 			.then(() => setUpdate(!update))
 			.then(() => setEditMode(null))
@@ -296,13 +308,31 @@ const UserTable = () => {
 											['birthday', 'Date de naissance'],
 											['address', 'Adresse'],
 											['addAddress', "Complément d'adresse"],
-											['city', 'Ville'],
 											['postalCode', 'Code postal'],
+											['city', 'Ville'],
 											['situation', 'Situation'],
 											['quotient', 'Quotient'],
 											['wageType', 'Type de revenu'],
 											['otherWage', 'Autres revenus'],
-										].map(([field, label]) => (
+										].map(([field, label]) => {
+											// En édition, code postal + ville passent par le composant validé
+											if (editMode === user.id && field === 'city') return null;
+											if (editMode === user.id && field === 'postalCode') return (
+												<PostalCodeCityInput
+													key="postal-city"
+													postalCode={editedUser.postalCode}
+													city={editedUser.city}
+													required
+													onChange={({ postalCode, city, isValid }) => {
+														setEditedUser(prev => ({ ...prev, postalCode, city }));
+														setEditAddrValid(isValid);
+													}}
+													fieldClassName="bg-white p-3 rounded-lg border border-gray-200"
+													labelClassName="text-xs font-medium text-rayonblue block mb-1"
+													inputClassName="w-full border-2 border-rayonblue rounded px-2 py-1"
+												/>
+											);
+											return (
 											<div key={field} className="bg-white p-3 rounded-lg border border-gray-200">
 												<label className="text-xs font-medium text-rayonblue block mb-1">{label}</label>
 												{editMode === user.id ? (
@@ -316,7 +346,8 @@ const UserTable = () => {
 													<p className="text-gray-800">{user[field] || '—'}</p>
 												)}
 											</div>
-										))}
+											);
+										})}
 
 										<div className="bg-white p-3 rounded-lg border border-gray-200">
 											<label className="text-xs font-medium text-rayonblue block mb-1">Poids maximum autorisé par mois (en grammes)</label>
