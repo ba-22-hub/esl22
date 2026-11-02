@@ -188,7 +188,7 @@ function OrderTable() {
                 nom: `${userData?.firstName || ''} ${userData?.lastName || ''}`.trim() || pickupPoint.name || "Client",
                 pays: "FR",
                 cp: userData?.postalCode || pickupPoint.zipCode, // Code postal du destinataire ou du point relais
-                vville: userData?.city || pickupPoint.city, // Ville du destinataire ou du point relais
+                ville: userData?.city || pickupPoint.city, // Ville du destinataire ou du point relais
                 rue: userData?.address || `${pickupPoint.address1 || ""} ${pickupPoint.address2 || ""}`.trim(),
                 contact: {
                     phone: normalizePhone(userData?.phone) || defaultPhone,
