@@ -7,6 +7,7 @@ import { displayNotification } from '@lib/displayNotification.jsx';
 
 // Importing common components
 import Loading from "@common/Loading.jsx";
+import PostalCodeCityInput from "@common/PostalCodeCityInput.jsx";
 
 /** * The Account page.
  * @returns {React.ReactElement} Account component.
@@ -17,6 +18,7 @@ function Account() {
     const [clientEdit, setClientEdit] = useState(null)
     const [client, setClient] = useState(null)
     const [activeRequests, setActiveRequest] = useState(false)
+    const [addrValid, setAddrValid] = useState(false)
     const { user, logout, isAdmin, loading, checkIsAdmin } = useAuthor()
 
 
@@ -103,6 +105,16 @@ function Account() {
     // handle the edit of the personnal informations
     async function handleEdit(e) {
         e.preventDefault(); // Empêche le rechargement de la page
+
+        // DPD refuse tout couple code postal / commune inconnu
+        if (!addrValid) {
+            displayNotification(
+                "Adresse incomplète",
+                "Saisissez un code postal valide et choisissez votre commune : le transporteur refuse les adresses inconnues.",
+                "warning"
+            )
+            return
+        }
 
         try {
             const { data, error } = await supabase
@@ -239,8 +251,25 @@ function Account() {
                                 {renderField("Téléphone", "phone")}
                                 {renderField("Adresse", "address")}
                                 {renderField("Précisions", "addAddress")}
-                                {renderField("Ville", "city")}
-                                {renderField("Code postal", "postalCode")}
+                                {editing ? (
+                                    <PostalCodeCityInput
+                                        postalCode={clientEdit.postalCode}
+                                        city={clientEdit.city}
+                                        onChange={({ postalCode, city, isValid }) => {
+                                            setClientEdit(prev => ({ ...prev, postalCode, city }))
+                                            setAddrValid(isValid)
+                                        }}
+                                        fieldClassName="flex flex-col sm:flex-row sm:flex-wrap sm:items-center text-rayonblue mb-2 text-sm lg:text-base"
+                                        labelClassName="font-semibold sm:min-w-[180px] sm:whitespace-nowrap lg:mr-4 mr-0"
+                                        inputClassName="flex-1 min-w-0 border border-rayonorange rounded-lg text-rayonorange pl-2 h-[1.8rem]"
+                                        messageClassName="sm:basis-full sm:pl-[180px] lg:pl-[196px]"
+                                    />
+                                ) : (
+                                    <>
+                                        {renderField("Code postal", "postalCode")}
+                                        {renderField("Ville", "city")}
+                                    </>
+                                )}
                             </div>
                         </div>
 

@@ -16,6 +16,9 @@
 //                            bénéficiaire (UrgentBeneficiary) et non du centre
 //                            social émetteur de la commande ; badge dans la
 //                            liste des commandes
+// 2026-11-02    Louvel       clé "ville" du destinataire (était "vville") ;
+//                            affichage du message d'erreur renvoyé par
+//                            l'Edge Function (refus DPD lisible, ex. code postal)
 //
 // =============================================================================
 
@@ -188,7 +191,7 @@ function OrderTable() {
                 nom: `${userData?.firstName || ''} ${userData?.lastName || ''}`.trim() || pickupPoint.name || "Client",
                 pays: "FR",
                 cp: userData?.postalCode || pickupPoint.zipCode, // Code postal du destinataire ou du point relais
-                vville: userData?.city || pickupPoint.city, // Ville du destinataire ou du point relais
+                ville: userData?.city || pickupPoint.city, // Ville du destinataire ou du point relais
                 rue: userData?.address || `${pickupPoint.address1 || ""} ${pickupPoint.address2 || ""}`.trim(),
                 contact: {
                     phone: normalizePhone(userData?.phone) || defaultPhone,
@@ -241,7 +244,19 @@ function OrderTable() {
             );
 
             if (functionError) {
-                throw new Error(`Erreur fonction Edge: ${functionError.message}`);
+                // Sur un statut non-2xx, supabase-js ne renvoie qu'un message générique ;
+                // le message lisible de l'Edge Function ({ error: "..." }) est dans
+                // la réponse jointe : functionError.context.
+                let message = functionError.message;
+                if (functionError.context && typeof functionError.context.json === "function") {
+                    try {
+                        const body = await functionError.context.json();
+                        if (body?.error) message = body.error;
+                    } catch {
+                        // corps non JSON : on garde le message générique
+                    }
+                }
+                throw new Error(message);
             }
 
             let pdfBlob;

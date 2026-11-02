@@ -6,6 +6,7 @@
 // ----------    ----------    -------------------------------------------------
 // 2026-06-09    Louvel       Création create-dpd-label-relay from creat-dpd-label
 // 2026-06-09    Louvel       Adaptation pour prendre en compte le nouveau payload
+// 2026-11-02    Louvel       Erreurs métier DPD (SOAP Fault) traduites en 422 lisible
 //
 // =============================================================================
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -18,6 +19,21 @@ const cleanObject = (obj)=>{
     }
   }
   return cleaned;
+};
+// Messages lisibles pour les erreurs métier renvoyées par DPD (balise <ErrorId>).
+// Les erreurs non listées sont renvoyées avec le texte brut de DPD.
+const DPD_ERROR_MESSAGES = {
+  UnknownZipCodeCity: "Code postal ou commune invalide pour ce destinataire. Corrigez sa fiche puis réessayez."
+};
+// Extrait l'erreur métier d'une réponse SOAP Fault de DPD, ou null si ce n'en est pas une.
+const parseDpdFault = (text)=>{
+  const errorId = text.match(/<ErrorId>([^<]+)<\/ErrorId>/)?.[1]?.trim();
+  const fault = text.match(/<faultstring>([^<]+)<\/faultstring>/)?.[1]?.trim();
+  if (!errorId && !fault) return null;
+  return {
+    errorId: errorId ?? null,
+    message: (errorId && DPD_ERROR_MESSAGES[errorId]) || `Refus DPD : ${fault ?? errorId}`
+  };
 };
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -125,6 +141,21 @@ serve(async (req)=>{
     if (!response.ok) {
       const errorText = await response.text();
       console.error("Erreur du proxy:", errorText);
+      // Refus métier de DPD (adresse, poids…) : la requête est en cause, pas le service.
+      // 422 + message lisible, pour que l'interface puisse l'afficher tel quel.
+      const dpdFault = parseDpdFault(errorText);
+      if (dpdFault) {
+        return new Response(JSON.stringify({
+          error: dpdFault.message,
+          dpdErrorId: dpdFault.errorId
+        }), {
+          status: 422,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json"
+          }
+        });
+      }
       return new Response(JSON.stringify({
         error: `Erreur du proxy: ${response.status} - ${errorText.substring(0, 200)}`
       }), {

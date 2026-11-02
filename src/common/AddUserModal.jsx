@@ -2,12 +2,15 @@ import { useState } from "react";
 import { createUser } from "@lib/createUser.js"
 
 import FormInput from "@common/FormInput.jsx"
+import PostalCodeCityInput from "@common/PostalCodeCityInput.jsx"
+import { displayNotification } from '@lib/displayNotification.jsx';
 
 
 function AddUserModal({ isOpen, onClose }) {
     if (!isOpen) return null;
 
     const [length, setLength] = useState('')
+    const [addrValid, setAddrValid] = useState(false)
     const [formData, setFormData] = useState({
         accountType: 'beneficiary',
         gender: '',
@@ -81,8 +84,17 @@ function AddUserModal({ isOpen, onClose }) {
         }
     }
     async function handleSubmit() {
-        await createUser(formData);
-        onClose();
+        // DPD refuse tout couple code postal / commune inconnu
+        if (!addrValid) {
+            displayNotification(
+                'Adresse incomplète',
+                'Saisissez un code postal valide et choisissez la commune : DPD refuse les adresses inconnues.',
+                'warning'
+            );
+            return;
+        }
+        const ok = await createUser(formData);
+        if (ok) onClose();
     }
 
     return (
@@ -141,10 +153,19 @@ function AddUserModal({ isOpen, onClose }) {
                     <FormInput labelClassName="ml-[8%]" className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Rue :" name="address" value={formData.address} onChange={handleChange} isStarred={true} />
                     {/* add adresse */}
                     <FormInput labelClassName="ml-[8%]" className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Complément d'adresse :" name="addAddress" value={formData.addAddress} onChange={handleChange} />
-                    {/* City  */}
-                    <FormInput labelClassName="ml-[8%]" className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Commune :" name="city" value={formData.city} onChange={handleChange} isStarred={true} />
-                    {/* Post code */}
-                    <FormInput labelClassName="ml-[8%]" className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Code postal :" name="postalCode" value={formData.postalCode} onChange={handleChange} isStarred={true} type='number' />
+                    {/* Post code + city (contrôlés via geo.api.gouv.fr) */}
+                    <PostalCodeCityInput
+                        postalCode={formData.postalCode}
+                        city={formData.city}
+                        required
+                        onChange={({ postalCode, city, isValid }) => {
+                            setFormData(prev => ({ ...prev, postalCode, city }));
+                            setAddrValid(isValid);
+                        }}
+                        labelClassName="ml-[8%] text-rayonblue block"
+                        inputClassName="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1 px-2"
+                        messageClassName="ml-[8%] -mt-1 mb-2"
+                    />
                     {/* length */}
                     {formData.accountType !== "mds" && (
                         <FormInput labelClassName="ml-[8%]" className="w-[84%] h-[2.3rem] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Durée de validité (jours)" name="length" value={length} onChange={handleChange} isStarred={true} type='number' min="0" />

@@ -39,6 +39,7 @@ import { useNavigate } from 'react-router-dom';
 import { displayNotification } from '@lib/displayNotification.jsx';
 
 import Loading from '@common/Loading.jsx';
+import PostalCodeCityInput from '@common/PostalCodeCityInput.jsx';
 
 const EMPTY_FORM = {
 	firstName: '',
@@ -55,6 +56,10 @@ const EMPTY_FORM = {
 // Champs texte optionnels : une chaîne vide doit partir en NULL en base,
 // sinon on stocke des '' impossibles à distinguer d'une absence de valeur.
 const OPTIONAL_FIELDS = ['email', 'address', 'addAddress', 'city', 'postalCode', 'notes'];
+
+// Code postal et commune sont saisis via PostalCodeCityInput (contrôle
+// geo.api.gouv.fr) : DPD refuse tout couple code postal / commune inconnu.
+const ADDRESS_FIELDS = ['postalCode', 'city'];
 
 // Dispositifs au titre desquels une autorisation peut être accordée. Ils ne
 // diffèrent que par leurs paramètres : durée, nombre de commandes possibles et
@@ -107,6 +112,8 @@ const UrgentBeneficiaryTable = () => {
 	const [editedForm, setEditedForm] = useState(EMPTY_FORM);
 	const [modalOpen, setModalOpen] = useState(false);
 	const [newForm, setNewForm] = useState(EMPTY_FORM);
+	const [newAddrValid, setNewAddrValid] = useState(false);
+	const [editAddrValid, setEditAddrValid] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
 	const [update, setUpdate] = useState(true);
@@ -278,7 +285,7 @@ const UrgentBeneficiaryTable = () => {
 
 	// phone est NOT NULL en base : on valide ici pour afficher un message clair
 	// plutôt que de laisser remonter une erreur Postgres.
-	const validate = (form) => {
+	const validate = (form, addrValid) => {
 		if (!form.firstName.trim() || !form.lastName.trim()) {
 			displayNotification('Champs obligatoires', 'Le nom et le prénom sont requis.', 'warning');
 			return false;
@@ -287,6 +294,14 @@ const UrgentBeneficiaryTable = () => {
 			displayNotification(
 				'Téléphone requis',
 				'Le numéro de téléphone est obligatoire : il est utilisé par DPD pour la livraison.',
+				'warning'
+			);
+			return false;
+		}
+		if (!addrValid) {
+			displayNotification(
+				'Adresse incomplète',
+				'Saisissez un code postal valide et choisissez la commune : DPD refuse les adresses inconnues.',
 				'warning'
 			);
 			return false;
@@ -320,7 +335,7 @@ const UrgentBeneficiaryTable = () => {
 	};
 
 	const handleCreate = async () => {
-		if (!validate(newForm)) return;
+		if (!validate(newForm, newAddrValid)) return;
 		setIsSaving(true);
 
 		// mdsId doit être renseigné explicitement : la policy WITH CHECK vérifie
@@ -335,15 +350,16 @@ const UrgentBeneficiaryTable = () => {
 			displayNotification('Erreur lors de la création de la fiche', error.message, 'danger');
 			return;
 		}
-		displayNotification('Fiche bénéficiaire créée', 'success');
+		displayNotification('Fiche bénéficiaire créée', 'La fiche a été enregistrée.', 'success');
 		await warnIfExistingAccount(newForm.email);
 		setNewForm(EMPTY_FORM);
+		setNewAddrValid(false);
 		setModalOpen(false);
 		setUpdate(!update);
 	};
 
 	const handleValidate = async (id) => {
-		if (!validate(editedForm)) return;
+		if (!validate(editedForm, editAddrValid)) return;
 		setIsSaving(true);
 
 		const { error } = await supabase
@@ -398,7 +414,7 @@ const UrgentBeneficiaryTable = () => {
 		}
 
 		setIsSaving(false);
-		displayNotification('Fiche mise à jour', 'success');
+		displayNotification('Fiche mise à jour', 'Les modifications ont été enregistrées.', 'success');
 		await warnIfExistingAccount(editedForm.email);
 		setEditMode(null);
 		setUpdate(!update);
@@ -555,7 +571,7 @@ const UrgentBeneficiaryTable = () => {
 			displayNotification('Erreur lors de la suppression', error.message, 'danger');
 			return;
 		}
-		displayNotification('Fiche supprimée', 'success');
+		displayNotification('Fiche supprimée', 'La fiche a été supprimée.', 'success');
 		setUpdate(!update);
 	};
 
@@ -576,8 +592,8 @@ const UrgentBeneficiaryTable = () => {
 		['email', 'Adresse mail', false],
 		['address', 'Rue', false],
 		['addAddress', "Complément d'adresse", false],
-		['city', 'Commune', false],
-		['postalCode', 'Code postal', false],
+		['postalCode', 'Code postal', true],
+		['city', 'Commune', true],
 	];
 
 	return (
@@ -709,7 +725,9 @@ const UrgentBeneficiaryTable = () => {
 							{expanded === b.id && (
 								<div className="p-4 bg-gray-50 border-t">
 									<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-										{formFields.map(([field, label, required]) => (
+										{formFields
+											.filter(([field]) => !(editMode === b.id && ADDRESS_FIELDS.includes(field)))
+											.map(([field, label, required]) => (
 											<div key={field} className="bg-white p-3 rounded-lg border border-gray-200">
 												<label className="text-xs font-medium text-rayonblue block mb-1">
 													{label}{required && <span className="text-red-500"> *</span>}
@@ -726,6 +744,21 @@ const UrgentBeneficiaryTable = () => {
 												)}
 											</div>
 										))}
+
+										{editMode === b.id && (
+											<PostalCodeCityInput
+												postalCode={editedForm.postalCode}
+												city={editedForm.city}
+												required
+												onChange={({ postalCode, city, isValid }) => {
+													setEditedForm(prev => ({ ...prev, postalCode, city }));
+													setEditAddrValid(isValid);
+												}}
+												fieldClassName="bg-white p-3 rounded-lg border border-gray-200"
+												labelClassName="text-xs font-medium text-rayonblue block mb-1"
+												inputClassName="w-full border-2 border-rayonblue rounded px-2 py-1"
+											/>
+										)}
 
 										<div className="bg-white p-3 rounded-lg border border-gray-200 md:col-span-2">
 											<label className="text-xs font-medium text-rayonblue block mb-1">Notes</label>
@@ -958,7 +991,9 @@ const UrgentBeneficiaryTable = () => {
 
 						<div className="flex-1 overflow-y-auto p-6">
 							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-								{formFields.map(([field, label, required]) => (
+								{formFields
+									.filter(([field]) => !ADDRESS_FIELDS.includes(field))
+									.map(([field, label, required]) => (
 									<div key={field}>
 										<label className="text-sm text-rayonblue block mb-1">
 											{label}{required && <span className="text-red-500"> *</span>}
@@ -971,6 +1006,17 @@ const UrgentBeneficiaryTable = () => {
 										/>
 									</div>
 								))}
+								<PostalCodeCityInput
+									postalCode={newForm.postalCode}
+									city={newForm.city}
+									required
+									onChange={({ postalCode, city, isValid }) => {
+										setNewForm(prev => ({ ...prev, postalCode, city }));
+										setNewAddrValid(isValid);
+									}}
+									labelClassName="text-sm text-rayonblue block mb-1"
+									inputClassName="w-full h-[2.3rem] rounded-lg border border-rayonblue px-2"
+								/>
 							</div>
 
 							<div className="mt-4">
@@ -985,8 +1031,8 @@ const UrgentBeneficiaryTable = () => {
 							</div>
 
 							<p className="text-xs text-gray-500 mt-3">
-								💡 Le téléphone est obligatoire : DPD l'utilise pour la notification de
-								livraison. L'adresse mail reste facultative.
+								💡 Le téléphone, le code postal et la commune sont obligatoires : DPD les
+								utilise pour la livraison. L'adresse mail reste facultative.
 							</p>
 
 							<button

@@ -22,9 +22,19 @@ async function createUser(user) {
         })
 
         if (error) {
+            let message = error.message
+            // Le motif renvoyé par l'Edge Function est dans la réponse jointe
+            if (error.context && typeof error.context.json === "function") {
+                try {
+                    const body = await error.context.json()
+                    if (body?.error) message = body.error
+                } catch {
+                    // corps non JSON : on garde le message générique
+                }
+            }
             displayNotification(
                 "Erreur lors de la création de l'utilisateur : " + user.firstName + " " + user.lastName,
-                error.message,
+                message,
                 "danger"
             )
             return null
@@ -39,7 +49,7 @@ async function createUser(user) {
             return null
         }
 
-        displayNotification("Utilisateur créé", "success")
+        displayNotification("Utilisateur créé", `Le compte de ${user.firstName} ${user.lastName} a été créé.`, "success")
         return true
 
     } catch (err) {
