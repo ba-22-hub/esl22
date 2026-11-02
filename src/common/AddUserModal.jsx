@@ -93,8 +93,8 @@ function AddUserModal({ isOpen, onClose }) {
             );
             return;
         }
-        await createUser(formData);
-        onClose();
+        const ok = await createUser(formData);
+        if (ok) onClose();
     }
 
     return (

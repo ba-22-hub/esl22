@@ -350,7 +350,7 @@ const UrgentBeneficiaryTable = () => {
 			displayNotification('Erreur lors de la création de la fiche', error.message, 'danger');
 			return;
 		}
-		displayNotification('Fiche bénéficiaire créée', 'success');
+		displayNotification('Fiche bénéficiaire créée', 'La fiche a été enregistrée.', 'success');
 		await warnIfExistingAccount(newForm.email);
 		setNewForm(EMPTY_FORM);
 		setNewAddrValid(false);
@@ -414,7 +414,7 @@ const UrgentBeneficiaryTable = () => {
 		}
 
 		setIsSaving(false);
-		displayNotification('Fiche mise à jour', 'success');
+		displayNotification('Fiche mise à jour', 'Les modifications ont été enregistrées.', 'success');
 		await warnIfExistingAccount(editedForm.email);
 		setEditMode(null);
 		setUpdate(!update);
@@ -571,7 +571,7 @@ const UrgentBeneficiaryTable = () => {
 			displayNotification('Erreur lors de la suppression', error.message, 'danger');
 			return;
 		}
-		displayNotification('Fiche supprimée', 'success');
+		displayNotification('Fiche supprimée', 'La fiche a été supprimée.', 'success');
 		setUpdate(!update);
 	};
 

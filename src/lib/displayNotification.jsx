@@ -40,13 +40,28 @@ function ProgressBar({ duration }) {
     );
 }
 
+// Types considérés comme des erreurs : elles restent affichées jusqu'au clic
+// sur ✕, pour laisser le temps de lire le message et de corriger.
+const PERSISTENT_TYPES = ["danger", "error"];
+const DEFAULT_DURATION = 5000;
+
 // API exportée
+// duration (ms) facultatif :
+//   - non fourni : 5 s pour les messages ordinaires, sans limite pour les erreurs ;
+//   - 0 ou Infinity : le message reste jusqu'au clic sur ✕ ;
+//   - toute autre valeur : respectée telle quelle.
 function displayNotification(
     title,
     message,
     type = "info",
-    duration = 5000
+    duration
 ) {
+    const effectiveDuration =
+        duration === 0 || duration === Infinity
+            ? Infinity
+            : duration ?? (PERSISTENT_TYPES.includes(type) ? Infinity : DEFAULT_DURATION);
+    const isPersistent = effectiveDuration === Infinity;
+
     const backgroundColors = {
         success: "#2ecc71",
         info: "#3498db",
@@ -101,11 +116,11 @@ function displayNotification(
                 <div style={{ fontWeight: "bold", fontSize: "15px" }}>{title}</div>
                 <div style={{ fontSize: "14px", opacity: 0.95 }}>{message}</div>
 
-                {/* Barre de progression */}
-                <ProgressBar duration={duration} />
+                {/* Barre de progression (inutile si le message reste affiché) */}
+                {!isPersistent && <ProgressBar duration={effectiveDuration} />}
             </div>
         ),
-        { duration }
+        { duration: effectiveDuration }
     );
 }
 
