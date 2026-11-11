@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createUser } from "@lib/createUser.js"
+import { supabase } from "@lib/supabaseClient.js"
 
 import FormInput from "@common/FormInput.jsx"
 import PostalCodeCityInput from "@common/PostalCodeCityInput.jsx"
@@ -26,7 +27,11 @@ function AddUserModal({ isOpen, onClose }) {
         end_right: '',
         weight_limit: '',
         order_limit: '',
-        price_limit: ''
+        price_limit: '',
+        validation_org: '',
+        validation_person: '',
+        user_message: '',
+        admin_message: ''
     })
 
     // Un compte MDS (centre social) n'a ni date d'expiration de droits
@@ -93,8 +98,31 @@ function AddUserModal({ isOpen, onClose }) {
             );
             return;
         }
-        const ok = await createUser(formData);
-        if (ok) onClose();
+        // admin_message n'est pas une colonne de "User" : on le retire avant la création
+        const { admin_message, ...userData } = formData;
+        const ok = await createUser(userData);
+        if (!ok) return;
+
+        // Message administrateur : create-user ne renvoie pas l'id, on le retrouve par l'email
+        const note = admin_message?.trim();
+        if (note) {
+            const { data: created } = await supabase
+                .from('User')
+                .select('id')
+                .eq('email', userData.email)
+                .maybeSingle();
+            const { error } = created
+                ? await supabase.from('user_admin_note').upsert({ user_id: created.id, admin_message: note })
+                : { error: { message: "Compte introuvable après création" } };
+            if (error) {
+                displayNotification(
+                    'Message administrateur non enregistré',
+                    `Le compte est créé, mais ajoutez le message depuis la fiche. (${error.message})`,
+                    'warning'
+                );
+            }
+        }
+        onClose();
     }
 
     return (
@@ -173,6 +201,17 @@ function AddUserModal({ isOpen, onClose }) {
 
                     {formData.accountType !== "mds" && (
                         <>
+                            <h2 className="ml-[4%] text-xl text-rayonorange font-bold my-2">Information Bénéficiaire</h2>
+                            <p className="ml-[8%] text-rayonblue">Origine de la validation</p>
+                            <div className="grid md:grid-cols-2 gap-4 mx-[8%]">
+                                <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Organisation" name="validation_org" value={formData.validation_org} onChange={handleChange} placeholder="Ex : CCAS de Lannion" maxLength={150} />
+                                <FormInput labelClassName="" className="w-[100%] h-[2.3rem] rounded-lg border border-rayonblue mb-2 mt-1" inputText="Nom de la personne" name="validation_person" value={formData.validation_person} onChange={handleChange} placeholder="Ex : Ginette Durand, AS" maxLength={150} />
+                            </div>
+                            <label className="ml-[8%] text-rayonblue">Message utilisateur <span className="text-gray-400 text-sm">(visible par le bénéficiaire)</span></label>
+                            <textarea className="w-[84%] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1 px-2 py-1" rows={2} maxLength={500} name="user_message" value={formData.user_message} onChange={handleChange} placeholder="Ex : rendez-vous MDD reporté au 15 août pour prolonger la date de validité" />
+                            <label className="ml-[8%] text-rayonblue">Message administrateur <span className="text-gray-400 text-sm">(interne, jamais visible par le bénéficiaire)</span></label>
+                            <textarea className="w-[84%] ml-[8%] rounded-lg border border-amber-300 bg-amber-50 mb-2 mt-1 px-2 py-1" rows={2} maxLength={1000} name="admin_message" value={formData.admin_message} onChange={handleChange} placeholder="Ex : ajouter un paquet de riz sur la prochaine commande" />
+
                             <h2 className="ml-[4%] text-xl text-rayonorange font-bold my-2">Quotas : </h2>
                             <div className="grid md:grid-cols-2 gap-4 mx-[8%]">
                                 <div className="relative group">
