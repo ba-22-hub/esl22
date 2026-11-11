@@ -9,6 +9,10 @@
 // 2026-08-03    Louvel       Suppression de notifyUsers - (le useEffect ne fait plus que fetchUsers())
 //                            Fix handleChange sur end_right : réactivation automatique de has_right/status
 //                            quand la date est repoussée dans le futur, avec la notification explicative.
+// 2026-11-10    Louvel       Demande du président : masquage des déclarations (situation, quotient,
+//                            type de revenu, autres revenus) via SHOW_DECLARATIONS ; ajout du bloc
+//                            « Information Bénéficiaire » (origine de la validation : organisation +
+//                            personne, message utilisateur, message administrateur → user_admin_note).
 //
 // =============================================================================
 
@@ -26,6 +30,10 @@ import Loading from '@common/Loading.jsx';
 import PostalCodeCityInput from '@common/PostalCodeCityInput.jsx';
 import AddUserModal from '@common/AddUserModal';
 
+// Bloc « Déclarations » masqué à la demande du président (nov. 2026).
+// Les colonnes restent en base ; repasser à true pour réafficher.
+const SHOW_DECLARATIONS = false;
+const DECLARATION_FIELDS = ['situation', 'quotient', 'wageType', 'otherWage'];
 
 const UserTable = () => {
 	const [users, setUsers] = useState([]);
@@ -39,6 +47,7 @@ const UserTable = () => {
 	const [modalOpen, setModalOpen] = useState(false)
 	const [statusFilter, setStatusFilter] = useState('');
 	const [adminIds, setAdminIds] = useState([]);
+	const [adminNotes, setAdminNotes] = useState({}); // { [user_id]: admin_message }
 
 
 	const { isAdmin, loading } = useAuthor()
@@ -57,6 +66,10 @@ const UserTable = () => {
 		// Récupérer les ids admins
 		const { data: admins } = await supabase.from('Admins').select('id');
 		if (admins) setAdminIds(admins.map(a => a.id));
+
+		// Messages administrateur (table séparée, lisible par les admins uniquement)
+		const { data: notes } = await supabase.from('user_admin_note').select('user_id, admin_message');
+		if (notes) setAdminNotes(Object.fromEntries(notes.map(n => [n.user_id, n.admin_message])));
 
 		setIsLoading(false);
 		};
@@ -84,7 +97,7 @@ const UserTable = () => {
 
 	const handleEdit = (user) => {
 		setEditMode(user.id);
-		setEditedUser(user);
+		setEditedUser({ ...user, admin_message: adminNotes[user.id] ?? '' });
 		setEditAddrValid(false);
 		setExpanded(user.id);
 	};
@@ -134,9 +147,49 @@ const UserTable = () => {
 			);
 			return;
 		}
-		patchUser(editMode, editedUser)
+		// admin_message n'est pas une colonne de "User" : on le retire du patch
+		const { admin_message, ...userPatch } = editedUser;
+		const clean = (s) => (typeof s === 'string' && s.trim() !== '' ? s.trim() : null);
+		const noteChanged = (admin_message ?? '') !== (adminNotes[editMode] ?? '');
+
+		patchUser(editMode, userPatch)
+			.then(async () => {
+				if (!noteChanged) return;
+				const { error } = await supabase.from('user_admin_note').upsert({
+					user_id: editMode,
+					admin_message: clean(admin_message),
+					updated_at: new Date().toISOString(),
+				});
+				if (error) displayNotification("Message administrateur non enregistré", error.message, "danger");
+			})
 			.then(() => setUpdate(!update))
 			.then(() => setEditMode(null))
+	};
+
+	// Champ du bloc « Information Bénéficiaire » (affichage ou édition)
+	const renderInfoField = (user, field, label, { multiline = false, maxLength, placeholder, hint, shownValue, className = '' } = {}) => {
+		const isEditing = editMode === user.id;
+		const value = shownValue !== undefined ? shownValue : user[field];
+		const inputProps = {
+			name: field,
+			value: editedUser[field] || '',
+			onChange: handleChange,
+			maxLength,
+			placeholder,
+			className: "w-full border-2 border-rayonblue rounded px-2 py-1",
+		};
+		return (
+			<div className={`bg-white p-3 rounded-lg border border-gray-200 ${className}`}>
+				<label className="text-xs font-medium text-rayonblue block mb-1">
+					{label} {hint && <span className="text-gray-400 font-normal">({hint})</span>}
+				</label>
+				{isEditing ? (
+					multiline ? <textarea rows={2} {...inputProps} /> : <input {...inputProps} />
+				) : (
+					<p className="text-gray-800 whitespace-pre-line">{value || '—'}</p>
+				)}
+			</div>
+		);
 	};
 
 	const handleDelete = (id) => {
@@ -314,7 +367,9 @@ const UserTable = () => {
 											['quotient', 'Quotient'],
 											['wageType', 'Type de revenu'],
 											['otherWage', 'Autres revenus'],
-										].map(([field, label]) => {
+										]
+										.filter(([field]) => SHOW_DECLARATIONS || !DECLARATION_FIELDS.includes(field))
+										.map(([field, label]) => {
 											// En édition, code postal + ville passent par le composant validé
 											if (editMode === user.id && field === 'city') return null;
 											if (editMode === user.id && field === 'postalCode') return (
@@ -467,6 +522,31 @@ const UserTable = () => {
 										</div>
 										)}
 									</div>
+
+									{user.accountType !== 'mds' && (
+										<div className="mt-6">
+											<h3 className="text-lg font-bold text-rayonorange mb-2">Information Bénéficiaire</h3>
+											<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+												{renderInfoField(user, 'validation_org', 'Origine de la validation — Organisation', {
+													maxLength: 150, placeholder: 'Ex : CCAS de Lannion',
+												})}
+												{renderInfoField(user, 'validation_person', 'Origine de la validation — Nom de la personne', {
+													maxLength: 150, placeholder: 'Ex : Ginette Durand, AS',
+												})}
+												{renderInfoField(user, 'user_message', 'Message utilisateur', {
+													multiline: true, maxLength: 500, hint: 'visible par le bénéficiaire',
+													placeholder: 'Ex : rendez-vous MDD reporté au 15 août pour prolonger la date de validité',
+													className: 'md:col-span-2',
+												})}
+												{renderInfoField(user, 'admin_message', 'Message administrateur', {
+													multiline: true, maxLength: 1000, hint: 'interne, jamais visible par le bénéficiaire',
+													placeholder: 'Ex : ajouter un paquet de riz sur la prochaine commande',
+													shownValue: adminNotes[user.id],
+													className: 'md:col-span-2 !bg-amber-50 !border-amber-300',
+												})}
+											</div>
+										</div>
+									)}
 								</div>
 							)}
 						</div>

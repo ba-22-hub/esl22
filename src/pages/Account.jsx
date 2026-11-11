@@ -9,6 +9,10 @@ import { displayNotification } from '@lib/displayNotification.jsx';
 import Loading from "@common/Loading.jsx";
 import PostalCodeCityInput from "@common/PostalCodeCityInput.jsx";
 
+// 2026-11-11 Louvel — Bloc « Déclarations » masqué à la demande du président.
+// Les colonnes restent en base ; repasser à true pour réafficher.
+const SHOW_DECLARATIONS = false;
+
 /** * The Account page.
  * @returns {React.ReactElement} Account component.
  */
@@ -237,6 +241,14 @@ function Account() {
                             ⏼ Déconnexion
                         </button>
 
+                        {/* Message de la Banque Alimentaire (saisi par un admin, lecture seule) */}
+                        {client.user_message?.trim() && (
+                            <div className="mt-6 p-4 rounded-lg border-l-4 border-rayonorange bg-orange-50 text-rayonblue">
+                                <p className="font-semibold mb-1">📢 Message de la Banque Alimentaire</p>
+                                <p className="whitespace-pre-line [overflow-wrap:anywhere]">{client.user_message}</p>
+                            </div>
+                        )}
+
                         <div className="flex flex-col md:flex-row gap-4 mt-6">
                             <div className="border border-rayonblue rounded-lg p-4 flex-1 min-w-0">
                                 <h2 className="text-rayonblue text-xl font-semibold mb-4">État civil</h2>
@@ -273,12 +285,14 @@ function Account() {
                             </div>
                         </div>
 
-                        <div className="border border-rayonblue rounded-lg p-4 mt-6 w-full max-w-full">
-                            <h2 className="text-rayonblue text-xl font-semibold mb-4">Déclarations</h2>
-                            {renderSelect("Situation", "situation", situationOptions)}
-                            {renderField("Quotient familial (CAF)", "quotient")}
-                            {renderSelect("Type de revenu", "wageType", wageOptions)}
-                        </div>
+                        {SHOW_DECLARATIONS && (
+                            <div className="border border-rayonblue rounded-lg p-4 mt-6 w-full max-w-full">
+                                <h2 className="text-rayonblue text-xl font-semibold mb-4">Déclarations</h2>
+                                {renderSelect("Situation", "situation", situationOptions)}
+                                {renderField("Quotient familial (CAF)", "quotient")}
+                                {renderSelect("Type de revenu", "wageType", wageOptions)}
+                            </div>
+                        )}
 
                         {/* rights */}
                         <div className="border border-rayonblue rounded-lg p-4 mt-6 w-full max-w-full overflow-x-auto">
