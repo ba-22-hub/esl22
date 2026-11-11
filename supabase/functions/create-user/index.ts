@@ -7,6 +7,10 @@
 // 2026-11-02    Louvel       Messages d'erreur lisibles (adresse déjà utilisée,
 //                            doublon en base) ; mot de passe généré avec
 //                            crypto.getRandomValues au lieu de Math.random
+// 2026-11-10    Louvel       Sécurité : seul un administrateur connecté (table Admins)
+//                            peut créer un compte (401/403 sinon) ; seuls les champs
+//                            autorisés de newUser sont insérés dans "User" ;
+//                            ajout validation_org, validation_person, user_message.
 //
 // =============================================================================
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
@@ -22,6 +26,47 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS"
+};
+// Champs de "User" que le formulaire d'inscription (AddUserModal) a le droit de renseigner.
+// Tout autre champ envoyé (status, current_weight, reminder_sent_at...) est ignoré.
+const ALLOWED_FIELDS = [
+  "accountType",
+  "gender",
+  "firstName",
+  "lastName",
+  "phone",
+  "email",
+  "address",
+  "addAddress",
+  "city",
+  "postalCode",
+  "start_right",
+  "end_right",
+  "weight_limit",
+  "order_limit",
+  "price_limit",
+  "has_right",
+  "validation_org",
+  "validation_person",
+  "user_message"
+];
+// Champs texte facultatifs : chaîne vide → NULL
+const NULLABLE_TEXT_FIELDS = [
+  "validation_org",
+  "validation_person",
+  "user_message"
+];
+const pickAllowedFields = (src)=>{
+  const out = {};
+  for (const key of ALLOWED_FIELDS){
+    if (!(key in src)) continue;
+    let value = src[key];
+    if (NULLABLE_TEXT_FIELDS.includes(key)) {
+      value = typeof value === "string" && value.trim() !== "" ? value.trim() : null;
+    }
+    out[key] = value;
+  }
+  return out;
 };
 serve(async (req)=>{
   // CORS preflight
@@ -42,6 +87,42 @@ serve(async (req)=>{
     });
   }
   try {
+    // Init admin client
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
+    // 0. Vérifier que l'appelant est un administrateur connecté
+    //    (la clé anon publique ou un compte bénéficiaire ne suffisent pas)
+    const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+    if (!token) {
+      return jsonResponse({
+        error: "Authentification requise"
+      }, 401);
+    }
+    const { data: callerData, error: callerError } = await supabaseAdmin.auth.getUser(token);
+    if (callerError || !callerData?.user) {
+      return jsonResponse({
+        error: "Session invalide ou expirée, reconnectez-vous."
+      }, 401);
+    }
+    const { data: adminRow, error: adminError } = await supabaseAdmin.from("Admins").select("id").eq("id", callerData.user.id).maybeSingle();
+    if (adminError) {
+      console.error("Admin check error:", adminError.message);
+      return jsonResponse({
+        error: "Vérification des droits impossible"
+      }, 500);
+    }
+    if (!adminRow) {
+      console.warn("create-user refusé pour un non-admin:", callerData.user.id);
+      return jsonResponse({
+        error: "Action réservée aux administrateurs"
+      }, 403);
+    }
     // Parse body
     let body;
     try {
@@ -69,15 +150,6 @@ serve(async (req)=>{
         }
       });
     }
-    // Init admin client
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    });
     // Generate password
     const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%(){}[]=+-&";
     // crypto.getRandomValues : aléatoire cryptographique (Math.random est prévisible)
@@ -112,7 +184,7 @@ serve(async (req)=>{
     // 2. Insérer dans la table User
     const { error: dbError } = await supabaseAdmin.from("User").insert([
       {
-        ...newUser,
+        ...pickAllowedFields(newUser),
         id: authData.user.id
       }
     ]);
