@@ -23,6 +23,7 @@ function Account() {
     const [client, setClient] = useState(null)
     const [activeRequests, setActiveRequest] = useState(false)
     const [addrValid, setAddrValid] = useState(false)
+    const [adminNote, setAdminNote] = useState(null) // message administrateur (lecture seule)
     const { user, logout, isAdmin, loading, checkIsAdmin } = useAuthor()
 
 
@@ -53,6 +54,14 @@ function Account() {
 
                 setClientEdit(userdata);
                 setClient(userdata);
+
+                // Message administrateur (table user_admin_note, lecture seule pour le bénéficiaire)
+                const { data: note } = await supabase
+                    .from('user_admin_note')
+                    .select('admin_message')
+                    .eq('user_id', uid)
+                    .maybeSingle();
+                setAdminNote(note?.admin_message ?? null);
             } catch (error) {
                 displayNotification("Erreur inattendue", error.message, "danger")
             }
@@ -241,14 +250,6 @@ function Account() {
                             ⏼ Déconnexion
                         </button>
 
-                        {/* Message de la Banque Alimentaire (saisi par un admin, lecture seule) */}
-                        {client.user_message?.trim() && (
-                            <div className="mt-6 p-4 rounded-lg border-l-4 border-rayonorange bg-orange-50 text-rayonblue">
-                                <p className="font-semibold mb-1">📢 Message de la Banque Alimentaire</p>
-                                <p className="whitespace-pre-line [overflow-wrap:anywhere]">{client.user_message}</p>
-                            </div>
-                        )}
-
                         <div className="flex flex-col md:flex-row gap-4 mt-6">
                             <div className="border border-rayonblue rounded-lg p-4 flex-1 min-w-0">
                                 <h2 className="text-rayonblue text-xl font-semibold mb-4">État civil</h2>
@@ -293,6 +294,22 @@ function Account() {
                                 {renderSelect("Type de revenu", "wageType", wageOptions)}
                             </div>
                         )}
+
+                        {/* Information Bénéficiaire — saisie par la BA, toujours en lecture seule (même en mode Modifier) */}
+                        <div className="border border-rayonblue rounded-lg p-4 mt-6 w-full max-w-full">
+                            <h2 className="text-rayonblue text-xl font-semibold mb-4">Information Bénéficiaire</h2>
+                            {[
+                                ["Validé par (organisation)", client.validation_org],
+                                ["Validé par (personne)", client.validation_person],
+                                ["Message utilisateur", client.user_message],
+                                ["Message administrateur", adminNote],
+                            ].map(([label, value]) => (
+                                <div key={label} className="flex flex-col sm:flex-row sm:items-start text-rayonblue mb-2 text-sm lg:text-base">
+                                    <label className="font-semibold sm:min-w-[180px] sm:whitespace-nowrap lg:mr-4 mr-0">{label} :</label>
+                                    <p className="flex-1 min-w-0 whitespace-pre-line [overflow-wrap:anywhere]">{value?.trim() ? value : '—'}</p>
+                                </div>
+                            ))}
+                        </div>
 
                         {/* rights */}
                         <div className="border border-rayonblue rounded-lg p-4 mt-6 w-full max-w-full overflow-x-auto">

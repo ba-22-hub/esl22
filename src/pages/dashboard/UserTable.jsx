@@ -539,7 +539,7 @@ const UserTable = () => {
 													className: 'md:col-span-2',
 												})}
 												{renderInfoField(user, 'admin_message', 'Message administrateur', {
-													multiline: true, maxLength: 1000, hint: 'interne, jamais visible par le bénéficiaire',
+													multiline: true, maxLength: 1000, hint: 'visible par le bénéficiaire, non modifiable',
 													placeholder: 'Ex : ajouter un paquet de riz sur la prochaine commande',
 													shownValue: adminNotes[user.id],
 													className: 'md:col-span-2 !bg-amber-50 !border-amber-300',
