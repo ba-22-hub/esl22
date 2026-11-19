@@ -209,7 +209,7 @@ function AddUserModal({ isOpen, onClose }) {
                             </div>
                             <label className="ml-[8%] text-rayonblue">Message utilisateur <span className="text-gray-400 text-sm">(visible par le bénéficiaire)</span></label>
                             <textarea className="w-[84%] ml-[8%] rounded-lg border border-rayonblue mb-2 mt-1 px-2 py-1" rows={2} maxLength={500} name="user_message" value={formData.user_message} onChange={handleChange} placeholder="Ex : rendez-vous MDD reporté au 15 août pour prolonger la date de validité" />
-                            <label className="ml-[8%] text-rayonblue">Message administrateur <span className="text-gray-400 text-sm">(interne, jamais visible par le bénéficiaire)</span></label>
+                            <label className="ml-[8%] text-rayonblue">Message administrateur <span className="text-gray-400 text-sm">(visible par le bénéficiaire, non modifiable)</span></label>
                             <textarea className="w-[84%] ml-[8%] rounded-lg border border-amber-300 bg-amber-50 mb-2 mt-1 px-2 py-1" rows={2} maxLength={1000} name="admin_message" value={formData.admin_message} onChange={handleChange} placeholder="Ex : ajouter un paquet de riz sur la prochaine commande" />
 
                             <h2 className="ml-[4%] text-xl text-rayonorange font-bold my-2">Quotas : </h2>
