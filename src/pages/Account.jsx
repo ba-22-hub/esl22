@@ -9,6 +9,10 @@ import { displayNotification } from '@lib/displayNotification.jsx';
 import Loading from "@common/Loading.jsx";
 import PostalCodeCityInput from "@common/PostalCodeCityInput.jsx";
 
+// 2026-11-11 Louvel — Bloc « Déclarations » masqué à la demande du président.
+// Les colonnes restent en base ; repasser à true pour réafficher.
+const SHOW_DECLARATIONS = false;
+
 /** * The Account page.
  * @returns {React.ReactElement} Account component.
  */
@@ -19,6 +23,7 @@ function Account() {
     const [client, setClient] = useState(null)
     const [activeRequests, setActiveRequest] = useState(false)
     const [addrValid, setAddrValid] = useState(false)
+    const [adminNote, setAdminNote] = useState(null) // message administrateur (lecture seule)
     const { user, logout, isAdmin, loading, checkIsAdmin } = useAuthor()
 
 
@@ -49,6 +54,14 @@ function Account() {
 
                 setClientEdit(userdata);
                 setClient(userdata);
+
+                // Message administrateur (table user_admin_note, lecture seule pour le bénéficiaire)
+                const { data: note } = await supabase
+                    .from('user_admin_note')
+                    .select('admin_message')
+                    .eq('user_id', uid)
+                    .maybeSingle();
+                setAdminNote(note?.admin_message ?? null);
             } catch (error) {
                 displayNotification("Erreur inattendue", error.message, "danger")
             }
@@ -273,11 +286,29 @@ function Account() {
                             </div>
                         </div>
 
+                        {SHOW_DECLARATIONS && (
+                            <div className="border border-rayonblue rounded-lg p-4 mt-6 w-full max-w-full">
+                                <h2 className="text-rayonblue text-xl font-semibold mb-4">Déclarations</h2>
+                                {renderSelect("Situation", "situation", situationOptions)}
+                                {renderField("Quotient familial (CAF)", "quotient")}
+                                {renderSelect("Type de revenu", "wageType", wageOptions)}
+                            </div>
+                        )}
+
+                        {/* Information Bénéficiaire — saisie par la BA, toujours en lecture seule (même en mode Modifier) */}
                         <div className="border border-rayonblue rounded-lg p-4 mt-6 w-full max-w-full">
-                            <h2 className="text-rayonblue text-xl font-semibold mb-4">Déclarations</h2>
-                            {renderSelect("Situation", "situation", situationOptions)}
-                            {renderField("Quotient familial (CAF)", "quotient")}
-                            {renderSelect("Type de revenu", "wageType", wageOptions)}
+                            <h2 className="text-rayonblue text-xl font-semibold mb-4">Information Bénéficiaire</h2>
+                            {[
+                                ["Validé par (organisation)", client.validation_org],
+                                ["Validé par (personne)", client.validation_person],
+                                ["Message utilisateur", client.user_message],
+                                ["Message administrateur", adminNote],
+                            ].map(([label, value]) => (
+                                <div key={label} className="flex flex-col sm:flex-row sm:items-start text-rayonblue mb-2 text-sm lg:text-base">
+                                    <label className="font-semibold sm:min-w-[180px] sm:whitespace-nowrap lg:mr-4 mr-0">{label} :</label>
+                                    <p className="flex-1 min-w-0 whitespace-pre-line [overflow-wrap:anywhere]">{value?.trim() ? value : '—'}</p>
+                                </div>
+                            ))}
                         </div>
 
                         {/* rights */}
